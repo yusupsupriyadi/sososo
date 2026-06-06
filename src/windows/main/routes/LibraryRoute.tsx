@@ -33,7 +33,7 @@ export default function LibraryRoute() {
   }
 
   return (
-    <div className="route-center">
+    <div className="flex h-full items-center justify-center p-6">
       <div className="home">
         <div className="home-icon">🎙️</div>
         <h2>Mulai transkripsi</h2>

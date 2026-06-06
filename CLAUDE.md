@@ -10,8 +10,8 @@ live captions in a single transparent-glass window that switches to a full trans
 pause/finish) while recording, plus a library/settings/history UI when idle. User-facing UI copy is
 in **Bahasa Indonesia**.
 
-Stack: Tauri 2 (Rust) backend · React 19 + React Router 7 + Zustand 5 + Vite 7 (TypeScript) frontend ·
-**Bun** package manager.
+Stack: Tauri 2 (Rust) backend · React 19 + React Router 7 + Zustand 5 + Vite 7 + Tailwind CSS v4
+(TypeScript) frontend · **Bun** package manager.
 
 ## Commands
 
@@ -50,7 +50,11 @@ navigates to the session detail (where the AI summary lives) if anything was tra
 
 Transparent glass (**no blur**) = `transparent:true` + `decorations:false` window with **no** native
 acrylic/vibrancy; the desktop behind shows through sharply, tinted only by the semi-transparent CSS panel
-backgrounds (`--glass-bg` in `src/styles/theme.css`, applied via the `.glass` class).
+backgrounds (the `--glass-bg`/`--color-glass` token, defined in `@theme` in `src/styles/app.css`,
+applied via the `.glass` class). Styling is **Tailwind CSS v4** (`@tailwindcss/vite`, no config file):
+design tokens live in `@theme`, base/reset in `@layer base`, and the bespoke component classes
+(`.glass`, `.rec-pill`, `.caption`, …) in `@layer components` — all in the single `src/styles/app.css`.
+Simple layout uses utility classes directly in JSX.
 
 ### Audio → STT pipeline (the core data flow)
 `commands::start_session` → `session::spawn_session` → async `run_session` (Tauri/tokio runtime):

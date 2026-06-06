@@ -28,6 +28,19 @@ pause**, **red = finish**) above a large transcript panel.
 - Widget **460×600** + always-on-top while recording (mimics the old floating overlay). Timer/status kept but
   subtle in the panel header, not on the pill (pill is 2 buttons only).
 
+## Follow-up: true floating + drag handle
+- **Float, not a box:** the native **window shadow** drew a soft rectangle around the
+  whole transparent area (visible as the ~15-22px halo in the screenshot), so the
+  pill/panel read as one boxed unit. Fixed by setting **`shadow: false` permanently
+  in `tauri.conf.json`** (applied at window creation — a runtime `setShadow(false)`
+  was unreliable). No window shadow anywhere now; the pill and glass panel float as
+  separate shapes, each keeping its own CSS box-shadow.
+- **Drag handle:** added a grip-dots handle in the pill, **to the right of the red
+  finish button**, as the dedicated `data-tauri-drag-region` to move the window.
+  Removed the drag-region from the pill container (the panel header stays draggable
+  as a bonus). The handle's SVG is `pointer-events: none` so mousedown targets the
+  handle and the drag region fires.
+
 ## Verification
 - `bun run build` — OK (72 modules). `cargo check` — OK (capability + conf validated by tauri-build).
   Visual/runtime not tested headless.

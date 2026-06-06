@@ -84,7 +84,7 @@ export default function SessionDetailRoute() {
 
   if (loading) {
     return (
-      <div className="route-center">
+      <div className="flex h-full items-center justify-center p-6">
         <p className="muted">Memuat…</p>
       </div>
     );
@@ -92,7 +92,7 @@ export default function SessionDetailRoute() {
 
   if (!detail) {
     return (
-      <div className="route-center">
+      <div className="flex h-full items-center justify-center p-6">
         <div className="empty-state">
           <h2>Sesi tidak ditemukan</h2>
           <p>
