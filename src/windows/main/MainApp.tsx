@@ -42,22 +42,24 @@ export default function MainApp() {
 		prev.current = state;
 	}, [state, sessionId, navigate]);
 
-	// Apply the user's UI zoom to the whole app shell. Keep the floating
-	// recording widget at 100% so its compact fixed-size layout stays intact.
-	useEffect(() => {
-		const root = document.documentElement;
-		root.style.zoom = inSession ? '1' : String(uiScale);
-		return () => {
-			root.style.zoom = '1';
-		};
-	}, [inSession, uiScale]);
-
 	// While a session is active the whole window becomes the floating
-	// transcription widget (its own root, no titlebar/sidebar).
+	// transcription widget (its own root, no titlebar/sidebar). The floating
+	// widget is intentionally compact and not affected by the UI zoom.
 	if (inSession) return <RecordingView />;
 
 	return (
-		<div className='flex h-screen w-screen flex-col gap-2'>
+		// UI font size = CSS zoom on the shell. Counter-scale the shell to the
+		// viewport (calc(100vw / N) × calc(100vh / N)) so zooming enlarges the
+		// content but the shell still renders back to exactly the window size —
+		// no overflow/clipping; the inner scroll areas handle the extra height.
+		<div
+			className='flex flex-col gap-2'
+			style={{
+				zoom: uiScale,
+				width: `calc(100vw / ${uiScale})`,
+				height: `calc(100vh / ${uiScale})`,
+			}}
+		>
 			<Titlebar />
 			<div className='flex min-h-0 flex-1 gap-2'>
 				<SessionSidebar />
