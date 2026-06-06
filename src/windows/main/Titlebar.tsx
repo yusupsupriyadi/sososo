@@ -1,12 +1,14 @@
-import { closeSelf, minimizeSelf } from "../../lib/window";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { closeSelf, minimizeSelf } from '../../lib/window';
+import { IconClose, IconMinimize } from '../../lib/icons';
 
 const ICON_BTN =
-  "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm bg-transparent text-[14px] leading-none text-fg-dim transition-colors duration-[120ms] active:bg-active";
+  'inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm bg-transparent text-[14px] leading-none text-fg-dim transition-colors duration-[120ms] active:bg-active';
 
 export default function Titlebar() {
   return (
     <header
-      className="flex items-center gap-2 rounded-md liquid-glass px-2.5 py-2"
+      className="liquid-glass flex items-center gap-2 rounded-md px-2.5 py-2"
       data-tauri-drag-region
     >
       <div className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em]">
@@ -17,16 +19,18 @@ export default function Titlebar() {
       <button
         className={`${ICON_BTN} hover:bg-hover hover:text-fg`}
         title="Minimize"
+        aria-label="Minimize"
         onClick={() => void minimizeSelf()}
       >
-        —
+        <HugeiconsIcon icon={IconMinimize} size={16} strokeWidth={2} aria-hidden={true} />
       </button>
       <button
         className={`${ICON_BTN} hover:bg-[rgba(255,93,93,0.22)] hover:text-[#ffd9d9]`}
         title="Close"
+        aria-label="Close"
         onClick={() => void closeSelf()}
       >
-        ✕
+        <HugeiconsIcon icon={IconClose} size={16} strokeWidth={2} aria-hidden={true} />
       </button>
     </header>
   );
