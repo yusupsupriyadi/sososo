@@ -1,0 +1,7 @@
+# rustfmt config — kept close to the Rust community default (the de-facto SOP).
+# Only stable options are set here; unstable ones (imports_granularity,
+# group_imports, …) require nightly and are intentionally avoided.
+edition = "2021"
+max_width = 100          # rustfmt default; matches Prettier printWidth 100
+tab_spaces = 4           # idiomatic Rust indentation
+newline_style = "Unix"   # LF, consistent with .gitattributes / .editorconfig

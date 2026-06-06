@@ -10,10 +10,13 @@
     "tauri": "tauri",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "fmt:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "fmt:rust:check": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,jsonc,css,md,html}": "prettier --write"
+    "*.{ts,tsx,js,jsx,json,jsonc,css,md,html}": "prettier --write",
+    "src-tauri/**/*.rs": "rustfmt --edition 2021"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.2.0",
