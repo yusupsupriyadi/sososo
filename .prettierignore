@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Rust / Tauri build artifacts (Prettier does not format Rust — use rustfmt)
+src-tauri/target/
+src-tauri/gen/
+
+# Lockfiles & generated
+bun.lockb
+*.lock
+*.log

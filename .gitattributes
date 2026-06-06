@@ -1,0 +1,14 @@
+# Normalize line endings to LF across platforms (matches .editorconfig + Prettier `endOfLine: lf`).
+# Prevents CRLF/LF churn on Windows where `format:check` would otherwise keep failing.
+* text=auto eol=lf
+
+# Treat known binary assets as binary so they are never line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.wav binary
+*.woff binary
+*.woff2 binary
