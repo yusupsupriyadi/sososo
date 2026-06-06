@@ -1,5 +1,5 @@
 use serde::Serialize;
-use wasapi::{Direction, DeviceEnumerator};
+use wasapi::{DeviceEnumerator, Direction};
 
 use crate::error::{AppError, AppResult};
 
@@ -30,9 +30,15 @@ fn list_for(direction: Direction) -> AppResult<Vec<DeviceInfo>> {
     for dev in &collection {
         let Ok(dev) = dev else { continue };
         let Ok(id) = dev.get_id() else { continue };
-        let name = dev.get_friendlyname().unwrap_or_else(|_| "Unknown device".into());
+        let name = dev
+            .get_friendlyname()
+            .unwrap_or_else(|_| "Unknown device".into());
         let is_default = default_id.as_deref() == Some(id.as_str());
-        out.push(DeviceInfo { id, name, is_default });
+        out.push(DeviceInfo {
+            id,
+            name,
+            is_default,
+        });
     }
     Ok(out)
 }

@@ -5,7 +5,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use crossbeam_channel::{bounded, Receiver, Sender};
-use wasapi::{Direction, DeviceEnumerator, SampleType, StreamMode, WaveFormat};
+use wasapi::{DeviceEnumerator, Direction, SampleType, StreamMode, WaveFormat};
 
 use crate::audio::{TARGET_CHANNELS, TARGET_SAMPLE_RATE};
 use crate::error::{AppError, AppResult};
@@ -162,8 +162,7 @@ fn capture_thread(
         .get_audiocaptureclient()
         .map_err(|e| AppError::Audio(e.to_string()))?;
 
-    let mut raw: VecDeque<u8> =
-        VecDeque::with_capacity(blockalign * TARGET_SAMPLE_RATE as usize);
+    let mut raw: VecDeque<u8> = VecDeque::with_capacity(blockalign * TARGET_SAMPLE_RATE as usize);
 
     audio_client
         .start_stream()
