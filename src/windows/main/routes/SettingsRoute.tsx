@@ -7,6 +7,14 @@ import {
 } from "../../../lib/ipc";
 import type { DeviceLists } from "../../../types/domain";
 
+const FIELD_CTRL =
+  "w-full flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent";
+const BTN =
+  "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap hover:bg-hover";
+const H3 = "mb-3 text-[12px] uppercase tracking-[0.06em] text-fg-faint";
+const FIELD = "mb-3.5 flex flex-col gap-1.5";
+const FIELD_LABEL = "text-[13px] text-fg-dim";
+
 export default function SettingsRoute() {
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
   const [inputId, setInputId] = useState("");
@@ -59,51 +67,70 @@ export default function SettingsRoute() {
   }
 
   return (
-    <div className="settings">
-      <h2>Settings</h2>
+    <div className="mx-auto max-w-[620px] px-8 py-7">
+      <h2 className="mb-5 text-[20px] font-semibold">Settings</h2>
 
-      <section className="settings-group">
-        <h3>API Keys</h3>
-        <label className="field">
-          <span>
+      <section className="mb-7">
+        <h3 className={H3}>API Keys</h3>
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>
             Deepgram API Key{" "}
-            {dgSaved && <em className="saved">✓ tersimpan</em>}
+            {dgSaved && (
+              <em className="ml-1.5 text-[11.5px] not-italic text-ok">
+                ✓ tersimpan
+              </em>
+            )}
           </span>
-          <div className="field-row">
+          <div className="flex gap-2">
             <input
+              className={FIELD_CTRL}
               type="password"
               value={dgKey}
               onChange={(e) => setDgKey(e.target.value)}
               placeholder={dgSaved ? "••••••••••••" : "Token Deepgram…"}
             />
-            <button onClick={() => void saveKey("deepgram")}>Simpan</button>
+            <button className={BTN} onClick={() => void saveKey("deepgram")}>
+              Simpan
+            </button>
           </div>
         </label>
-        <label className="field">
-          <span>
-            OpenAI API Key {oaSaved && <em className="saved">✓ tersimpan</em>}
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>
+            OpenAI API Key{" "}
+            {oaSaved && (
+              <em className="ml-1.5 text-[11.5px] not-italic text-ok">
+                ✓ tersimpan
+              </em>
+            )}
           </span>
-          <div className="field-row">
+          <div className="flex gap-2">
             <input
+              className={FIELD_CTRL}
               type="password"
               value={oaKey}
               onChange={(e) => setOaKey(e.target.value)}
               placeholder={oaSaved ? "••••••••••••" : "sk-…"}
             />
-            <button onClick={() => void saveKey("openai")}>Simpan</button>
+            <button className={BTN} onClick={() => void saveKey("openai")}>
+              Simpan
+            </button>
           </div>
         </label>
-        <p className="muted">
+        <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
           Key disimpan aman di Windows Credential Manager dan tidak pernah
           dikirim ke frontend.
         </p>
       </section>
 
-      <section className="settings-group">
-        <h3>Audio Devices</h3>
-        <label className="field">
-          <span>Mikrofon</span>
-          <select value={inputId} onChange={(e) => setInputId(e.target.value)}>
+      <section className="mb-7">
+        <h3 className={H3}>Audio Devices</h3>
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>Mikrofon</span>
+          <select
+            className={FIELD_CTRL}
+            value={inputId}
+            onChange={(e) => setInputId(e.target.value)}
+          >
             {devices?.input.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -112,9 +139,12 @@ export default function SettingsRoute() {
             ))}
           </select>
         </label>
-        <label className="field">
-          <span>Sumber system audio (output yang di-loopback)</span>
+        <label className={FIELD}>
+          <span className={FIELD_LABEL}>
+            Sumber system audio (output yang di-loopback)
+          </span>
           <select
+            className={FIELD_CTRL}
             value={outputId}
             onChange={(e) => setOutputId(e.target.value)}
           >
@@ -126,14 +156,17 @@ export default function SettingsRoute() {
             ))}
           </select>
         </label>
-        <button className="primary" onClick={() => void saveDevices()}>
+        <button
+          className="mt-1 cursor-pointer rounded-sm border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.18)] px-4 py-[9px] text-[13px] text-[#dbe8ff] whitespace-nowrap hover:bg-hover"
+          onClick={() => void saveDevices()}
+        >
           Simpan device
         </button>
       </section>
 
-      <section className="settings-group">
-        <h3>Bahasa</h3>
-        <p className="muted">
+      <section className="mb-7">
+        <h3 className={H3}>Bahasa</h3>
+        <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
           Semua bahasa kini memakai model <b>Nova-3</b> Deepgram (akurasi terbaik,
           termasuk Bahasa Indonesia). Pilih bahasa di layar utama sebelum mulai
           merekam. Opsi <i>Auto-deteksi (multilingual)</i> mengenali campuran
@@ -142,7 +175,7 @@ export default function SettingsRoute() {
         </p>
       </section>
 
-      {status && <p className="status">{status}</p>}
+      {status && <p className="mt-2 text-[12.5px] text-ok">{status}</p>}
     </div>
   );
 }

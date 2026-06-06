@@ -46,3 +46,21 @@ Tailwind preflight removes default element margins (e.g. bare `<p>`). A few unst
 paragraphs in empty/loading states (e.g. "Memuat…", "Tidak ada transkrip…") may sit slightly tighter
 than before. Trivial to restore with an explicit margin if undesired. Headings/buttons/inputs/lists all
 have explicit styles so are unaffected.
+
+## Follow-up: full utility-first (no @layer components)
+Per user request, went all the way to utility-first. Removed the entire `@layer components` block;
+every component class (`.glass`, `.icon-btn`, `.rec-pill`, `.caption`, `.settings`, `.detail`, …) is now
+inline utility classes in JSX across all 7 components. `app.css` now holds only `@import`, `@theme`
+tokens, `@keyframes`, and `@layer base`.
+- Added `@theme` tokens so multi-part values stay single utilities: `--shadow-glass`, `--shadow-pill`
+  (→ `shadow-glass`/`shadow-pill`) and `--animate-rec-pulse` (→ `animate-rec-pulse`). Native `<option>`
+  dark bg moved to `@layer base` (`option{}`) since per-element styling isn't reliable.
+- Dynamic styling moved into JSX: NavLink `.active` → `className={({isActive}) => clsx(...)}`; the
+  `.caption.you .speaker` / `.line.you .line-speaker` combinators → conditional `text-accent`/
+  `text-accent-2` on the child; `clsx("caption", source, interim)` → exclusive conditional utilities;
+  `.rec-dot.is-live/.is-error` → exclusive `bg-*`/`animate-*`. Repeated patterns use small local
+  `const` strings (e.g. `ICON_BTN`, `BIG_BTN_BASE`, `FIELD_CTRL`).
+- Exact px preserved via arbitrary utilities (`text-[13px]`, `py-[9px]`, `bg-[rgba(110,168,254,0.2)]`,
+  `brightness-[1.12]`, `scale-[0.92]`); transitions approximated with `transition[-colors] duration-[120ms]`.
+- Verify: `bun run build` — **OK** (69 modules; CSS 24.2→21.6 kB). Grep confirms zero leftover component
+  classes in JSX. Visual fidelity still needs `bun run tauri dev`.

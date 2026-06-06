@@ -49,12 +49,15 @@ small `minWidth`/`minHeight` in `tauri.conf.json`). Otherwise `MainApp` renders 
 navigates to the session detail (where the AI summary lives) if anything was transcribed, else home.
 
 Transparent glass (**no blur**) = `transparent:true` + `decorations:false` window with **no** native
-acrylic/vibrancy; the desktop behind shows through sharply, tinted only by the semi-transparent CSS panel
-backgrounds (the `--glass-bg`/`--color-glass` token, defined in `@theme` in `src/styles/app.css`,
-applied via the `.glass` class). Styling is **Tailwind CSS v4** (`@tailwindcss/vite`, no config file):
-design tokens live in `@theme`, base/reset in `@layer base`, and the bespoke component classes
-(`.glass`, `.rec-pill`, `.caption`, …) in `@layer components` — all in the single `src/styles/app.css`.
-Simple layout uses utility classes directly in JSX.
+acrylic/vibrancy; the desktop behind shows through sharply, tinted only by the semi-transparent
+`--color-glass` token (used as `bg-glass`). Styling is **Tailwind CSS v4** (`@tailwindcss/vite`, no
+config file) and **utility-first**: all component styling is inline utility classes in JSX. The single
+`src/styles/app.css` holds only `@import "tailwindcss"`, the `@theme` design tokens (colors, radii,
+`--font-sans`, the multi-part `--shadow-glass`/`--shadow-pill`, and `--animate-rec-pulse`), the
+`rec-pulse` `@keyframes`, and an `@layer base` reset (transparent bg, fonts, scrollbar, dark `<option>`,
+drag-region cursor). There is no `@layer components`. Exact non-scale values use arbitrary utilities
+(e.g. `text-[13px]`, `bg-[rgba(110,168,254,0.2)]`); the glass card = `rounded-lg border
+border-glass-border bg-glass shadow-glass`.
 
 ### Audio → STT pipeline (the core data flow)
 `commands::start_session` → `session::spawn_session` → async `run_session` (Tauri/tokio runtime):

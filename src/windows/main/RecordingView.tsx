@@ -5,6 +5,9 @@ import { useElapsedLabel } from "../../hooks/useElapsedTimer";
 import { useTranscriptStore } from "../../state/transcriptStore";
 import { enterRecordingWindow, exitRecordingWindow } from "../../lib/window";
 
+const PILL_BTN =
+  "inline-flex cursor-pointer items-center justify-center transition duration-[120ms] enabled:hover:brightness-[1.12] enabled:active:scale-[0.92] disabled:cursor-default disabled:opacity-55";
+
 /**
  * Compact floating transcription widget shown while a session is active. A small
  * pill on top carries just two icon buttons — yellow = pause/resume, red =
@@ -30,6 +33,7 @@ export default function RecordingView() {
   }, [segments.length, last?.text]);
 
   const stopping = state === "stopping";
+  const live = !paused && state === "recording";
   const status =
     state === "starting"
       ? "Menyiapkan…"
@@ -41,9 +45,9 @@ export default function RecordingView() {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center gap-2 p-2">
-      <div className="rec-pill">
+      <div className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-glass-border bg-glass-strong px-3 py-[7px] shadow-pill">
         <button
-          className="rec-pause"
+          className={`${PILL_BTN} h-[30px] w-10 rounded-[9px] bg-[#f5c518] text-[#1b1b1b]`}
           onClick={() => void togglePause()}
           disabled={state !== "recording"}
           title={paused ? "Lanjutkan" : "Jeda"}
@@ -61,7 +65,7 @@ export default function RecordingView() {
           )}
         </button>
         <button
-          className="rec-end"
+          className={`${PILL_BTN} h-8 w-8 rounded-full bg-rec text-white`}
           onClick={() => void stop()}
           disabled={stopping || state === "starting"}
           title="Selesai"
@@ -72,7 +76,7 @@ export default function RecordingView() {
           </svg>
         </button>
         <span
-          className="rec-drag"
+          className="ml-0.5 inline-flex h-[30px] w-[22px] cursor-grab items-center justify-center rounded-[7px] text-fg-faint hover:bg-hover hover:text-fg-dim active:cursor-grabbing [&>svg]:pointer-events-none"
           data-tauri-drag-region
           title="Geser untuk memindahkan"
           aria-label="Geser untuk memindahkan"
@@ -88,43 +92,68 @@ export default function RecordingView() {
         </span>
       </div>
 
-      <div className="rec-panel glass">
-        <div className="rec-panel-head" data-tauri-drag-region>
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg border border-glass-border bg-glass shadow-glass">
+        <div
+          className="flex items-center gap-2 border-b border-glass-border px-3.5 py-[9px]"
+          data-tauri-drag-region
+        >
           <span
             className={clsx(
-              "rec-dot",
-              !paused && state === "recording" && "is-live",
-              state === "error" && "is-error",
+              "h-[9px] w-[9px] shrink-0 rounded-full",
+              live
+                ? "animate-rec-pulse bg-rec"
+                : state === "error"
+                  ? "bg-[#ffb454]"
+                  : "bg-fg-faint",
             )}
           />
-          <span className="rec-state">{status}</span>
-          <span className="rec-timer">{elapsed}</span>
+          <span className="text-[12px] font-semibold text-fg-dim">{status}</span>
+          <span className="ml-auto text-[12px] tabular-nums text-fg-dim">
+            {elapsed}
+          </span>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[14px]">
           {segments.length === 0 ? (
-            <p className="rec-hint">
+            <p className="m-auto px-4 text-center text-[13px] italic text-fg-faint">
               {state === "starting"
                 ? "Menyambungkan ke Deepgram…"
                 : "Transkrip langsung akan muncul di sini saat ada suara."}
             </p>
           ) : (
             segments.map((c) => (
-              <div
-                key={c.segmentId}
-                className={clsx("caption", c.source, !c.isFinal && "interim")}
-              >
-                <span className="speaker">
+              <div key={c.segmentId} className="flex flex-col gap-0.5">
+                <span
+                  className={clsx(
+                    "text-[11px] uppercase tracking-[0.05em]",
+                    c.source === "you"
+                      ? "text-accent"
+                      : c.source === "remote"
+                        ? "text-accent-2"
+                        : "text-fg-faint",
+                  )}
+                >
                   {c.speaker ?? (c.source === "you" ? "You" : "Speaker")}
                 </span>
-                <span className="caption-text">{c.text}</span>
+                <span
+                  className={clsx(
+                    "text-[14px] leading-[1.5] text-fg",
+                    !c.isFinal && "italic opacity-60",
+                  )}
+                >
+                  {c.text}
+                </span>
               </div>
             ))
           )}
           <div ref={endRef} />
         </div>
 
-        {state === "error" && error && <p className="rec-error">{error}</p>}
+        {state === "error" && error && (
+          <p className="mx-3.5 mb-3 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );

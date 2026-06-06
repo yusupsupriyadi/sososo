@@ -6,6 +6,11 @@ import { useConfigStore, type LanguageCode } from "../../../state/configStore";
 import { hasApiKey, setTranscriptionOptions } from "../../../lib/ipc";
 import { LANGUAGES } from "../../../lib/languages";
 
+const BIG_BTN_BASE =
+  "inline-block cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60";
+const SELECT =
+  "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent";
+
 export default function LibraryRoute() {
   const { start } = useSession();
   const state = useSessionStore((s) => s.state);
@@ -34,25 +39,30 @@ export default function LibraryRoute() {
 
   return (
     <div className="flex h-full items-center justify-center p-6">
-      <div className="home">
-        <div className="home-icon">🎙️</div>
-        <h2>Mulai transkripsi</h2>
+      <div className="max-w-[440px] text-center text-fg-dim">
+        <div className="mb-2 text-[44px]">🎙️</div>
+        <h2 className="mb-3.5 text-[20px] font-semibold text-fg">
+          Mulai transkripsi
+        </h2>
 
         {keyReady === false ? (
           <>
-            <p className="muted">
+            <p className="mx-auto mt-3.5 max-w-[360px] text-[13px] leading-[1.5] text-fg-faint">
               Deepgram API key belum diatur. Atur dulu untuk mulai transkripsi.
             </p>
-            <Link to="/main/settings" className="big-btn">
+            <Link
+              to="/main/settings"
+              className={`${BIG_BTN_BASE} border-glass-border bg-[rgba(255,255,255,0.06)] text-fg hover:bg-hover`}
+            >
               ⚙ Buka Settings
             </Link>
           </>
         ) : (
           <>
-            <div className="quick-config">
-              <label>
-                <span>Bahasa</span>
-                <select value={language} onChange={onLanguage}>
+            <div className="mx-auto mb-5 flex max-w-[340px] flex-col gap-3 text-left">
+              <label className="flex flex-col gap-[5px]">
+                <span className="text-[12px] text-fg-faint">Bahasa</span>
+                <select className={SELECT} value={language} onChange={onLanguage}>
                   {LANGUAGES.map((l) => (
                     <option key={l.code} value={l.code}>
                       {l.label}
@@ -60,9 +70,10 @@ export default function LibraryRoute() {
                   ))}
                 </select>
               </label>
-              <label>
-                <span>Sumber audio</span>
+              <label className="flex flex-col gap-[5px]">
+                <span className="text-[12px] text-fg-faint">Sumber audio</span>
                 <select
+                  className={SELECT}
                   value={systemOnly ? "system" : "both"}
                   onChange={onSource}
                 >
@@ -73,13 +84,13 @@ export default function LibraryRoute() {
             </div>
 
             <button
-              className="big-btn start"
+              className={`${BIG_BTN_BASE} border-[rgba(110,168,254,0.45)] bg-[rgba(110,168,254,0.2)] text-[#dbe8ff] hover:bg-[rgba(110,168,254,0.3)]`}
               onClick={() => void start()}
               disabled={state === "starting"}
             >
               ● {state === "starting" ? "Memulai…" : "Mulai Transkripsi"}
             </button>
-            <p className="muted">
+            <p className="mx-auto mt-3.5 max-w-[360px] text-[13px] leading-[1.5] text-fg-faint">
               Saat mulai, jendela ini berubah jadi tampilan transkripsi langsung
               dengan tombol <b>Jeda</b> & <b>Selesai</b> di atas. Bahasa spesifik
               (Indonesia/English) biasanya lebih akurat daripada Auto.
@@ -87,7 +98,11 @@ export default function LibraryRoute() {
           </>
         )}
 
-        {state === "error" && error && <p className="home-err">{error}</p>}
+        {state === "error" && error && (
+          <p className="mt-4 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );

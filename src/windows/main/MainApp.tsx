@@ -49,7 +49,7 @@ export default function MainApp() {
 			<Titlebar />
 			<div className='flex min-h-0 flex-1 gap-2'>
 				<SessionSidebar />
-				<main className='glass min-w-0 flex-1 overflow-y-auto'>
+				<main className='min-w-0 flex-1 overflow-y-auto rounded-lg border border-glass-border bg-glass shadow-glass'>
 					<Routes>
 						<Route
 							index

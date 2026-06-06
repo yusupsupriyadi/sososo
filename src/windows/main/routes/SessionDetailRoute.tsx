@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import clsx from "clsx";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   deleteSession,
@@ -9,6 +10,9 @@ import {
 import { formatDateTime } from "../../../lib/format";
 import { languageLabel } from "../../../lib/languages";
 import type { SessionDetail } from "../../../types/domain";
+
+const ACTION_BTN =
+  "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap hover:bg-hover hover:text-fg";
 
 export default function SessionDetailRoute() {
   const { id } = useParams();
@@ -85,7 +89,7 @@ export default function SessionDetailRoute() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <p className="muted">Memuat…</p>
+        <p className="text-[13px] text-fg-faint">Memuat…</p>
       </div>
     );
   }
@@ -93,11 +97,15 @@ export default function SessionDetailRoute() {
   if (!detail) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <div className="empty-state">
-          <h2>Sesi tidak ditemukan</h2>
-          <p>
+        <div className="max-w-[420px] text-center text-fg-dim">
+          <h2 className="mb-2 text-[18px] font-semibold text-fg">
+            Sesi tidak ditemukan
+          </h2>
+          <p className="text-[13.5px] leading-[1.5]">
             Rekaman ini mungkin sudah dihapus.{" "}
-            <Link to="/main">Kembali ke beranda</Link>
+            <Link to="/main" className="text-accent underline">
+              Kembali ke beranda
+            </Link>
           </p>
         </div>
       </div>
@@ -107,12 +115,12 @@ export default function SessionDetailRoute() {
   const { session, segments } = detail;
 
   return (
-    <div className="detail">
-      <div className="detail-head">
-        <div className="detail-title-row">
+    <div className="mx-auto max-w-[760px] px-7 py-6">
+      <div className="mb-5 border-b border-glass-border pb-3.5">
+        <div className="flex items-center gap-3">
           {editing ? (
             <input
-              className="detail-title-input"
+              className="flex-1 rounded-sm border border-accent bg-[rgba(255,255,255,0.06)] px-2.5 py-[7px] text-[18px] font-semibold text-fg outline-none"
               value={titleDraft}
               autoFocus
               onChange={(e) => setTitleDraft(e.target.value)}
@@ -123,11 +131,14 @@ export default function SessionDetailRoute() {
               onBlur={() => void saveTitle()}
             />
           ) : (
-            <h2 className="detail-title">{session.title}</h2>
+            <h2 className="m-0 flex-1 break-words text-[19px] font-semibold text-fg">
+              {session.title}
+            </h2>
           )}
-          <div className="detail-actions">
+          <div className="flex shrink-0 gap-1.5">
             {!editing && (
               <button
+                className={ACTION_BTN}
                 onClick={() => {
                   setTitleDraft(session.title);
                   setEditing(true);
@@ -138,14 +149,22 @@ export default function SessionDetailRoute() {
             )}
             {confirmDelete ? (
               <>
-                <button className="danger" onClick={() => void doDelete()}>
+                <button
+                  className="cursor-pointer rounded-sm border border-[rgba(255,93,93,0.45)] bg-[rgba(255,93,93,0.2)] px-[11px] py-1.5 text-[12.5px] text-[#ffd9d9] whitespace-nowrap hover:bg-hover hover:text-fg"
+                  onClick={() => void doDelete()}
+                >
                   Hapus permanen
                 </button>
-                <button onClick={() => setConfirmDelete(false)}>Batal</button>
+                <button
+                  className={ACTION_BTN}
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Batal
+                </button>
               </>
             ) : (
               <button
-                className="danger-ghost"
+                className="cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap hover:border-[rgba(255,93,93,0.4)] hover:bg-hover hover:text-[#ffb4b4]"
                 onClick={() => setConfirmDelete(true)}
               >
                 🗑 Hapus
@@ -153,7 +172,7 @@ export default function SessionDetailRoute() {
             )}
           </div>
         </div>
-        <p className="detail-meta">
+        <p className="mt-2.5 text-[12px] text-fg-faint">
           {formatDateTime(session.startedAt)} · {languageLabel(session.language)}{" "}
           · {session.segmentCount} baris ·{" "}
           {session.systemOnly ? "System saja" : "System + Mikrofon"}
@@ -161,12 +180,14 @@ export default function SessionDetailRoute() {
       </div>
 
       {segments.length > 0 && (
-        <section className="summary-section">
-          <div className="summary-head">
-            <h3>Ringkasan AI</h3>
+        <section className="mb-[22px] rounded-md border border-glass-border bg-[rgba(110,168,254,0.07)] px-[18px] py-4">
+          <div className="mb-2.5 flex items-center justify-between gap-2.5">
+            <h3 className="m-0 text-[12px] uppercase tracking-[0.06em] text-accent">
+              Ringkasan AI
+            </h3>
             {session.summary && (
               <button
-                className="sum-btn ghost"
+                className="cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-[11px] py-1.5 text-[12.5px] font-medium text-fg-dim whitespace-nowrap enabled:hover:bg-hover disabled:cursor-default disabled:opacity-60"
                 onClick={() => void doSummarize()}
                 disabled={summarizing}
               >
@@ -179,21 +200,21 @@ export default function SessionDetailRoute() {
             <>
               <SummaryView text={session.summary} />
               {session.summarizedAt && (
-                <p className="summary-meta">
+                <p className="mt-2.5 text-[11px] text-fg-faint">
                   Dibuat {formatDateTime(session.summarizedAt)}
                   {session.summaryModel ? ` · ${session.summaryModel}` : ""}
                 </p>
               )}
             </>
           ) : (
-            <div className="summary-empty">
-              <p className="muted">
+            <div className="flex flex-col items-start gap-3">
+              <p className="m-0 text-[13px] leading-[1.5] text-fg-dim">
                 Selesaikan transkrip ini dengan membuat ringkasan otomatis —
                 ringkasan singkat, poin penting, dan tindak lanjut — memakai
                 OpenAI.
               </p>
               <button
-                className="sum-btn primary"
+                className="cursor-pointer rounded-sm border border-[rgba(110,168,254,0.45)] bg-[rgba(110,168,254,0.2)] px-4 py-[9px] text-[13px] font-semibold text-[#dbe8ff] whitespace-nowrap enabled:hover:bg-[rgba(110,168,254,0.3)] disabled:cursor-default disabled:opacity-60"
                 onClick={() => void doSummarize()}
                 disabled={summarizing}
               >
@@ -207,21 +228,34 @@ export default function SessionDetailRoute() {
       )}
 
       {segments.length === 0 ? (
-        <p className="muted">Tidak ada transkrip tersimpan untuk sesi ini.</p>
+        <p className="text-[13px] text-fg-faint">
+          Tidak ada transkrip tersimpan untuk sesi ini.
+        </p>
       ) : (
-        <div className="transcript">
+        <div className="flex flex-col gap-3">
           {segments.map((s, i) => (
-            <div key={i} className={`line ${s.source}`}>
-              <span className="line-speaker">
+            <div key={i} className="flex flex-col gap-[3px]">
+              <span
+                className={clsx(
+                  "text-[11px] font-semibold tracking-[0.02em]",
+                  s.source === "you" ? "text-accent" : "text-accent-2",
+                )}
+              >
                 {s.speaker ?? (s.source === "you" ? "You" : "Speaker")}
               </span>
-              <span className="line-text">{s.text}</span>
+              <span className="text-[14px] leading-[1.55] text-fg">
+                {s.text}
+              </span>
             </div>
           ))}
         </div>
       )}
 
-      {err && <p className="home-err">{err}</p>}
+      {err && (
+        <p className="mt-4 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
+          {err}
+        </p>
+      )}
     </div>
   );
 }
@@ -236,9 +270,11 @@ function SummaryView({ text }: { text: string }) {
     const items = bullets;
     bullets = [];
     nodes.push(
-      <ul className="sum-list" key={key}>
+      <ul className="m-0 flex flex-col gap-[3px] pl-5" key={key}>
         {items.map((b, i) => (
-          <li key={i}>{stripInline(b)}</li>
+          <li key={i} className="text-[13.5px] leading-[1.5] text-fg">
+            {stripInline(b)}
+          </li>
         ))}
       </ul>,
     );
@@ -251,7 +287,10 @@ function SummaryView({ text }: { text: string }) {
     } else if (/^#{1,6}\s+/.test(t)) {
       flushBullets(`u${i}`);
       nodes.push(
-        <h4 className="sum-h" key={i}>
+        <h4
+          className="mt-2 mb-0.5 text-[13.5px] font-semibold text-fg first:mt-0"
+          key={i}
+        >
           {stripInline(t.replace(/^#{1,6}\s+/, ""))}
         </h4>,
       );
@@ -260,7 +299,7 @@ function SummaryView({ text }: { text: string }) {
     } else {
       flushBullets(`u${i}`);
       nodes.push(
-        <p className="sum-p" key={i}>
+        <p className="m-0 text-[13.5px] leading-[1.55] text-fg" key={i}>
           {stripInline(t)}
         </p>,
       );
@@ -268,7 +307,7 @@ function SummaryView({ text }: { text: string }) {
   });
   flushBullets("uend");
 
-  return <div className="summary-body">{nodes}</div>;
+  return <div className="flex flex-col gap-1.5">{nodes}</div>;
 }
 
 /** Strip basic inline Markdown emphasis (**bold**, `code`) for plain rendering. */
