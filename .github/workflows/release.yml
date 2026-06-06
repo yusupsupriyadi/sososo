@@ -1,0 +1,48 @@
+name: Release
+
+# Tag a version to publish, e.g. `git tag v0.1.0 && git push origin v0.1.0`.
+# A draft GitHub Release is created with the Windows installer attached;
+# review it and click "Publish".
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing (optional): https://v2.tauri.app/distribute/sign/windows/
+          # Configure a certificate in tauri.conf.json and add the secrets here.
+        with:
+          # Empty on workflow_dispatch -> builds without creating a release.
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('sososo {0}', github.ref_name) || '' }}
+          releaseBody: 'See the assets below to download and install. Builds are not code-signed yet, so Windows SmartScreen may warn on first run.'
+          releaseDraft: true
+          prerelease: false
+          tauriScript: bun run tauri
+          uploadWorkflowArtifacts: true
