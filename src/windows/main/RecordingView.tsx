@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useSession } from "../../hooks/useSession";
 import { useElapsedLabel } from "../../hooks/useElapsedTimer";
 import { useTranscriptStore } from "../../state/transcriptStore";
+import { useConfigStore } from "../../state/configStore";
 import { enterRecordingWindow, exitRecordingWindow } from "../../lib/window";
 
 const PILL_BTN =
@@ -18,6 +19,7 @@ export default function RecordingView() {
   const { state, error, paused, stop, togglePause } = useSession();
   const elapsed = useElapsedLabel();
   const segments = useTranscriptStore((s) => s.segments);
+  const transcriptScale = useConfigStore((s) => s.transcriptScale);
   const endRef = useRef<HTMLDivElement>(null);
   const last = segments[segments.length - 1];
 
@@ -125,21 +127,23 @@ export default function RecordingView() {
               <div key={c.segmentId} className="flex flex-col gap-0.5">
                 <span
                   className={clsx(
-                    "text-[11px] uppercase tracking-[0.05em]",
+                    "uppercase tracking-[0.05em]",
                     c.source === "you"
                       ? "text-accent"
                       : c.source === "remote"
                         ? "text-accent-2"
                         : "text-fg-faint",
                   )}
+                  style={{ fontSize: `${11 * transcriptScale}px` }}
                 >
                   {c.speaker ?? (c.source === "you" ? "You" : "Speaker")}
                 </span>
                 <span
                   className={clsx(
-                    "text-[14px] leading-[1.5] text-fg",
+                    "leading-[1.5] text-fg",
                     !c.isFinal && "italic opacity-60",
                   )}
+                  style={{ fontSize: `${14 * transcriptScale}px` }}
                 >
                   {c.text}
                 </span>

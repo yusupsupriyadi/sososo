@@ -10,6 +10,7 @@ import {
 import { formatDateTime } from "../../../lib/format";
 import { languageLabel } from "../../../lib/languages";
 import { useLibraryStore } from "../../../state/libraryStore";
+import { useConfigStore } from "../../../state/configStore";
 import type { SessionDetail } from "../../../types/domain";
 
 const ACTION_BTN =
@@ -20,6 +21,7 @@ export default function SessionDetailRoute() {
   const sessionId = Number(id);
   const navigate = useNavigate();
   const refreshLibrary = useLibraryStore((s) => s.refresh);
+  const transcriptScale = useConfigStore((s) => s.transcriptScale);
 
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -240,13 +242,17 @@ export default function SessionDetailRoute() {
             <div key={i} className="flex flex-col gap-[3px]">
               <span
                 className={clsx(
-                  "text-[11px] font-semibold tracking-[0.02em]",
+                  "font-semibold tracking-[0.02em]",
                   s.source === "you" ? "text-accent" : "text-accent-2",
                 )}
+                style={{ fontSize: `${11 * transcriptScale}px` }}
               >
                 {s.speaker ?? (s.source === "you" ? "You" : "Speaker")}
               </span>
-              <span className="text-[14px] leading-[1.55] text-fg">
+              <span
+                className="leading-[1.55] text-fg"
+                style={{ fontSize: `${14 * transcriptScale}px` }}
+              >
                 {s.text}
               </span>
             </div>

@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useTranscriptStream } from '../../hooks/useTranscriptStream';
 import { useSessionStore } from '../../state/sessionStore';
 import { useTranscriptStore } from '../../state/transcriptStore';
+import { useConfigStore } from '../../state/configStore';
 import Titlebar from './Titlebar';
 import SessionSidebar from './SessionSidebar';
 import RecordingView from './RecordingView';
@@ -14,6 +15,7 @@ export default function MainApp() {
 	useTranscriptStream();
 	const state = useSessionStore((s) => s.state);
 	const sessionId = useSessionStore((s) => s.sessionId);
+	const uiScale = useConfigStore((s) => s.uiScale);
 	const navigate = useNavigate();
 	const prev = useRef(state);
 
@@ -40,12 +42,22 @@ export default function MainApp() {
 		prev.current = state;
 	}, [state, sessionId, navigate]);
 
+	// Apply the user's UI zoom to the whole app shell. Keep the floating
+	// recording widget at 100% so its compact fixed-size layout stays intact.
+	useEffect(() => {
+		const root = document.documentElement;
+		root.style.zoom = inSession ? '1' : String(uiScale);
+		return () => {
+			root.style.zoom = '1';
+		};
+	}, [inSession, uiScale]);
+
 	// While a session is active the whole window becomes the floating
 	// transcription widget (its own root, no titlebar/sidebar).
 	if (inSession) return <RecordingView />;
 
 	return (
-		<div className='flex h-screen w-screen flex-col gap-2 p-2'>
+		<div className='flex h-screen w-screen flex-col gap-2'>
 			<Titlebar />
 			<div className='flex min-h-0 flex-1 gap-2'>
 				<SessionSidebar />
