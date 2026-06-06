@@ -3,21 +3,25 @@ import { NavLink } from "react-router-dom";
 import clsx from "clsx";
 import { listSessions } from "../../lib/ipc";
 import { useSessionStore } from "../../state/sessionStore";
+import { useLibraryStore } from "../../state/libraryStore";
 import { formatDateTime } from "../../lib/format";
 import type { SessionSummary } from "../../types/domain";
 
 export default function SessionSidebar() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const state = useSessionStore((s) => s.state);
+  const revision = useLibraryStore((s) => s.revision);
 
-  // Load on mount and refresh whenever a session ends, so a just-finished
-  // recording shows up immediately. Skip while recording (the list won't change).
+  // Load on mount and refresh whenever a session ends (so a just-finished
+  // recording shows up) or a mutation bumps `revision` (delete/rename). Skip
+  // while recording (the list won't change). The sidebar is mounted
+  // persistently, so it can't rely on remounting to pick up changes.
   useEffect(() => {
     if (state === "recording" || state === "starting") return;
     listSessions()
       .then(setSessions)
       .catch(() => {});
-  }, [state]);
+  }, [state, revision]);
 
   return (
     <aside className="flex w-60 shrink-0 flex-col gap-1.5 rounded-lg liquid-glass p-3">

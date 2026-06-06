@@ -9,6 +9,7 @@ import {
 } from "../../../lib/ipc";
 import { formatDateTime } from "../../../lib/format";
 import { languageLabel } from "../../../lib/languages";
+import { useLibraryStore } from "../../../state/libraryStore";
 import type { SessionDetail } from "../../../types/domain";
 
 const ACTION_BTN =
@@ -18,6 +19,7 @@ export default function SessionDetailRoute() {
   const { id } = useParams();
   const sessionId = Number(id);
   const navigate = useNavigate();
+  const refreshLibrary = useLibraryStore((s) => s.refresh);
 
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,7 @@ export default function SessionDetailRoute() {
     try {
       await renameSession(sessionId, next);
       setDetail({ ...detail, session: { ...detail.session, title: next } });
+      refreshLibrary(); // sidebar shows the new title without a remount
     } catch (e) {
       setErr(String(e));
     }
@@ -65,6 +68,7 @@ export default function SessionDetailRoute() {
   async function doDelete() {
     try {
       await deleteSession(sessionId);
+      refreshLibrary(); // drop the deleted session from the sidebar list
       navigate("/main");
     } catch (e) {
       setErr(String(e));
