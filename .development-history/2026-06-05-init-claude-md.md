@@ -1,55 +1,33 @@
 # Init CLAUDE.md — Codebase Analysis & Documentation
 
 - **Date:** 2026-06-05
-- **Task:** `/init` — analyze the repository and (re)generate `CLAUDE.md` for future Claude Code sessions.
-- **Author:** Claude Code (Opus 4.8)
+- **Task:** `/init` — analyze the repo and (re)generate `CLAUDE.md`.
 
 ## Goal
+Replace the minimal `CLAUDE.md` (which only carried the `.development-history` rule) with a high-signal
+guide (commands + architecture), preserving the development-history rule.
 
-Replace the minimal project `CLAUDE.md` (which only carried the `.development-history` rule) with a
-high-signal guide covering common commands and the big-picture architecture, while **preserving** the
-existing development-history rule.
+## Analyzed
+Full source tree (`src/`, `src-tauri/src/`) + config (`package.json`, `tsconfig.json`, `vite.config.ts`,
+`Cargo.toml`, `tauri.conf.json`, `capabilities/*.json`).
 
-## What was analyzed
+## Key findings (now in CLAUDE.md)
+- **Project:** `sososo` — Windows real-time meeting transcription. WASAPI loopback + mic → Deepgram live STT
+  → glass overlay + main window. UI in Bahasa Indonesia.
+- **Stack:** Tauri 2 (Rust) + React 19 / React Router 7 / Zustand 5 / Vite 7 (TS). Package manager: **Bun**.
+- **Windows:** at this date a two-window, one-build model (`HashRouter` `#/main`, `#/overlay`); overlay built
+  at runtime in `lib.rs setup()` so acrylic applies before first paint.
+- **Audio pipeline:** MTA threads → WASAPI polling + autoconvert (16 kHz/16-bit/mono) → bounded crossbeam
+  (drop-on-lag) → `Interleaver` (mic=ch0, system=ch1) → 40 ms tokio bridge → `futures::mpsc` → Deepgram.
+- **IPC/events:** commands in `commands.rs` (registered in `lib.rs`), TS wrappers in `lib/ipc.ts`,
+  camelCase↔snake_case; global `session://state` + `transcript://segment`; segments upserted by `segmentId`.
+- **Secrets:** API keys in Windows Credential Manager (`keyring`); only `has_api_key` exposed.
+- **Verification:** no test framework — `bun run build`, `cargo check`/`clippy`, `audio_probe` example.
+- **Milestones:** A/B/C done; D (SQLite) + E (AI summary) pending at this point.
 
-Read the full source tree (frontend `src/`, Tauri backend `src-tauri/src/`) plus build/config files:
-
-- **Config:** `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, `src-tauri/Cargo.toml`,
-  `src-tauri/tauri.conf.json`, `src-tauri/capabilities/*.json`.
-- **Backend (Rust):** `lib.rs`, `main.rs`, `commands.rs`, `events.rs`, `session.rs`, `state.rs`,
-  `error.rs`, `keys.rs`, `audio/{mod,capture,mixer,devices}.rs`, `examples/audio_probe.rs`.
-- **Frontend (TS/React):** `main.tsx`, `AppRouter.tsx`, `lib/{ipc,events,window}.ts`,
-  `state/{session,transcript,config}Store.ts`, `hooks/{useSession,useTranscriptStream,useElapsedTimer}.ts`,
-  `types/domain.ts`, `windows/main/*`, `windows/overlay/*`.
-
-## Key findings (captured in CLAUDE.md)
-
-1. **Project:** `sososo` — Windows real-time meeting/audio transcription app. Captures system audio
-   (WASAPI loopback) + mic → Deepgram live STT → frosted-glass overlay + main window. UI in Bahasa Indonesia.
-2. **Stack:** Tauri 2 (Rust) + React 19 / React Router 7 / Zustand 5 / Vite 7 (TS). Package manager is **Bun**.
-3. **Two-window, one-build model:** `HashRouter` fragment (`#/main`, `#/overlay`) selects the shell;
-   overlay is built at runtime in `lib.rs setup()` so acrylic applies before first paint.
-4. **Audio pipeline:** dedicated MTA threads → WASAPI polling + autoconvert (16 kHz/16-bit/mono) →
-   bounded crossbeam (drop-on-lag) → `Interleaver` (mic=ch0 "you", system=ch1 "remote") → 40 ms tokio
-   bridge → `futures::mpsc` → Deepgram (Nova-3 multi/en, Nova-2 others).
-5. **IPC/events:** commands in `commands.rs` (registered in `lib.rs`), TS wrappers in `lib/ipc.ts`,
-   camelCase↔snake_case auto-mapping; global `session://state` + `transcript://segment` events; segments
-   upserted by stable `segmentId`.
-6. **Secrets:** API keys in Windows Credential Manager via `keyring`; only `has_api_key` boolean exposed.
-7. **Verification:** no unit-test framework. `bun run build` (TS), `cargo check`/`cargo clippy`, and the
-   `audio_probe` example.
-8. **Milestones:** A (UI), B (audio), C (live STT) done; **D (SQLite persistence)** and
-   **E (AI summary / OpenAI)** pending — `start_session` `title` and the OpenAI key are placeholders.
-
-## Environment notes
-
-- `bun` 1.3.10 on PATH.
-- `cargo` 1.96.0 installed via rustup at `~/.cargo/bin` (not on the default shell PATH; invoked through
-  `bun run tauri *`).
-- Repository is **not** a git repo at time of writing.
+## Environment
+- `bun` 1.3.10; `cargo` 1.96.0 (rustup, `~/.cargo/bin`, invoked via `bun run tauri *`). Not yet a git repo.
 
 ## Files changed
-
-- `CLAUDE.md` — rewritten with project overview, commands table, architecture, conventions/gotchas;
-  retained the `.development-history` rule.
+- `CLAUDE.md` — rewritten (overview, commands, architecture, conventions); kept `.development-history` rule.
 - `.development-history/2026-06-05-init-claude-md.md` — this report (folder created).

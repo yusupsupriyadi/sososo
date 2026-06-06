@@ -1,82 +1,48 @@
-# Nova-3 untuk semua bahasa + fitur riwayat (SQLite)
+# Nova-3 for all languages + session history (SQLite)
 
-- **Tanggal:** 2026-06-05
-- **Milestone:** menutup **D (persistence/SQLite)** + perluasan bahasa STT.
+- **Date:** 2026-06-05
+- **Milestone:** closes **D (SQLite persistence)** + STT language expansion.
 
-## Tujuan
+## Goal
+1. Move **all** languages to Deepgram **Nova-3** (previously only `multi`/`en`; rest on Nova-2).
+2. Implement the **history feature** (was a static `SAMPLE_SESSIONS` placeholder): persist sessions +
+   transcripts, real list, open/read old transcripts, delete, rename.
 
-1. Menambah varian bahasa yang didukung Deepgram **Nova-3** dan memindahkan
-   **semua** bahasa ke Nova-3 (sebelumnya hanya `multi`/`en` di Nova-3, sisanya
-   Nova-2).
-2. Mengimplementasikan **fitur riwayat** yang sebelumnya hanya placeholder statis
-   (`SAMPLE_SESSIONS`) — simpan sesi + transkrip, daftar nyata, buka & baca
-   transkrip lama, hapus, dan ganti nama.
+## Research (2 sources)
+- Nova-3 now supports **Indonesian (`id`) streaming** (Deepgram, Jan 2026), lower WER than Nova-2.
+- Nova-3 supports ~50+ languages + `multi` (code-switching).
+- Rust SDK `deepgram 0.10`: `Model::Nova3` + `Language::Other(String)` → all BCP-47 codes map to Nova-3.
 
-## Riset (terverifikasi 2 sumber)
-
-- Nova-3 kini mendukung **Indonesian (`id`) streaming** (Deepgram, Jan 2026),
-  dengan WER lebih rendah dibanding Nova-2 → memindahkan `id` ke Nova-3 menaikkan
-  akurasi.
-- Nova-3 mendukung ~50+ bahasa + mode `multi` (code-switching). Daftar mengacu
-  ke Models & Languages Overview Deepgram.
-- SDK Rust `deepgram 0.10`: `Model::Nova3` + `Language::Other(String)` (escape
-  hatch) → semua kode BCP-47 dipetakan seragam ke Nova-3.
-
-## Perubahan
-
-### Bahasa (semua Nova-3)
-- `src/lib/languages.ts` **(baru)** — daftar lengkap bahasa Nova-3 (label Bahasa
-  Indonesia, termasuk varian regional), `multi`+`id` disematkan di atas; helper
+## Changes
+**Languages (all Nova-3):**
+- `src/lib/languages.ts` *(new)* — full Nova-3 language list (Bahasa labels), `multi`+`id` pinned on top;
   `languageLabel()`.
-- `src/state/configStore.ts` — `LanguageCode` jadi `string` (daftar dinamis).
-- `src/windows/main/routes/LibraryRoute.tsx` — dropdown bahasa render dari `LANGUAGES`.
-- `src/windows/main/routes/SettingsRoute.tsx` — teks bagian Bahasa diperbarui (semua Nova-3).
-- `src-tauri/src/session.rs` — `model_language()` selalu `Model::Nova3`.
+- `configStore.ts` — `LanguageCode` → `string`. `LibraryRoute.tsx`/`SettingsRoute.tsx` render from `LANGUAGES`.
+  `session.rs` — `model_language()` always `Model::Nova3`.
 
-### Riwayat (SQLite, Milestone D)
-- `src-tauri/Cargo.toml` — tambah `rusqlite` (fitur `bundled`).
-- `src-tauri/src/error.rs` — varian `AppError::Db` + `From<rusqlite::Error>`.
-- `src-tauri/src/db.rs` **(baru)** — `Db(Mutex<Connection>)`, skema `sessions` +
-  `segments` (FK cascade, WAL), tipe serde (`SessionSummary`, `StoredSegment`,
-  `SessionDetail`), dan operasi: `create_session`, `finalize_session` (set
-  `ended_at` atau buang sesi kosong), `upsert_segment`, `list_sessions`,
-  `get_session`, `delete_session`, `rename_session`.
-- `src-tauri/src/lib.rs` — `mod db`, buka DB di `app_data_dir()/sososo.db` pada
-  `setup()` + `app.manage(db)`, registrasi 4 command baru.
-- `src-tauri/src/commands.rs` — `start_session` insert baris sesi (judul default
-  `Rekaman dd-mm-YYYY HH:MM`) & kembalikan id dari DB; command baru `list_sessions`,
-  `get_session`, `delete_session`, `rename_session`.
-- `src-tauri/src/session.rs` — `spawn_session` menerima `session_id` (hapus
-  `NEXT_ID` atomic, id kini dari DB); `emit_transcript` menyimpan segmen **final**
-  (idempotent); teardown memanggil `finalize_session`.
-- Frontend: `src/types/domain.ts` (tipe baru), `src/lib/ipc.ts` (4 wrapper),
-  `src/lib/format.ts` **(baru, locale id-ID)**, `src/windows/main/SessionSidebar.tsx`
-  (daftar nyata + refresh saat sesi berhenti + tombol "Rekaman baru"),
-  `src/windows/main/routes/SessionDetailRoute.tsx` **(baru)** (baca transkrip +
-  ganti nama inline + hapus dua langkah), `src/windows/main/MainApp.tsx` (route
-  `session/:id`), `src/windows/main/main.css` (styling).
+**History (SQLite, Milestone D):**
+- `Cargo.toml` — add `rusqlite` (`bundled`). `error.rs` — `AppError::Db` + `From<rusqlite::Error>`.
+- `src-tauri/src/db.rs` *(new)* — `Db(Mutex<Connection>)`, schema `sessions` + `segments` (FK cascade, WAL),
+  serde types, ops: `create_session`, `finalize_session` (set `ended_at` or drop empty session),
+  `upsert_segment`, `list_sessions`, `get_session`, `delete_session`, `rename_session`.
+- `lib.rs` — `mod db`, open DB at `app_data_dir()/sososo.db` in `setup()` + `manage`, register 4 commands.
+- `commands.rs` — `start_session` inserts session row (default title `Rekaman dd-mm-YYYY HH:MM`), returns DB id;
+  new commands `list_sessions`/`get_session`/`delete_session`/`rename_session`.
+- `session.rs` — `spawn_session` takes `session_id` (drop `NEXT_ID`); store **final** segments (idempotent);
+  teardown calls `finalize_session`.
+- Frontend: `types/domain.ts`, `lib/ipc.ts` (4 wrappers), `lib/format.ts` *(new, id-ID locale)*,
+  `SessionSidebar.tsx` (real list + refresh on stop + "new recording"), `SessionDetailRoute.tsx` *(new)*
+  (read transcript + inline rename + two-step delete), `MainApp.tsx` (`session/:id` route), `main.css`.
 
-## Catatan desain
+## Decisions
+- **Sync `rusqlite`** (not `tauri-plugin-sql`/`sqlx`): segments are produced backend-side, so writing from Rust
+  is most natural. Write only `is_final` segments (interim upserted in memory only).
+- Session id from DB `AUTOINCREMENT` (not an in-memory counter) — avoids cross-restart id collisions.
+- Empty sessions auto-dropped on teardown/fail. Custom commands need no new Tauri capability.
 
-- **Persistence pakai `rusqlite` (sinkron)**, bukan `tauri-plugin-sql`/`sqlx`:
-  segmen dihasilkan di backend (`run_session`), jadi penulisan dari Rust paling
-  natural. Tulis hanya saat segmen `is_final` (interim di-upsert di memori saja).
-- **id sesi kini dari DB** (`AUTOINCREMENT`), bukan counter in-memory yang reset
-  tiap restart — mencegah tabrakan id antar sesi aplikasi.
-- **Sesi kosong dibuang** otomatis saat teardown/gagal agar riwayat bersih.
-- Custom command tidak butuh entry capability baru di Tauri 2; `app.state::<Db>()`
-  aman karena DB di-`manage` saat `setup()` sebelum command apa pun bisa dipanggil.
+## Verification
+- `bun run build` — OK. `cargo check` — OK. `cargo clippy` — clean (2 pre-existing warnings in `audio/mixer.rs`).
 
-## Verifikasi
-
-- `bun run build` (tsc strict + Vite) — **OK**.
-- `cargo check` — **OK**.
-- `cargo clippy` — kode baru tanpa warning (2 warning pre-existing di
-  `audio/mixer.rs`, di luar scope).
-
-## Belum dikerjakan / lanjutan
-
-- Input judul saat mulai rekaman (sekarang judul default + bisa di-rename).
-- Beberapa bahasa Nova-3 mungkin batch-only; jika kode tertentu ditolak API saat
-  streaming, error sudah ditampilkan di UI (tidak crash).
-- Milestone E (ringkasan AI / OpenAI) masih placeholder.
+## Follow-ups
+- Title input at recording start (currently default + rename). Some Nova-3 langs may be batch-only (errors
+  surfaced in UI, no crash). Milestone E (AI summary) still placeholder.

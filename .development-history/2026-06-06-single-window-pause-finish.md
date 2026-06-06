@@ -1,71 +1,40 @@
-# Satu window + tampilan transkripsi (Jeda & Selesai), hapus overlay
+# Single window + transcription view (Pause & Finish), remove overlay
 
-- **Tanggal:** 2026-06-06
+- **Date:** 2026-06-06
 
-## Masalah & permintaan
+## Problem & request
+1. **Bug:** the floating overlay transcription window, once closed, could not be reopened (destroyed, no recreate).
+2. **UX change:** make it **one window** — on start it becomes the transcription view, with **Pause** and
+   **Finish** on top.
 
-1. **Bug:** window transkripsi (overlay melayang) jika ditutup tidak bisa dibuka
-   lagi (window dihancurkan, tak ada cara membuat ulang).
-2. **Perubahan UX:** jadikan **satu window** — saat mulai, window berubah jadi
-   tampilan transkripsi, dengan tombol **Jeda (pause)** dan **Selesai** di atas.
+## Solution
+Remove the overlay entirely (fixing the bug) and make the app **single-window, state-driven**: during an active
+session the window shows `RecordingView` (live transcript + Pause/Finish bar); when idle, the normal layout
+(titlebar + history sidebar + library/settings/detail routes).
 
-## Solusi
+**Backend:**
+- **Pause** (`session.rs`/`state.rs`/`commands.rs`): `ActiveSession` holds `paused: Arc<AtomicBool>`; the bridge
+  checks it each tick — when paused, samples are dropped and **not** sent to Deepgram (WS kept alive via SDK
+  `.keep_alive()`); resume forwards again. New command `set_paused(bool)`.
+- **Remove overlay** (`lib.rs`): no overlay window in `setup()`; drop `focus_overlay`; clean unused imports.
+  Delete `capabilities/overlay.json`.
 
-Menghapus overlay sepenuhnya (sekaligus menghilangkan bug) dan menjadikan aplikasi
-**single-window** yang *state-driven*: saat sesi aktif, window otomatis menampilkan
-`RecordingView` (transkrip langsung + bar Jeda/Selesai); saat idle, tampil layout
-biasa (titlebar + sidebar riwayat + rute library/settings/detail).
+**Frontend:**
+- **Delete** `src/windows/overlay/` (OverlayApp, RecBar, LiveCaptions, QuickNoteInput, overlay.css).
+- `AppRouter.tsx` — only `/main/*`. `MainApp.tsx` — conditional render: in-session → full `RecordingView`;
+  else normal layout. On `stopped`, navigate to session detail if a final transcript exists, else home.
+- `RecordingView.tsx` *(new)* — top bar (status + timer + Pause/Resume + Finish) + live captions (auto-scroll).
+- `sessionStore.ts` — add `paused`/`pausedAt`/`pausedTotalMs` + `setPaused` (pause-time accounting).
+  `useElapsedTimer.ts` — exclude paused time. `useSession.ts` — `togglePause` (optimistic + revert on fail).
+  `useTranscriptStream.ts` — reset pause accounting per session. `ipc.ts` — `setPaused` (replaces `focusOverlay`).
+  `LibraryRoute.tsx` — drop overlay branch. `main.css` — `RecordingView` + caption styles (ported from overlay).
 
-### Backend (Rust)
-- **Pause** (`session.rs` + `state.rs` + `commands.rs`):
-  - `ActiveSession` kini menyimpan `paused: Arc<AtomicBool>`.
-  - Bridge audio membaca flag tiap tick: saat pause, sampel dibuang dan **tidak**
-    dikirim ke Deepgram — WS tetap hidup via `.keep_alive()` SDK; saat resume,
-    audio diteruskan lagi. (Pause = transkripsi berhenti tanpa memutus koneksi.)
-  - Command baru `set_paused(paused: bool)`.
-- **Hapus overlay** (`lib.rs`): tidak ada lagi pembuatan window `overlay` di
-  `setup()`; command `focus_overlay` dihapus; import `WebviewWindowBuilder`/
-  `WebviewUrl`/`PhysicalPosition`/`Manager`(commands) dibersihkan.
-- `capabilities/overlay.json` dihapus.
+**Docs:** `CLAUDE.md` — architecture rewritten to "One window, state-driven views"; roadmap D & E done.
 
-### Frontend (TypeScript)
-- **Hapus** folder `src/windows/overlay/` (OverlayApp, RecBar, LiveCaptions,
-  QuickNoteInput, overlay.css).
-- `AppRouter.tsx` — hanya rute `/main/*` (rute `/overlay` dihapus).
-- `MainApp.tsx` — render kondisional: `inSession` (starting/recording/stopping/
-  reconnecting) → `RecordingView` penuh; selain itu layout normal. Saat sesi
-  berakhir (`stopped`), navigasi ke detail sesi bila ada transkrip final, jika
-  tidak kembali ke beranda.
-- `RecordingView.tsx` **(baru)** — bar atas (status + timer + **Jeda/Lanjutkan** +
-  **Selesai**) dan daftar caption live (auto-scroll).
-- `sessionStore.ts` — tambah `paused`, `pausedAt`, `pausedTotalMs`, aksi
-  `setPaused` (akuntansi waktu jeda).
-- `useElapsedTimer.ts` — timer mengecualikan waktu jeda dan beku saat dijeda.
-- `useSession.ts` — tambah `paused` + `togglePause` (optimistic + revert bila
-  command gagal).
-- `useTranscriptStream.ts` — reset akuntansi pause di awal/akhir sesi.
-- `ipc.ts` — `setPaused` (ganti `focusOverlay` yang dihapus).
-- `LibraryRoute.tsx` — buang `focusOverlay`/cabang overlay; teks tip diperbarui.
-- `main.css` — gaya `RecordingView` + caption (port dari overlay.css).
+## Notes
+- `window-vibrancy` remains in `Cargo.lock` as a **transitive** `tauri` dep — not used by our code, so still no blur.
+- Pause uses Deepgram keep-alive, so long pauses keep the connection alive.
 
-### Dokumentasi
-- `CLAUDE.md` — bagian arsitektur ditulis ulang jadi "One window, state-driven
-  views"; intro, capabilities, dan roadmap milestone (D & E selesai) diperbarui.
-
-## Alur baru
-Beranda → **Mulai Transkripsi** → window jadi tampilan transkripsi (Jeda/Selesai
-di atas) → **Selesai** → berhenti + buka **detail sesi** (tempat tombol ringkasan
-AI). Tidak ada lagi window terpisah yang bisa "hilang".
-
-## Catatan
-- `window-vibrancy` masih ada di `Cargo.lock` sebagai dependensi **transitif milik
-  `tauri`** — bukan dipakai kode kita (tidak ada `apply_acrylic`), jadi tetap tanpa
-  blur.
-- Pause memanfaatkan keep-alive Deepgram, jadi jeda lama pun koneksi tetap hidup.
-
-## Verifikasi
-- `bun run build` (tsc strict + Vite) — **OK** (72 modul; 4 file overlay terhapus).
-- `cargo check` — **OK** (3.95s).
-- `cargo clippy` — kode baru tanpa warning (2 warning pre-existing di
-  `audio/mixer.rs`, di luar scope).
-- **Runtime/visual** belum diuji headless — jalankan `bun run tauri dev`.
+## Verification
+- `bun run build` — OK (72 modules; 4 overlay files removed). `cargo check` — OK. `cargo clippy` — clean
+  (2 pre-existing in mixer). Runtime/visual not tested headless.

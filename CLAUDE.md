@@ -40,10 +40,13 @@ A single Vite build serves the one window (`AppRouter.tsx` via `HashRouter`, `in
 there is no separate overlay window anymore.
 
 `MainApp` is **session-state-driven**: while a session is active (`starting`/`recording`/`stopping`)
-it renders `RecordingView` full-window — the live transcript with a top bar carrying **Jeda (pause)**
-and **Selesai (finish)**. Otherwise it renders the normal layout (titlebar + session sidebar +
-library/settings/session-detail routes). When a session ends, `MainApp` navigates to the session
-detail (where the AI summary lives) if anything was transcribed, else back home.
+it renders `RecordingView` as a **compact, always-on-top floating widget** — a small pill with two icon
+buttons (**yellow = pause/resume, red = finish**) above the live-transcript panel. `RecordingView`
+shrinks the window via `enterRecordingWindow` on mount and restores it via `exitRecordingWindow` on
+unmount (`lib/window.ts`; needs the `set-size`/`center`/`set-always-on-top` window capabilities and a
+small `minWidth`/`minHeight` in `tauri.conf.json`). Otherwise `MainApp` renders the normal layout
+(titlebar + session sidebar + library/settings/session-detail routes). When a session ends it
+navigates to the session detail (where the AI summary lives) if anything was transcribed, else home.
 
 Transparent glass (**no blur**) = `transparent:true` + `decorations:false` window with **no** native
 acrylic/vibrancy; the desktop behind shows through sharply, tinted only by the semi-transparent CSS panel
@@ -102,3 +105,7 @@ Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the br
 ## Development history (project rule)
 Document every work activity as a Markdown report in the **`.development-history/`** folder (create it
 if it does not exist). This folder doubles as the project knowledge base and additional documentation.
+**Write these reports in English and keep them as compact as possible** — prefer terse bullet points over
+prose, and capture only what is needed to understand the change (goal, key changes, decisions, verification).
+This is the one exception to the Bahasa-Indonesia convention, which applies to user-facing UI strings, not
+internal docs.
