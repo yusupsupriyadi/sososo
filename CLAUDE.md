@@ -48,16 +48,20 @@ small `minWidth`/`minHeight` in `tauri.conf.json`). Otherwise `MainApp` renders 
 (titlebar + session sidebar + library/settings/session-detail routes). When a session ends it
 navigates to the session detail (where the AI summary lives) if anything was transcribed, else home.
 
-Transparent glass (**no blur**) = `transparent:true` + `decorations:false` window with **no** native
-acrylic/vibrancy; the desktop behind shows through sharply, tinted only by the semi-transparent
-`--color-glass` token (used as `bg-glass`). Styling is **Tailwind CSS v4** (`@tailwindcss/vite`, no
-config file) and **utility-first**: all component styling is inline utility classes in JSX. The single
-`src/styles/app.css` holds only `@import "tailwindcss"`, the `@theme` design tokens (colors, radii,
-`--font-sans`, the multi-part `--shadow-glass`/`--shadow-pill`, and `--animate-rec-pulse`), the
-`rec-pulse` `@keyframes`, and an `@layer base` reset (transparent bg, fonts, scrollbar, dark `<option>`,
-drag-region cursor). There is no `@layer components`. Exact non-scale values use arbitrary utilities
-(e.g. `text-[13px]`, `bg-[rgba(110,168,254,0.2)]`); the glass card = `rounded-lg border
-border-glass-border bg-glass shadow-glass`.
+Transparent glass (**no backdrop blur**) = `transparent:true` + `decorations:false` window with **no**
+native acrylic/vibrancy; the desktop behind shows through sharply. Styling is **Tailwind CSS v4**
+(`@tailwindcss/vite`, no config file) and **utility-first**: all component styling is inline utility
+classes in JSX. The single `src/styles/app.css` holds only `@import "tailwindcss"`, the `@theme` design
+tokens (colors, radii, `--font-sans`, `--shadow-liquid`, `--animate-rec-pulse`), the `rec-pulse`
+`@keyframes`, one custom `@utility liquid-glass`, and an `@layer base` reset (transparent bg, fonts,
+scrollbar, dark `<option>`, drag-region cursor). There is no `@layer components`.
+
+The **"liquid glass"** look is glossy, not frosted (CSS-only, no window blur). `@utility liquid-glass`
+(panels, sidebar, titlebar, pill, recording panel) = translucent `--color-glass` fill + bright white
+edge + inset top highlight + layered depth shadow + a diagonal specular sheen drawn by `::before`/
+`::after` at `z-index:-1` (so it never washes out text). Buttons get the glossy edge via the
+`shadow-liquid` utility + brighter white borders. Exact non-scale values use arbitrary utilities
+(`text-[13px]`, `bg-[rgba(110,168,254,0.2)]`).
 
 ### Audio → STT pipeline (the core data flow)
 `commands::start_session` → `session::spawn_session` → async `run_session` (Tauri/tokio runtime):

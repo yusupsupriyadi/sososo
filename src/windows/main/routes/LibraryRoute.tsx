@@ -7,7 +7,7 @@ import { hasApiKey, setTranscriptionOptions } from "../../../lib/ipc";
 import { LANGUAGES } from "../../../lib/languages";
 
 const BIG_BTN_BASE =
-  "inline-block cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60";
+  "inline-block cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline shadow-liquid transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60";
 const SELECT =
   "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent";
 

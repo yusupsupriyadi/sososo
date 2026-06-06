@@ -10,7 +10,7 @@ import type { DeviceLists } from "../../../types/domain";
 const FIELD_CTRL =
   "w-full flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent";
 const BTN =
-  "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap hover:bg-hover";
+  "cursor-pointer rounded-sm border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.1)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap shadow-liquid hover:bg-[rgba(255,255,255,0.18)]";
 const H3 = "mb-3 text-[12px] uppercase tracking-[0.06em] text-fg-faint";
 const FIELD = "mb-3.5 flex flex-col gap-1.5";
 const FIELD_LABEL = "text-[13px] text-fg-dim";
@@ -157,7 +157,7 @@ export default function SettingsRoute() {
           </select>
         </label>
         <button
-          className="mt-1 cursor-pointer rounded-sm border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.18)] px-4 py-[9px] text-[13px] text-[#dbe8ff] whitespace-nowrap hover:bg-hover"
+          className="mt-1 cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] text-[#dbe8ff] whitespace-nowrap shadow-liquid hover:bg-[rgba(110,168,254,0.34)]"
           onClick={() => void saveDevices()}
         >
           Simpan device

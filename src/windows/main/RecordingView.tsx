@@ -6,7 +6,7 @@ import { useTranscriptStore } from "../../state/transcriptStore";
 import { enterRecordingWindow, exitRecordingWindow } from "../../lib/window";
 
 const PILL_BTN =
-  "inline-flex cursor-pointer items-center justify-center transition duration-[120ms] enabled:hover:brightness-[1.12] enabled:active:scale-[0.92] disabled:cursor-default disabled:opacity-55";
+  "inline-flex cursor-pointer items-center justify-center shadow-liquid transition duration-[120ms] enabled:hover:brightness-[1.12] enabled:active:scale-[0.92] disabled:cursor-default disabled:opacity-55";
 
 /**
  * Compact floating transcription widget shown while a session is active. A small
@@ -45,7 +45,7 @@ export default function RecordingView() {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center gap-2 p-2">
-      <div className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-glass-border bg-glass-strong px-3 py-[7px] shadow-pill">
+      <div className="inline-flex shrink-0 items-center gap-2.5 rounded-full liquid-glass px-3 py-[7px]">
         <button
           className={`${PILL_BTN} h-[30px] w-10 rounded-[9px] bg-[#f5c518] text-[#1b1b1b]`}
           onClick={() => void togglePause()}
@@ -92,7 +92,7 @@ export default function RecordingView() {
         </span>
       </div>
 
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg border border-glass-border bg-glass shadow-glass">
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg liquid-glass">
         <div
           className="flex items-center gap-2 border-b border-glass-border px-3.5 py-[9px]"
           data-tauri-drag-region

@@ -6,7 +6,7 @@ const ICON_BTN =
 export default function Titlebar() {
   return (
     <header
-      className="flex items-center gap-2 rounded-md bg-glass-strong px-2.5 py-2"
+      className="flex items-center gap-2 rounded-md liquid-glass px-2.5 py-2"
       data-tauri-drag-region
     >
       <div className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em]">

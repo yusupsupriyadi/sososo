@@ -12,7 +12,7 @@ import { languageLabel } from "../../../lib/languages";
 import type { SessionDetail } from "../../../types/domain";
 
 const ACTION_BTN =
-  "cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap hover:bg-hover hover:text-fg";
+  "cursor-pointer rounded-sm border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.08)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap shadow-liquid hover:bg-hover hover:text-fg";
 
 export default function SessionDetailRoute() {
   const { id } = useParams();
@@ -150,7 +150,7 @@ export default function SessionDetailRoute() {
             {confirmDelete ? (
               <>
                 <button
-                  className="cursor-pointer rounded-sm border border-[rgba(255,93,93,0.45)] bg-[rgba(255,93,93,0.2)] px-[11px] py-1.5 text-[12.5px] text-[#ffd9d9] whitespace-nowrap hover:bg-hover hover:text-fg"
+                  className="cursor-pointer rounded-sm border border-[rgba(255,93,93,0.55)] bg-[rgba(255,93,93,0.24)] px-[11px] py-1.5 text-[12.5px] text-[#ffd9d9] whitespace-nowrap shadow-liquid hover:bg-hover hover:text-fg"
                   onClick={() => void doDelete()}
                 >
                   Hapus permanen
@@ -164,7 +164,7 @@ export default function SessionDetailRoute() {
               </>
             ) : (
               <button
-                className="cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap hover:border-[rgba(255,93,93,0.4)] hover:bg-hover hover:text-[#ffb4b4]"
+                className="cursor-pointer rounded-sm border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.08)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap shadow-liquid hover:border-[rgba(255,93,93,0.4)] hover:bg-hover hover:text-[#ffb4b4]"
                 onClick={() => setConfirmDelete(true)}
               >
                 🗑 Hapus
@@ -187,7 +187,7 @@ export default function SessionDetailRoute() {
             </h3>
             {session.summary && (
               <button
-                className="cursor-pointer rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-[11px] py-1.5 text-[12.5px] font-medium text-fg-dim whitespace-nowrap enabled:hover:bg-hover disabled:cursor-default disabled:opacity-60"
+                className="cursor-pointer rounded-sm border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.08)] px-[11px] py-1.5 text-[12.5px] font-medium text-fg-dim whitespace-nowrap shadow-liquid enabled:hover:bg-hover disabled:cursor-default disabled:opacity-60"
                 onClick={() => void doSummarize()}
                 disabled={summarizing}
               >
@@ -214,7 +214,7 @@ export default function SessionDetailRoute() {
                 OpenAI.
               </p>
               <button
-                className="cursor-pointer rounded-sm border border-[rgba(110,168,254,0.45)] bg-[rgba(110,168,254,0.2)] px-4 py-[9px] text-[13px] font-semibold text-[#dbe8ff] whitespace-nowrap enabled:hover:bg-[rgba(110,168,254,0.3)] disabled:cursor-default disabled:opacity-60"
+                className="cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] font-semibold text-[#dbe8ff] whitespace-nowrap shadow-liquid enabled:hover:bg-[rgba(110,168,254,0.34)] disabled:cursor-default disabled:opacity-60"
                 onClick={() => void doSummarize()}
                 disabled={summarizing}
               >

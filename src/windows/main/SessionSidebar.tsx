@@ -20,11 +20,11 @@ export default function SessionSidebar() {
   }, [state]);
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col gap-1.5 rounded-lg border border-glass-border bg-glass p-3 shadow-glass">
+    <aside className="flex w-60 shrink-0 flex-col gap-1.5 rounded-lg liquid-glass p-3">
       <NavLink
         to="/main"
         end
-        className="mb-1.5 block rounded-sm border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.16)] px-2.5 py-[9px] text-left text-[13px] font-semibold text-[#dbe8ff] no-underline hover:bg-[rgba(110,168,254,0.26)]"
+        className="mb-1.5 block rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.22)] px-2.5 py-[9px] text-left text-[13px] font-semibold text-[#dbe8ff] no-underline shadow-liquid hover:bg-[rgba(110,168,254,0.32)]"
       >
         ＋ Rekaman baru
       </NavLink>
