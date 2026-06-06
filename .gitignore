@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Audio capture smoke-test output (cargo run --example audio_probe)
+*.wav
