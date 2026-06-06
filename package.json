@@ -41,7 +41,7 @@
     "lint-staged": "^17.0.7",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "typescript": "~5.8.3",
+    "typescript": "~6.0.3",
     "vite": "^7.0.4"
   }
 }
