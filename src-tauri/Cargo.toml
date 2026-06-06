@@ -29,7 +29,7 @@ serde_json = "1"
 # --- audio capture (Milestone B) ---
 wasapi = "0.23"            # WASAPI loopback (Render device + Capture init) + mic, polled
 crossbeam-channel = "0.5"  # lock-free bridge from realtime audio threads
-thiserror = "1"            # error enum
+thiserror = "2"            # error enum
 
 # NOTE: WASAPI `autoconvert: true` lets us request 16 kHz/16-bit/mono directly,
 # so rubato resampling is not needed in v1.
