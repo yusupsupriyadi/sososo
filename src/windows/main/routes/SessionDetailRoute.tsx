@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import clsx from 'clsx';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { IconCheck, IconDelete, IconRegenerate, IconRename } from '../../../lib/icons';
 import { deleteSession, getSession, renameSession, summarizeSession } from '../../../lib/ipc';
 import { formatDateTime } from '../../../lib/format';
+import { speakerColor } from '../../../lib/speaker';
 import { languageLabel } from '../../../lib/languages';
 import { useLibraryStore } from '../../../state/libraryStore';
 import { useConfigStore } from '../../../state/configStore';
@@ -253,11 +253,11 @@ export default function SessionDetailRoute() {
           {segments.map((s, i) => (
             <div key={i} className="flex flex-col gap-[3px]">
               <span
-                className={clsx(
-                  'font-semibold tracking-[0.02em]',
-                  s.source === 'you' ? 'text-accent' : 'text-accent-2',
-                )}
-                style={{ fontSize: `${11 * transcriptScale}px` }}
+                className="font-semibold tracking-[0.02em]"
+                style={{
+                  fontSize: `${11 * transcriptScale}px`,
+                  color: speakerColor(s.source, s.speaker),
+                }}
               >
                 {s.speaker ?? (s.source === 'you' ? 'You' : 'Speaker')}
               </span>

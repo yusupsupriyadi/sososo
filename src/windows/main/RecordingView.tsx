@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useSession } from '../../hooks/useSession';
 import { IconDrag, IconPause, IconPlay, IconStop } from '../../lib/icons';
+import { speakerColor } from '../../lib/speaker';
 import { useElapsedLabel } from '../../hooks/useElapsedTimer';
 import { useTranscriptStore } from '../../state/transcriptStore';
 import { useConfigStore } from '../../state/configStore';
@@ -107,15 +108,11 @@ export default function RecordingView() {
             segments.map((c) => (
               <div key={c.segmentId} className="flex flex-col gap-0.5">
                 <span
-                  className={clsx(
-                    'tracking-[0.05em] uppercase',
-                    c.source === 'you'
-                      ? 'text-accent'
-                      : c.source === 'remote'
-                        ? 'text-accent-2'
-                        : 'text-fg-faint',
-                  )}
-                  style={{ fontSize: `${11 * transcriptScale}px` }}
+                  className="tracking-[0.05em] uppercase"
+                  style={{
+                    fontSize: `${11 * transcriptScale}px`,
+                    color: speakerColor(c.source, c.speaker),
+                  }}
                 >
                   {c.speaker ?? (c.source === 'you' ? 'You' : 'Speaker')}
                 </span>
