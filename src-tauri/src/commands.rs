@@ -76,7 +76,12 @@ pub fn start_session(
     let title = title
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
-        .unwrap_or_else(|| format!("Recording {}", chrono::Local::now().format("%d-%m-%Y %H:%M")));
+        .unwrap_or_else(|| {
+            format!(
+                "Recording {}",
+                chrono::Local::now().format("%d-%m-%Y %H:%M")
+            )
+        });
     let id = db.create_session(&title, &language, system_only, &started_at)?;
 
     let cancel = CancellationToken::new();
@@ -220,4 +225,37 @@ pub async fn summarize_session(db: State<'_, Db>, id: i64) -> AppResult<String> 
     let at = chrono::Utc::now().to_rfc3339();
     db.save_summary(id, &summary, &model, &at)?;
     Ok(summary)
+}
+
+// --- Live translation (OpenAI) ---
+
+/// Translate one finalized transcript line via OpenAI into `target_lang` (a
+/// human-readable language name like "English") and persist it on the segment
+/// row, returning the translated text.
+///
+/// Idempotent: if the row already has a translation for the same language it is
+/// returned without calling OpenAI, so a line is never translated twice. The
+/// frontend additionally caches per segment, so this is the defensive backstop.
+/// Requires the OpenAI key (Settings). Like `summarize_session`, the DB mutex is
+/// only held for the synchronous steps — never across the network `await`.
+#[tauri::command]
+pub async fn translate_segment(
+    db: State<'_, Db>,
+    session_id: i64,
+    segment_id: String,
+    text: String,
+    target_lang: String,
+) -> AppResult<String> {
+    if let Some((existing, lang)) = db.get_translation(session_id, &segment_id)? {
+        if lang == target_lang {
+            return Ok(existing);
+        }
+    }
+
+    let key = keys::get_api_key("openai")?
+        .ok_or_else(|| AppError::Config("OpenAI API key is not set (open Settings)".into()))?;
+
+    let translated = ai::translate(&key, &text, &target_lang).await?;
+    db.save_translation(session_id, &segment_id, &translated, &target_lang)?;
+    Ok(translated)
 }

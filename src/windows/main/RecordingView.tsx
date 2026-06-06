@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useSession } from '../../hooks/useSession';
+import { useLiveTranslation } from '../../hooks/useLiveTranslation';
 import { IconDrag, IconPause, IconPlay, IconStop } from '../../lib/icons';
 import { speakerColor } from '../../lib/speaker';
 import { useElapsedLabel } from '../../hooks/useElapsedTimer';
-import { useTranscriptStore } from '../../state/transcriptStore';
+import { useTranscriptStore, type TranslationEntry } from '../../state/transcriptStore';
 import { useConfigStore } from '../../state/configStore';
+import { languageLabel } from '../../lib/languages';
 import { enterRecordingWindow, exitRecordingWindow } from '../../lib/window';
 
 const PILL_BTN =
@@ -22,9 +24,16 @@ export default function RecordingView() {
   const { state, error, paused, stop, togglePause } = useSession();
   const elapsed = useElapsedLabel();
   const segments = useTranscriptStore((s) => s.segments);
+  const translations = useTranscriptStore((s) => s.translations);
   const transcriptScale = useConfigStore((s) => s.transcriptScale);
+  const translateEnabled = useConfigStore((s) => s.translateEnabled);
+  const setTranslateEnabled = useConfigStore((s) => s.setTranslateEnabled);
+  const targetLanguage = useConfigStore((s) => s.targetLanguage);
   const endRef = useRef<HTMLDivElement>(null);
   const last = segments[segments.length - 1];
+
+  // Translate finalized lines via OpenAI while recording (no-op when disabled).
+  useLiveTranslation();
 
   useEffect(() => {
     void enterRecordingWindow();
@@ -67,6 +76,35 @@ export default function RecordingView() {
           aria-label="Finish"
         >
           <HugeiconsIcon icon={IconStop} size={15} strokeWidth={2.2} aria-hidden={true} />
+        </button>
+        <button
+          className={`${PILL_BTN} h-[30px] w-9 rounded-[9px] ${
+            translateEnabled
+              ? 'bg-[rgba(110,168,254,0.9)] text-white'
+              : 'bg-[rgba(255,255,255,0.08)] text-fg-faint'
+          }`}
+          onClick={() => setTranslateEnabled(!translateEnabled)}
+          title={
+            translateEnabled
+              ? `Live translate: on → ${languageLabel(targetLanguage)}`
+              : 'Live translate: off'
+          }
+          aria-label="Toggle live translate"
+          aria-pressed={translateEnabled}
+        >
+          <svg
+            viewBox="0 0 16 16"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            aria-hidden="true"
+          >
+            <circle cx="8" cy="8" r="6.3" />
+            <path d="M1.7 8h12.6" />
+            <path d="M8 1.7c1.9 1.8 2.9 4 2.9 6.3S9.9 12.5 8 14.3C6.1 12.5 5.1 10.3 5.1 8S6.1 3.5 8 1.7z" />
+          </svg>
         </button>
         <span
           className="ml-0.5 inline-flex h-[30px] w-[22px] cursor-grab items-center justify-center rounded-[7px] text-fg-faint hover:bg-hover hover:text-fg-dim active:cursor-grabbing [&>svg]:pointer-events-none"
@@ -122,6 +160,9 @@ export default function RecordingView() {
                 >
                   {c.text}
                 </span>
+                {translateEnabled && (
+                  <TranslationLine entry={translations[c.segmentId]} scale={transcriptScale} />
+                )}
               </div>
             ))
           )}
@@ -136,4 +177,34 @@ export default function RecordingView() {
       </div>
     </div>
   );
+}
+
+/**
+ * Renders a segment's live translation beneath the original line (never
+ * replacing it): a dim, accent-bordered line when done, a faint "Translating…"
+ * placeholder while pending, and nothing on error.
+ */
+function TranslationLine({ entry, scale }: { entry?: TranslationEntry; scale: number }) {
+  if (!entry) return null;
+  if (entry.status === 'pending') {
+    return (
+      <span
+        className="border-l-2 border-[rgba(255,255,255,0.18)] pl-2 text-fg-faint italic"
+        style={{ fontSize: `${12 * scale}px` }}
+      >
+        Translating…
+      </span>
+    );
+  }
+  if (entry.status === 'done' && entry.text) {
+    return (
+      <span
+        className="border-l-2 border-[rgba(110,168,254,0.4)] pl-2 text-fg-dim"
+        style={{ fontSize: `${13 * scale}px` }}
+      >
+        {entry.text}
+      </span>
+    );
+  }
+  return null;
 }

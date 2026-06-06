@@ -113,6 +113,10 @@ export const LANGUAGES: LanguageOption[] = [
   { code: 'el', label: 'Greek' },
 ];
 
+/** Translation target languages = all supported languages except the
+ *  auto-detect pseudo-language ("multi"), which is not a valid target. */
+export const TRANSLATE_TARGETS: LanguageOption[] = LANGUAGES.filter((l) => l.code !== 'multi');
+
 /** Look up the display label for a language code (falls back to the code itself). */
 export function languageLabel(code: string): string {
   return LANGUAGES.find((l) => l.code === code)?.label ?? code;

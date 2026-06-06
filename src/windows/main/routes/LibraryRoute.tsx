@@ -6,7 +6,7 @@ import { useSessionStore } from '../../../state/sessionStore';
 import { useConfigStore, type LanguageCode } from '../../../state/configStore';
 import { hasApiKey, listDevices, setDevices, setTranscriptionOptions } from '../../../lib/ipc';
 import type { DeviceLists } from '../../../types/domain';
-import { LANGUAGES } from '../../../lib/languages';
+import { LANGUAGES, TRANSLATE_TARGETS } from '../../../lib/languages';
 import { IconMic, IconRecord, IconSettings } from '../../../lib/icons';
 
 const BIG_BTN_BASE =
@@ -24,18 +24,26 @@ export default function LibraryRoute() {
     systemOnly,
     inputDevice,
     outputDevice,
+    translateEnabled,
+    targetLanguage,
     setLanguage,
     setSystemOnly,
     setInputDevice,
     setOutputDevice,
+    setTranslateEnabled,
+    setTargetLanguage,
   } = useConfigStore();
   const [keyReady, setKeyReady] = useState<boolean | null>(null);
+  const [openaiReady, setOpenaiReady] = useState<boolean | null>(null);
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
 
   useEffect(() => {
     hasApiKey('deepgram')
       .then(setKeyReady)
       .catch(() => setKeyReady(false));
+    hasApiKey('openai')
+      .then(setOpenaiReady)
+      .catch(() => setOpenaiReady(false));
   }, [state]);
 
   // Load device lists once; seed defaults only if nothing is selected yet
@@ -145,6 +153,45 @@ export default function LibraryRoute() {
                   ))}
                 </select>
               </label>
+
+              <div className="mt-0.5 flex flex-col gap-2 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.03)] p-2.5">
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 shrink-0 cursor-pointer accent-[#6ea8fe]"
+                    checked={translateEnabled}
+                    onChange={(e) => setTranslateEnabled(e.target.checked)}
+                  />
+                  <span className="text-[13px] text-fg">Live translate (OpenAI)</span>
+                </label>
+                {translateEnabled && (
+                  <>
+                    <label className="flex flex-col gap-[5px]">
+                      <span className="text-[12px] text-fg-faint">Translate to</span>
+                      <select
+                        className={SELECT}
+                        value={targetLanguage}
+                        onChange={(e) => setTargetLanguage(e.target.value as LanguageCode)}
+                      >
+                        {TRANSLATE_TARGETS.map((l) => (
+                          <option key={l.code} value={l.code}>
+                            {l.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {openaiReady === false && (
+                      <p className="text-[12px] leading-[1.45] text-[#ffb454]">
+                        OpenAI API key isn't set — add it in{' '}
+                        <Link to="/main/settings" className="underline">
+                          Settings
+                        </Link>{' '}
+                        to translate.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             <button

@@ -147,3 +147,69 @@ pub async fn summarize(
 
     Ok((summary, MODEL.to_string()))
 }
+
+/// Translate a single finalized transcript line into `target_language` (a
+/// human-readable name like "English"). Returns ONLY the translated text.
+///
+/// Invoked by the `translate_segment` command for live, per-segment translation,
+/// so it is kept lightweight: a short timeout (it runs many times per session)
+/// and a low temperature for faithful output. Reuses the same OpenAI structs and
+/// endpoint as `summarize`.
+pub async fn translate(api_key: &str, text: &str, target_language: &str) -> AppResult<String> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Err(AppError::Ai("nothing to translate".into()));
+    }
+
+    let system_prompt = format!(
+        "You are a professional real-time translation engine. Translate the user's text into \
+         {target_language}. Output ONLY the translation — no quotes, no notes, no preamble, no \
+         transliteration. Preserve meaning, names, and tone. If the text is already in \
+         {target_language}, return it unchanged."
+    );
+
+    let body = serde_json::json!({
+        "model": MODEL,
+        "temperature": 0.2,
+        "messages": [
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": text },
+        ],
+    });
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()?;
+
+    let resp = client
+        .post(ENDPOINT)
+        .bearer_auth(api_key)
+        .json(&body)
+        .send()
+        .await?;
+
+    let status = resp.status();
+    let raw = resp.text().await?;
+
+    if !status.is_success() {
+        let detail = serde_json::from_str::<ApiErrorEnvelope>(&raw)
+            .map(|e| e.error.message)
+            .unwrap_or_else(|_| raw.clone());
+        let hint = if status.as_u16() == 401 {
+            " (check the OpenAI API key in Settings)"
+        } else {
+            ""
+        };
+        return Err(AppError::Ai(format!("OpenAI {status}: {detail}{hint}")));
+    }
+
+    let parsed: ChatResponse = serde_json::from_str(&raw)
+        .map_err(|e| AppError::Ai(format!("could not parse OpenAI response: {e}")))?;
+    parsed
+        .choices
+        .into_iter()
+        .next()
+        .map(|c| c.message.content.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Ai("OpenAI returned no translation".into()))
+}

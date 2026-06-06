@@ -77,6 +77,10 @@ export interface StoredSegment {
   tStart: number;
   tEnd?: number | null;
   confidence?: number | null;
+  /** Live translation of `text`, or null if the line was never translated. */
+  translation?: string | null;
+  /** Target language (display name) the translation was produced for. */
+  translationLang?: string | null;
 }
 
 export interface SessionDetail {

@@ -18,12 +18,19 @@ interface ConfigStore {
   uiScale: number;
   /** Font multiplier for transcript text + speaker labels (live + history). 1 = 100%. */
   transcriptScale: number;
+  /** Live-translate finalized transcript lines via OpenAI (off by default). */
+  translateEnabled: boolean;
+  /** Target language code for live translation (display name resolved via
+   *  `lib/languages.ts`). Default "en". */
+  targetLanguage: LanguageCode;
   setLanguage: (l: LanguageCode) => void;
   setSystemOnly: (s: boolean) => void;
   setInputDevice: (id: string | null) => void;
   setOutputDevice: (id: string | null) => void;
   setUiScale: (v: number) => void;
   setTranscriptScale: (v: number) => void;
+  setTranslateEnabled: (v: boolean) => void;
+  setTargetLanguage: (l: LanguageCode) => void;
 }
 
 /** Bounds for the appearance sliders, also used to clamp persisted values. */
@@ -41,20 +48,26 @@ export const useConfigStore = create<ConfigStore>()(
       outputDevice: null,
       uiScale: 1,
       transcriptScale: 1,
+      translateEnabled: false,
+      targetLanguage: 'en',
       setLanguage: (language) => set({ language }),
       setSystemOnly: (systemOnly) => set({ systemOnly }),
       setInputDevice: (inputDevice) => set({ inputDevice }),
       setOutputDevice: (outputDevice) => set({ outputDevice }),
       setUiScale: (uiScale) => set({ uiScale }),
       setTranscriptScale: (transcriptScale) => set({ transcriptScale }),
+      setTranslateEnabled: (translateEnabled) => set({ translateEnabled }),
+      setTargetLanguage: (targetLanguage) => set({ targetLanguage }),
     }),
     {
       name: 'sososo-config',
-      // Only persist the appearance prefs; language/systemOnly stay in-memory
-      // (they're already synced to the backend separately).
+      // Persist the appearance prefs + translation choice; language/systemOnly
+      // stay in-memory (they're already synced to the backend separately).
       partialize: (s) => ({
         uiScale: s.uiScale,
         transcriptScale: s.transcriptScale,
+        translateEnabled: s.translateEnabled,
+        targetLanguage: s.targetLanguage,
       }),
     },
   ),

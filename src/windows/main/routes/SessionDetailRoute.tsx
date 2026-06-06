@@ -267,6 +267,14 @@ export default function SessionDetailRoute() {
               >
                 {s.text}
               </span>
+              {s.translation && (
+                <span
+                  className="mt-0.5 border-l-2 border-[rgba(110,168,254,0.4)] pl-2 text-fg-dim"
+                  style={{ fontSize: `${13 * transcriptScale}px` }}
+                >
+                  {s.translation}
+                </span>
+              )}
             </div>
           ))}
         </div>

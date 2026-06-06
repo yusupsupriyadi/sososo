@@ -51,3 +51,15 @@ export const renameSession = (id: number, title: string): Promise<void> =>
 /** Generate + persist an AI summary for a session; resolves to the Markdown text. */
 export const summarizeSession = (id: number): Promise<string> =>
   invoke('summarize_session', { id });
+
+// --- Live translation ---
+
+/** Translate one finalized transcript line into `targetLang` (a display name
+ *  like "English"); resolves to the translated text. The backend persists it and
+ *  is idempotent, so a line is never translated twice. */
+export const translateSegment = (
+  sessionId: number,
+  segmentId: string,
+  text: string,
+  targetLang: string,
+): Promise<string> => invoke('translate_segment', { sessionId, segmentId, text, targetLang });

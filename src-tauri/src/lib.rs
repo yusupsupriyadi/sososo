@@ -29,6 +29,7 @@ pub fn run() {
             commands::delete_session,
             commands::rename_session,
             commands::summarize_session,
+            commands::translate_segment,
         ])
         .setup(|app| {
             // Open (creating if needed) the SQLite history database in the app

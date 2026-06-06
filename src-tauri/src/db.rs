@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS segments (
     t_start     REAL    NOT NULL,
     t_end       REAL,
     confidence  REAL,
+    translation      TEXT,
+    translation_lang TEXT,
     UNIQUE (session_id, segment_id)
 );
 
@@ -73,6 +75,10 @@ pub struct StoredSegment {
     pub t_start: f64,
     pub t_end: Option<f64>,
     pub confidence: Option<f64>,
+    /// Live-translation of `text` (Milestone: live translate), or `None` if the
+    /// line was never translated. `translation_lang` records the target language.
+    pub translation: Option<String>,
+    pub translation_lang: Option<String>,
 }
 
 /// A session plus its full transcript, for the detail view.
@@ -158,6 +164,53 @@ impl Db {
         Ok(())
     }
 
+    /// Store the live translation for a finalized segment (idempotent on
+    /// (session_id, segment_id)). The matching row is created by `upsert_segment`
+    /// before the frontend requests a translation, so this only updates columns.
+    pub fn save_translation(
+        &self,
+        session_id: i64,
+        segment_id: &str,
+        translation: &str,
+        lang: &str,
+    ) -> AppResult<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "UPDATE segments SET translation = ?1, translation_lang = ?2 \
+             WHERE session_id = ?3 AND segment_id = ?4",
+            rusqlite::params![translation, lang, session_id, segment_id],
+        )?;
+        Ok(())
+    }
+
+    /// Existing translation for a segment as `(translation, lang)`, or `None`
+    /// (also `None` when the row has no translation yet). Used to skip a second
+    /// OpenAI call for an already-translated line.
+    pub fn get_translation(
+        &self,
+        session_id: i64,
+        segment_id: &str,
+    ) -> AppResult<Option<(String, String)>> {
+        let conn = self.0.lock().unwrap();
+        let row = conn
+            .query_row(
+                "SELECT translation, translation_lang FROM segments \
+                 WHERE session_id = ?1 AND segment_id = ?2",
+                rusqlite::params![session_id, segment_id],
+                |r| {
+                    Ok((
+                        r.get::<_, Option<String>>(0)?,
+                        r.get::<_, Option<String>>(1)?,
+                    ))
+                },
+            )
+            .optional()?;
+        Ok(match row {
+            Some((Some(t), Some(l))) => Some((t, l)),
+            _ => None,
+        })
+    }
+
     /// All sessions, newest first, each with its transcript segment count.
     pub fn list_sessions(&self) -> AppResult<Vec<SessionSummary>> {
         let conn = self.0.lock().unwrap();
@@ -200,7 +253,7 @@ impl Db {
         };
 
         let mut stmt = conn.prepare(
-            "SELECT source, speaker, text, t_start, t_end, confidence \
+            "SELECT source, speaker, text, t_start, t_end, confidence, translation, translation_lang \
              FROM segments WHERE session_id = ?1 ORDER BY t_start, id",
         )?;
         let rows = stmt.query_map([id], |row| {
@@ -211,6 +264,8 @@ impl Db {
                 t_start: row.get(3)?,
                 t_end: row.get(4)?,
                 confidence: row.get(5)?,
+                translation: row.get(6)?,
+                translation_lang: row.get(7)?,
             })
         })?;
         let mut segments = Vec::new();
@@ -267,6 +322,22 @@ fn migrate(conn: &Connection) -> AppResult<()> {
         ),
     ] {
         if !existing.iter().any(|c| c == name) {
+            conn.execute(ddl, [])?;
+        }
+    }
+
+    let seg_existing = table_columns(conn, "segments")?;
+    for (name, ddl) in [
+        (
+            "translation",
+            "ALTER TABLE segments ADD COLUMN translation TEXT",
+        ),
+        (
+            "translation_lang",
+            "ALTER TABLE segments ADD COLUMN translation_lang TEXT",
+        ),
+    ] {
+        if !seg_existing.iter().any(|c| c == name) {
             conn.execute(ddl, [])?;
         }
     }
