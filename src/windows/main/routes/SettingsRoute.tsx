@@ -24,14 +24,17 @@ const FIELD_LABEL = "text-[13px] text-fg-dim";
 
 export default function SettingsRoute() {
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
-  const [inputId, setInputId] = useState("");
-  const [outputId, setOutputId] = useState("");
   const [dgKey, setDgKey] = useState("");
   const [oaKey, setOaKey] = useState("");
   const [dgSaved, setDgSaved] = useState(false);
   const [oaSaved, setOaSaved] = useState(false);
   const [status, setStatus] = useState("");
 
+  // Device selection is shared with the Start-transcription screen via the config store.
+  const inputDevice = useConfigStore((s) => s.inputDevice);
+  const outputDevice = useConfigStore((s) => s.outputDevice);
+  const setInputDevice = useConfigStore((s) => s.setInputDevice);
+  const setOutputDevice = useConfigStore((s) => s.setOutputDevice);
   const uiScale = useConfigStore((s) => s.uiScale);
   const transcriptScale = useConfigStore((s) => s.transcriptScale);
   const setUiScale = useConfigStore((s) => s.setUiScale);
@@ -41,19 +44,28 @@ export default function SettingsRoute() {
     listDevices()
       .then((d) => {
         setDeviceLists(d);
-        setInputId(d.input.find((x) => x.isDefault)?.id ?? d.input[0]?.id ?? "");
-        setOutputId(
-          d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? "",
-        );
+        // Seed defaults only if nothing is selected yet, so a choice made on
+        // the Start-transcription screen isn't clobbered.
+        const cfg = useConfigStore.getState();
+        if (cfg.inputDevice == null) {
+          setInputDevice(
+            d.input.find((x) => x.isDefault)?.id ?? d.input[0]?.id ?? null,
+          );
+        }
+        if (cfg.outputDevice == null) {
+          setOutputDevice(
+            d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? null,
+          );
+        }
       })
       .catch((e) => setStatus(`Failed to load devices: ${e}`));
     hasApiKey("deepgram").then(setDgSaved).catch(() => {});
     hasApiKey("openai").then(setOaSaved).catch(() => {});
-  }, []);
+  }, [setInputDevice, setOutputDevice]);
 
   async function saveDevices() {
     try {
-      await setDevices(inputId || null, outputId || null);
+      await setDevices(inputDevice, outputDevice);
       setStatus("Devices saved.");
     } catch (e) {
       setStatus(`Error: ${e}`);
@@ -140,8 +152,8 @@ export default function SettingsRoute() {
           <span className={FIELD_LABEL}>Microphone</span>
           <select
             className={FIELD_CTRL}
-            value={inputId}
-            onChange={(e) => setInputId(e.target.value)}
+            value={inputDevice ?? ""}
+            onChange={(e) => setInputDevice(e.target.value || null)}
           >
             {devices?.input.map((d) => (
               <option key={d.id} value={d.id}>
@@ -157,8 +169,8 @@ export default function SettingsRoute() {
           </span>
           <select
             className={FIELD_CTRL}
-            value={outputId}
-            onChange={(e) => setOutputId(e.target.value)}
+            value={outputDevice ?? ""}
+            onChange={(e) => setOutputDevice(e.target.value || null)}
           >
             {devices?.output.map((d) => (
               <option key={d.id} value={d.id}>

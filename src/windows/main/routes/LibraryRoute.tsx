@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { useSession } from "../../../hooks/useSession";
 import { useSessionStore } from "../../../state/sessionStore";
 import { useConfigStore, type LanguageCode } from "../../../state/configStore";
-import { hasApiKey, setTranscriptionOptions } from "../../../lib/ipc";
+import {
+  hasApiKey,
+  listDevices,
+  setDevices,
+  setTranscriptionOptions,
+} from "../../../lib/ipc";
+import type { DeviceLists } from "../../../types/domain";
 import { LANGUAGES } from "../../../lib/languages";
 
 const BIG_BTN_BASE =
@@ -16,8 +22,18 @@ export default function LibraryRoute() {
   const state = useSessionStore((s) => s.state);
   const error = useSessionStore((s) => s.error);
 
-  const { language, systemOnly, setLanguage, setSystemOnly } = useConfigStore();
+  const {
+    language,
+    systemOnly,
+    inputDevice,
+    outputDevice,
+    setLanguage,
+    setSystemOnly,
+    setInputDevice,
+    setOutputDevice,
+  } = useConfigStore();
   const [keyReady, setKeyReady] = useState<boolean | null>(null);
+  const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
 
   useEffect(() => {
     hasApiKey("deepgram")
@@ -25,16 +41,48 @@ export default function LibraryRoute() {
       .catch(() => setKeyReady(false));
   }, [state]);
 
+  // Load device lists once; seed defaults only if nothing is selected yet
+  // (a choice made in Settings is shared via the config store).
+  useEffect(() => {
+    listDevices()
+      .then((d) => {
+        setDeviceLists(d);
+        const cfg = useConfigStore.getState();
+        if (cfg.inputDevice == null) {
+          setInputDevice(
+            d.input.find((x) => x.isDefault)?.id ?? d.input[0]?.id ?? null,
+          );
+        }
+        if (cfg.outputDevice == null) {
+          setOutputDevice(
+            d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? null,
+          );
+        }
+      })
+      .catch(() => {});
+  }, [setInputDevice, setOutputDevice]);
+
   // Keep the backend in sync with the selected language / capture mode.
   useEffect(() => {
     void setTranscriptionOptions(language, systemOnly);
   }, [language, systemOnly]);
+
+  // Keep the backend in sync with the selected input/output devices.
+  useEffect(() => {
+    void setDevices(inputDevice, outputDevice);
+  }, [inputDevice, outputDevice]);
 
   function onLanguage(e: React.ChangeEvent<HTMLSelectElement>) {
     setLanguage(e.target.value as LanguageCode);
   }
   function onSource(e: React.ChangeEvent<HTMLSelectElement>) {
     setSystemOnly(e.target.value === "system");
+  }
+  function onInput(e: React.ChangeEvent<HTMLSelectElement>) {
+    setInputDevice(e.target.value || null);
+  }
+  function onOutput(e: React.ChangeEvent<HTMLSelectElement>) {
+    setOutputDevice(e.target.value || null);
   }
 
   return (
@@ -79,6 +127,38 @@ export default function LibraryRoute() {
                 >
                   <option value="both">System + Microphone (meeting)</option>
                   <option value="system">System only (video/music)</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-[5px]">
+                <span className="text-[12px] text-fg-faint">Microphone</span>
+                <select
+                  className={SELECT}
+                  value={inputDevice ?? ""}
+                  onChange={onInput}
+                >
+                  {devices?.input.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                      {d.isDefault ? " (default)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-[5px]">
+                <span className="text-[12px] text-fg-faint">
+                  System audio (speaker to capture)
+                </span>
+                <select
+                  className={SELECT}
+                  value={outputDevice ?? ""}
+                  onChange={onOutput}
+                >
+                  {devices?.output.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                      {d.isDefault ? " (default)" : ""}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
