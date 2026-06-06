@@ -3,7 +3,16 @@ import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useSession } from '../../hooks/useSession';
 import { useLiveTranslation } from '../../hooks/useLiveTranslation';
-import { IconDrag, IconPause, IconPlay, IconStop } from '../../lib/icons';
+import {
+  IconAlert,
+  IconDrag,
+  IconLanguage,
+  IconMic,
+  IconPause,
+  IconPlay,
+  IconRemote,
+  IconStop,
+} from '../../lib/icons';
 import { speakerColor } from '../../lib/speaker';
 import { useElapsedLabel } from '../../hooks/useElapsedTimer';
 import { useTranscriptStore, type TranslationEntry } from '../../state/transcriptStore';
@@ -92,19 +101,7 @@ export default function RecordingView() {
           aria-label="Toggle live translate"
           aria-pressed={translateEnabled}
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="15"
-            height="15"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            aria-hidden="true"
-          >
-            <circle cx="8" cy="8" r="6.3" />
-            <path d="M1.7 8h12.6" />
-            <path d="M8 1.7c1.9 1.8 2.9 4 2.9 6.3S9.9 12.5 8 14.3C6.1 12.5 5.1 10.3 5.1 8S6.1 3.5 8 1.7z" />
-          </svg>
+          <HugeiconsIcon icon={IconLanguage} size={15} strokeWidth={2} aria-hidden={true} />
         </button>
         <span
           className="ml-0.5 inline-flex h-[30px] w-[22px] cursor-grab items-center justify-center rounded-[7px] text-fg-faint hover:bg-hover hover:text-fg-dim active:cursor-grabbing [&>svg]:pointer-events-none"
@@ -146,12 +143,18 @@ export default function RecordingView() {
             segments.map((c) => (
               <div key={c.segmentId} className="flex flex-col gap-0.5">
                 <span
-                  className="tracking-[0.05em] uppercase"
+                  className="inline-flex items-center gap-1 tracking-[0.05em] uppercase"
                   style={{
                     fontSize: `${11 * transcriptScale}px`,
                     color: speakerColor(c.source, c.speaker),
                   }}
                 >
+                  <HugeiconsIcon
+                    icon={c.source === 'you' ? IconMic : IconRemote}
+                    size={Math.round(12 * transcriptScale)}
+                    strokeWidth={2}
+                    aria-hidden={true}
+                  />
                   {c.speaker ?? (c.source === 'you' ? 'You' : 'Speaker')}
                 </span>
                 <span
@@ -170,8 +173,15 @@ export default function RecordingView() {
         </div>
 
         {state === 'error' && error && (
-          <p className="mx-3.5 mb-3 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
-            {error}
+          <p className="mx-3.5 mb-3 flex items-start gap-2 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
+            <HugeiconsIcon
+              icon={IconAlert}
+              size={15}
+              strokeWidth={1.8}
+              className="mt-px shrink-0"
+              aria-hidden={true}
+            />
+            <span>{error}</span>
           </p>
         )}
       </div>

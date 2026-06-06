@@ -1,7 +1,22 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { IconCheck, IconDelete, IconRegenerate, IconRename } from '../../../lib/icons';
+import {
+  IconAi,
+  IconAlert,
+  IconBack,
+  IconCalendar,
+  IconCheck,
+  IconDelete,
+  IconLanguage,
+  IconLines,
+  IconMic,
+  IconNoTranscript,
+  IconRegenerate,
+  IconRemote,
+  IconRename,
+  IconSpeaker,
+} from '../../../lib/icons';
 import { deleteSession, getSession, renameSession, summarizeSession } from '../../../lib/ipc';
 import { formatDateTime } from '../../../lib/format';
 import { speakerColor } from '../../../lib/speaker';
@@ -104,8 +119,9 @@ export default function SessionDetailRoute() {
           <h2 className="mb-2 text-[18px] font-semibold text-fg">Session not found</h2>
           <p className="text-[13.5px] leading-[1.5]">
             This recording may have been deleted.{' '}
-            <Link to="/main" className="text-accent underline">
-              Back to home
+            <Link to="/main" className="inline-flex items-center gap-1 text-accent">
+              <HugeiconsIcon icon={IconBack} size={13} strokeWidth={1.8} aria-hidden={true} />
+              <span className="underline">Back to home</span>
             </Link>
           </p>
         </div>
@@ -172,17 +188,38 @@ export default function SessionDetailRoute() {
             )}
           </div>
         </div>
-        <p className="mt-2.5 text-[12px] text-fg-faint">
-          {formatDateTime(session.startedAt)} · {languageLabel(session.language)} ·{' '}
-          {session.segmentCount} lines ·{' '}
-          {session.systemOnly ? 'System only' : 'System + Microphone'}
-        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[12px] text-fg-faint">
+          <span className="inline-flex items-center gap-1.5">
+            <HugeiconsIcon icon={IconCalendar} size={13} strokeWidth={1.8} aria-hidden={true} />
+            {formatDateTime(session.startedAt)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <HugeiconsIcon icon={IconLanguage} size={13} strokeWidth={1.8} aria-hidden={true} />
+            {languageLabel(session.language)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <HugeiconsIcon icon={IconLines} size={13} strokeWidth={1.8} aria-hidden={true} />
+            {session.segmentCount} lines
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <HugeiconsIcon
+              icon={session.systemOnly ? IconSpeaker : IconMic}
+              size={13}
+              strokeWidth={1.8}
+              aria-hidden={true}
+            />
+            {session.systemOnly ? 'System only' : 'System + Microphone'}
+          </span>
+        </div>
       </div>
 
       {segments.length > 0 && (
         <section className="mb-[22px] rounded-md border border-glass-border bg-[rgba(110,168,254,0.07)] px-[18px] py-4">
           <div className="mb-2.5 flex items-center justify-between gap-2.5">
-            <h3 className="m-0 text-[12px] tracking-[0.06em] text-accent uppercase">AI Summary</h3>
+            <h3 className="m-0 inline-flex items-center gap-1.5 text-[12px] tracking-[0.06em] text-accent uppercase">
+              <HugeiconsIcon icon={IconAi} size={14} strokeWidth={1.8} aria-hidden={true} />
+              AI Summary
+            </h3>
             {session.summary && (
               <button
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.08)] px-[11px] py-1.5 text-[12.5px] font-medium whitespace-nowrap text-fg-dim shadow-liquid enabled:hover:bg-hover disabled:cursor-default disabled:opacity-60"
@@ -247,18 +284,27 @@ export default function SessionDetailRoute() {
       )}
 
       {segments.length === 0 ? (
-        <p className="text-[13px] text-fg-faint">No transcript saved for this session.</p>
+        <div className="flex flex-col items-center gap-2 py-10 text-fg-faint">
+          <HugeiconsIcon icon={IconNoTranscript} size={32} strokeWidth={1.5} aria-hidden={true} />
+          <p className="text-[13px]">No transcript saved for this session.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {segments.map((s, i) => (
             <div key={i} className="flex flex-col gap-[3px]">
               <span
-                className="font-semibold tracking-[0.02em]"
+                className="inline-flex items-center gap-1 font-semibold tracking-[0.02em]"
                 style={{
                   fontSize: `${11 * transcriptScale}px`,
                   color: speakerColor(s.source, s.speaker),
                 }}
               >
+                <HugeiconsIcon
+                  icon={s.source === 'you' ? IconMic : IconRemote}
+                  size={Math.round(12 * transcriptScale)}
+                  strokeWidth={2}
+                  aria-hidden={true}
+                />
                 {s.speaker ?? (s.source === 'you' ? 'You' : 'Speaker')}
               </span>
               <span
@@ -281,8 +327,15 @@ export default function SessionDetailRoute() {
       )}
 
       {err && (
-        <p className="mt-4 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
-          {err}
+        <p className="mt-4 flex items-start gap-2 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
+          <HugeiconsIcon
+            icon={IconAlert}
+            size={15}
+            strokeWidth={1.8}
+            className="mt-px shrink-0"
+            aria-hidden={true}
+          />
+          <span>{err}</span>
         </p>
       )}
     </div>

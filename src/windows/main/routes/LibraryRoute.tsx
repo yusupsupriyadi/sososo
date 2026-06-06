@@ -7,7 +7,16 @@ import { useConfigStore, type LanguageCode } from '../../../state/configStore';
 import { hasApiKey, listDevices, setDevices, setTranscriptionOptions } from '../../../lib/ipc';
 import type { DeviceLists } from '../../../types/domain';
 import { LANGUAGES, TRANSLATE_TARGETS } from '../../../lib/languages';
-import { IconMic, IconRecord, IconSettings } from '../../../lib/icons';
+import {
+  IconAlert,
+  IconKey,
+  IconLanguage,
+  IconMic,
+  IconRecord,
+  IconSettings,
+  IconSpeaker,
+  IconWave,
+} from '../../../lib/icons';
 
 const BIG_BTN_BASE =
   'inline-flex items-center justify-center gap-2 cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline shadow-liquid transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60';
@@ -96,6 +105,9 @@ export default function LibraryRoute() {
 
         {keyReady === false ? (
           <>
+            <div className="mt-1 flex justify-center text-fg-faint">
+              <HugeiconsIcon icon={IconKey} size={26} strokeWidth={1.5} aria-hidden={true} />
+            </div>
             <p className="mx-auto mt-3.5 max-w-[360px] text-[13px] leading-[1.5] text-fg-faint">
               Deepgram API key isn't set. Set it first to start transcription.
             </p>
@@ -111,7 +123,15 @@ export default function LibraryRoute() {
           <>
             <div className="mx-auto mb-5 flex max-w-[340px] flex-col gap-3 text-left">
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">Language</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-faint">
+                  <HugeiconsIcon
+                    icon={IconLanguage}
+                    size={13}
+                    strokeWidth={1.8}
+                    aria-hidden={true}
+                  />
+                  Language
+                </span>
                 <select className={SELECT} value={language} onChange={onLanguage}>
                   {LANGUAGES.map((l) => (
                     <option key={l.code} value={l.code}>
@@ -121,7 +141,10 @@ export default function LibraryRoute() {
                 </select>
               </label>
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">Audio source</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-faint">
+                  <HugeiconsIcon icon={IconWave} size={13} strokeWidth={1.8} aria-hidden={true} />
+                  Audio source
+                </span>
                 <select
                   className={SELECT}
                   value={systemOnly ? 'system' : 'both'}
@@ -132,7 +155,10 @@ export default function LibraryRoute() {
                 </select>
               </label>
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">Microphone</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-faint">
+                  <HugeiconsIcon icon={IconMic} size={13} strokeWidth={1.8} aria-hidden={true} />
+                  Microphone
+                </span>
                 <select className={SELECT} value={inputDevice ?? ''} onChange={onInput}>
                   {devices?.input.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -143,7 +169,15 @@ export default function LibraryRoute() {
                 </select>
               </label>
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">System audio (speaker to capture)</span>
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-faint">
+                  <HugeiconsIcon
+                    icon={IconSpeaker}
+                    size={13}
+                    strokeWidth={1.8}
+                    aria-hidden={true}
+                  />
+                  System audio (speaker to capture)
+                </span>
                 <select className={SELECT} value={outputDevice ?? ''} onChange={onOutput}>
                   {devices?.output.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -162,12 +196,28 @@ export default function LibraryRoute() {
                     checked={translateEnabled}
                     onChange={(e) => setTranslateEnabled(e.target.checked)}
                   />
-                  <span className="text-[13px] text-fg">Live translate (OpenAI)</span>
+                  <span className="inline-flex items-center gap-1.5 text-[13px] text-fg">
+                    <HugeiconsIcon
+                      icon={IconLanguage}
+                      size={14}
+                      strokeWidth={1.8}
+                      aria-hidden={true}
+                    />
+                    Live translate (OpenAI)
+                  </span>
                 </label>
                 {translateEnabled && (
                   <>
                     <label className="flex flex-col gap-[5px]">
-                      <span className="text-[12px] text-fg-faint">Translate to</span>
+                      <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-faint">
+                        <HugeiconsIcon
+                          icon={IconLanguage}
+                          size={13}
+                          strokeWidth={1.8}
+                          aria-hidden={true}
+                        />
+                        Translate to
+                      </span>
                       <select
                         className={SELECT}
                         value={targetLanguage}
@@ -181,12 +231,21 @@ export default function LibraryRoute() {
                       </select>
                     </label>
                     {openaiReady === false && (
-                      <p className="text-[12px] leading-[1.45] text-[#ffb454]">
-                        OpenAI API key isn't set — add it in{' '}
-                        <Link to="/main/settings" className="underline">
-                          Settings
-                        </Link>{' '}
-                        to translate.
+                      <p className="flex items-start gap-1.5 text-[12px] leading-[1.45] text-[#ffb454]">
+                        <HugeiconsIcon
+                          icon={IconAlert}
+                          size={14}
+                          strokeWidth={1.8}
+                          className="mt-0.5 shrink-0"
+                          aria-hidden={true}
+                        />
+                        <span>
+                          OpenAI API key isn't set — add it in{' '}
+                          <Link to="/main/settings" className="underline">
+                            Settings
+                          </Link>{' '}
+                          to translate.
+                        </span>
                       </p>
                     )}
                   </>
@@ -211,8 +270,15 @@ export default function LibraryRoute() {
         )}
 
         {state === 'error' && error && (
-          <p className="mt-4 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-[12.5px] text-[#ffb454]">
-            {error}
+          <p className="mt-4 flex items-start gap-2 rounded-sm border border-[rgba(255,180,84,0.25)] bg-[rgba(255,180,84,0.1)] px-3 py-2 text-left text-[12.5px] text-[#ffb454]">
+            <HugeiconsIcon
+              icon={IconAlert}
+              size={15}
+              strokeWidth={1.8}
+              className="mt-px shrink-0"
+              aria-hidden={true}
+            />
+            <span>{error}</span>
           </p>
         )}
       </div>

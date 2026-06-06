@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { hasApiKey, listDevices, setApiKey, setDevices } from '../../../lib/ipc';
-import { IconCheck } from '../../../lib/icons';
+import {
+  IconAlert,
+  IconAppearance,
+  IconCheck,
+  IconDevices,
+  IconKey,
+  IconLanguage,
+  IconMic,
+  IconSpeaker,
+} from '../../../lib/icons';
 import {
   useConfigStore,
   UI_SCALE_MIN,
@@ -15,7 +24,8 @@ const FIELD_CTRL =
   'w-full flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent';
 const BTN =
   'cursor-pointer rounded-sm border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.1)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap shadow-liquid hover:bg-[rgba(255,255,255,0.18)]';
-const H3 = 'mb-3 text-[12px] uppercase tracking-[0.06em] text-fg-faint';
+const H3 =
+  'mb-3 inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.06em] text-fg-faint';
 const FIELD = 'mb-3.5 flex flex-col gap-1.5';
 const FIELD_LABEL = 'text-[13px] text-fg-dim';
 
@@ -92,7 +102,10 @@ export default function SettingsRoute() {
       <h2 className="mb-5 text-[20px] font-semibold">Settings</h2>
 
       <section className="mb-7">
-        <h3 className={H3}>API Keys</h3>
+        <h3 className={H3}>
+          <HugeiconsIcon icon={IconKey} size={13} strokeWidth={1.8} aria-hidden={true} />
+          API Keys
+        </h3>
         <label className={FIELD}>
           <span className={FIELD_LABEL}>
             Deepgram API Key{' '}
@@ -145,9 +158,15 @@ export default function SettingsRoute() {
       </section>
 
       <section className="mb-7">
-        <h3 className={H3}>Audio Devices</h3>
+        <h3 className={H3}>
+          <HugeiconsIcon icon={IconDevices} size={13} strokeWidth={1.8} aria-hidden={true} />
+          Audio Devices
+        </h3>
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>Microphone</span>
+          <span className={`${FIELD_LABEL} inline-flex items-center gap-1.5`}>
+            <HugeiconsIcon icon={IconMic} size={13} strokeWidth={1.8} aria-hidden={true} />
+            Microphone
+          </span>
           <select
             className={FIELD_CTRL}
             value={inputDevice ?? ''}
@@ -162,7 +181,10 @@ export default function SettingsRoute() {
           </select>
         </label>
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>System audio source (the output to loop back)</span>
+          <span className={`${FIELD_LABEL} inline-flex items-center gap-1.5`}>
+            <HugeiconsIcon icon={IconSpeaker} size={13} strokeWidth={1.8} aria-hidden={true} />
+            System audio source (the output to loop back)
+          </span>
           <select
             className={FIELD_CTRL}
             value={outputDevice ?? ''}
@@ -185,7 +207,10 @@ export default function SettingsRoute() {
       </section>
 
       <section className="mb-7">
-        <h3 className={H3}>Appearance</h3>
+        <h3 className={H3}>
+          <HugeiconsIcon icon={IconAppearance} size={13} strokeWidth={1.8} aria-hidden={true} />
+          Appearance
+        </h3>
 
         <div className={FIELD}>
           <span className={FIELD_LABEL}>
@@ -245,7 +270,10 @@ export default function SettingsRoute() {
       </section>
 
       <section className="mb-7">
-        <h3 className={H3}>Language</h3>
+        <h3 className={H3}>
+          <HugeiconsIcon icon={IconLanguage} size={13} strokeWidth={1.8} aria-hidden={true} />
+          Language
+        </h3>
         <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
           All languages now use Deepgram's <b>Nova-3</b> model (best accuracy, including
           Indonesian). Pick the language on the main screen before you start recording. The{' '}
@@ -254,7 +282,21 @@ export default function SettingsRoute() {
         </p>
       </section>
 
-      {status && <p className="mt-2 text-[12.5px] text-ok">{status}</p>}
+      {status && (
+        <p
+          className={`mt-2 inline-flex items-center gap-1.5 text-[12.5px] ${
+            /^(Error|Failed)/.test(status) ? 'text-[#ffb454]' : 'text-ok'
+          }`}
+        >
+          <HugeiconsIcon
+            icon={/^(Error|Failed)/.test(status) ? IconAlert : IconCheck}
+            size={14}
+            strokeWidth={1.8}
+            aria-hidden={true}
+          />
+          {status}
+        </p>
+      )}
     </div>
   );
 }

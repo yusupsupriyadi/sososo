@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { listSessions } from '../../lib/ipc';
-import { IconAdd, IconSettings } from '../../lib/icons';
+import { IconAdd, IconHistory, IconInbox, IconSettings, IconTranscript } from '../../lib/icons';
 import { useSessionStore } from '../../state/sessionStore';
 import { useLibraryStore } from '../../state/libraryStore';
 import { formatDateTime } from '../../lib/format';
@@ -35,12 +35,16 @@ export default function SessionSidebar() {
         <HugeiconsIcon icon={IconAdd} size={16} strokeWidth={2} aria-hidden={true} />
         New recording
       </NavLink>
-      <div className="px-1.5 pt-1 pb-2 text-[11px] tracking-[0.06em] text-fg-faint uppercase">
+      <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-2 text-[11px] tracking-[0.06em] text-fg-faint uppercase">
+        <HugeiconsIcon icon={IconHistory} size={12} strokeWidth={2} aria-hidden={true} />
         History
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {sessions.length === 0 ? (
-          <p className="p-1.5 text-[12px] leading-[1.5] text-fg-faint">No recordings yet.</p>
+          <div className="flex flex-col items-center gap-2 p-4 text-center text-fg-faint">
+            <HugeiconsIcon icon={IconInbox} size={28} strokeWidth={1.5} aria-hidden={true} />
+            <p className="text-[12px] leading-[1.5]">No recordings yet.</p>
+          </div>
         ) : (
           sessions.map((s) => (
             <NavLink
@@ -49,14 +53,23 @@ export default function SessionSidebar() {
               title={s.title}
               className={({ isActive }) =>
                 clsx(
-                  'flex cursor-pointer flex-col items-start gap-0.5 rounded-sm px-2.5 py-2 text-left text-fg no-underline transition-colors duration-[120ms] hover:bg-hover',
+                  'flex cursor-pointer items-start gap-2 rounded-sm px-2.5 py-2 text-left text-fg no-underline transition-colors duration-[120ms] hover:bg-hover',
                   isActive ? 'bg-active' : 'bg-transparent',
                 )
               }
             >
-              <span className="text-[13px]">{s.title}</span>
-              <span className="text-[11px] text-fg-faint">
-                {formatDateTime(s.startedAt)} · {s.segmentCount} lines
+              <HugeiconsIcon
+                icon={IconTranscript}
+                size={15}
+                strokeWidth={1.8}
+                className="mt-0.5 shrink-0 text-fg-faint"
+                aria-hidden={true}
+              />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-[13px]">{s.title}</span>
+                <span className="text-[11px] text-fg-faint">
+                  {formatDateTime(s.startedAt)} · {s.segmentCount} lines
+                </span>
               </span>
             </NavLink>
           ))
