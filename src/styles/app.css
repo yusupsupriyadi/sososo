@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================================
    Design tokens. v4 emits each as a :root CSS var AND as
@@ -31,10 +31,11 @@
   --radius-lg: 16px;
 
   /* glossy "liquid glass" edge for buttons: bright top highlight + soft depth */
-  --shadow-liquid: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 9px rgb(0 0 0 / 0.2), 0 3px 8px rgb(0 0 0 / 0.15);
+  --shadow-liquid:
+    inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 9px rgb(0 0 0 / 0.2), 0 3px 8px rgb(0 0 0 / 0.15);
 
   /* type */
-  --font-sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* animation → `animate-rec-pulse` */
   --animate-rec-pulse: rec-pulse 1.4s infinite;
@@ -72,7 +73,7 @@
     inset 0 1px 0 rgb(255 255 255 / 0.6),
     inset 0 0 18px rgb(255 255 255 / 0.05);
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
@@ -82,7 +83,7 @@
     pointer-events: none;
   }
   &::after {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: -1;

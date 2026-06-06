@@ -1,5 +1,5 @@
-import { useSessionStore } from "../state/sessionStore";
-import { setPaused as ipcSetPaused, startSession, stopSession } from "../lib/ipc";
+import { useSessionStore } from '../state/sessionStore';
+import { setPaused as ipcSetPaused, startSession, stopSession } from '../lib/ipc';
 
 /** Start/stop/pause controls with optimistic state; backend events refine it. */
 export function useSession() {
@@ -9,23 +9,23 @@ export function useSession() {
   const patch = useSessionStore((s) => s.patch);
   const setPausedLocal = useSessionStore((s) => s.setPaused);
 
-  const isActive = state === "recording" || state === "starting";
+  const isActive = state === 'recording' || state === 'starting';
 
   async function start() {
-    patch({ state: "starting", error: null });
+    patch({ state: 'starting', error: null });
     try {
       await startSession();
     } catch (e) {
-      patch({ state: "error", error: String(e) });
+      patch({ state: 'error', error: String(e) });
     }
   }
 
   async function stop() {
-    patch({ state: "stopping" });
+    patch({ state: 'stopping' });
     try {
       await stopSession();
     } catch (e) {
-      patch({ state: "error", error: String(e) });
+      patch({ state: 'error', error: String(e) });
     }
   }
 

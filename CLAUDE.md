@@ -17,14 +17,14 @@ Stack: Tauri 2 (Rust) backend · React 19 + React Router 7 + Zustand 5 + Vite 7 
 
 Run from the repo root. The package manager is **Bun** — do not use npm/yarn/pnpm.
 
-| Task | Command |
-|------|---------|
-| Run the full desktop app (dev) | `bun run tauri dev` |
-| Frontend only (browser, no Tauri APIs) | `bun run dev` → http://localhost:1420 |
-| Typecheck + build frontend | `bun run build` (runs `tsc` then `vite build`) |
-| Build the installer/bundle | `bun run tauri build` |
-| Rust check / lint (from `src-tauri/`) | `cargo check` · `cargo clippy` |
-| Audio capture smoke test (from `src-tauri/`) | `cargo run --example audio_probe -- 6` |
+| Task                                         | Command                                        |
+| -------------------------------------------- | ---------------------------------------------- |
+| Run the full desktop app (dev)               | `bun run tauri dev`                            |
+| Frontend only (browser, no Tauri APIs)       | `bun run dev` → http://localhost:1420          |
+| Typecheck + build frontend                   | `bun run build` (runs `tsc` then `vite build`) |
+| Build the installer/bundle                   | `bun run tauri build`                          |
+| Rust check / lint (from `src-tauri/`)        | `cargo check` · `cargo clippy`                 |
+| Audio capture smoke test (from `src-tauri/`) | `cargo run --example audio_probe -- 6`         |
 
 - **No unit-test framework is configured.** Verification = `bun run build` (TS), `cargo check` /
   `cargo clippy` (Rust), and the `audio_probe` example (writes `audio_probe.wav` — L=mic, R=system —
@@ -35,6 +35,7 @@ Run from the repo root. The package manager is **Bun** — do not use npm/yarn/p
 ## Architecture
 
 ### One window, state-driven views
+
 A single Vite build serves the one window (`AppRouter.tsx` via `HashRouter`, `index.html#/main` →
 `windows/main/MainApp`). The **main** window is the only window (declared in `tauri.conf.json`);
 there is no separate overlay window anymore.
@@ -64,7 +65,9 @@ edge + inset top highlight + layered depth shadow + a diagonal specular sheen dr
 (`text-[13px]`, `bg-[rgba(110,168,254,0.2)]`).
 
 ### Audio → STT pipeline (the core data flow)
+
 `commands::start_session` → `session::spawn_session` → async `run_session` (Tauri/tokio runtime):
+
 1. **Capture** (`audio/capture.rs`): mic and system-loopback each run on a dedicated thread in an
    **MTA COM apartment**, using WASAPI **polling** mode with `autoconvert` to emit 16 kHz / 16-bit /
    mono PCM. Bounded crossbeam channels (cap 64) **drop on lag** to favor fresh audio over latency.
@@ -80,6 +83,7 @@ edge + inset top highlight + layered depth shadow + a diagonal specular sheen dr
 Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the bridge and stops both captures.
 
 ### IPC & events
+
 - **Commands** (frontend → backend): registered in `lib.rs` `invoke_handler!`; Rust impls in
   `commands.rs`; typed TS wrappers in `lib/ipc.ts`. Tauri auto-maps **camelCase JS ↔ snake_case Rust**.
   `AppError` (`error.rs`) serializes to a plain string so commands can `?`-return it to the UI.
@@ -90,18 +94,21 @@ Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the br
   **upserts by id** so interim results are replaced in place when finalized (`state/transcriptStore.ts`).
 
 ### State
+
 - **Rust** (`state.rs` `AppState`, Mutex-guarded, Tauri-managed): active session (id + cancel token),
   selected input/output device ids, language, `system_only`.
 - **Frontend** (Zustand): `sessionStore` (state machine: idle→starting→recording→stopping→stopped/error),
   `transcriptStore` (segments), `configStore` (language, systemOnly).
 
 ### Secrets & permissions
+
 - API keys (`deepgram`, `openai`) live in the **Windows Credential Manager** via `keyring` (`keys.rs`).
   They are **never** returned to the frontend — only `has_api_key` (a boolean) is exposed.
 - The window capability in `src-tauri/capabilities/main.json` grants the minimal window permissions
   (start-dragging, minimize, close); CSP is set in `tauri.conf.json`.
 
 ## Conventions & gotchas
+
 - **Multi-agent project**: more than one AI agent works on this repository, sometimes in parallel.
   Touch only the files within your task scope, keep each commit to one focused change, and never bundle
   unrelated modified/untracked files — another agent may own them. Pull/rebase before pushing if needed.
@@ -118,6 +125,7 @@ Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the br
   See `.development-history/` for per-feature notes.
 
 ## Development history (project rule)
+
 Document every work activity as a Markdown report in the **`.development-history/`** folder (create it
 if it does not exist). This folder doubles as the project knowledge base and additional documentation.
 **Write these reports in English and keep them as compact as possible** — prefer terse bullet points over

@@ -3,10 +3,12 @@
 - **Date:** 2026-06-06
 
 ## Goal
+
 User correction: the intent was **transparent glass**, not frosted/blur. The old design used two blur layers —
 native acrylic (window-vibrancy) + CSS `backdrop-filter: blur()`.
 
 ## Changes
+
 Remove **all** blur; the "glass" tint now comes purely from panel background alpha (CSS).
 
 **Backend:** `lib.rs` — remove `apply_acrylic` use + calls (overlay + main); windows stay `transparent: true`
@@ -19,8 +21,10 @@ highlight + drop-shadow). `theme.css` — raise tint alpha so text stays readabl
 **Docs:** `CLAUDE.md` — architecture: glass = transparent, no acrylic/vibrancy, tint from `--glass-bg`.
 
 ## Notes
+
 - Result: semi-transparent floating glass panels, the desktop **sharp** behind (not blurred). Adjust
   transparency via `--glass-bg` / `--glass-bg-strong` in `theme.css`.
 
 ## Verification
+
 - `bun run build` — OK. `cargo check` — OK (no `window-vibrancy` refs left). Visual not tested headless.

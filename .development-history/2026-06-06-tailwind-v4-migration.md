@@ -3,20 +3,23 @@
 - **Date:** 2026-06-06
 
 ## Goal
+
 Move the hand-written CSS (~892 lines, 4 files) to Tailwind **v4** without changing the look
 (transparent-glass, no blur). Chosen scope: **pragmatic** — tokens → `@theme`, simple layout →
 utilities in JSX, complex/stateful/dynamic patterns → component classes in `@layer components`.
 
 ## Setup
+
 - `bun add tailwindcss @tailwindcss/vite` → v4.3.0.
 - `vite.config.ts`: add `tailwindcss()` to `plugins`. No `tailwind.config.js`/PostCSS (v4 auto-detects).
 - New single entry `src/styles/app.css`: `@import "tailwindcss"` + `@theme` + top-level `@keyframes
-  rec-pulse` + `@layer base` (reset) + `@layer components` (all component classes).
+rec-pulse` + `@layer base` (reset) + `@layer components` (all component classes).
 - `src/main.tsx`: 3 imports (reset/theme/glass.css) → one `import "./styles/app.css"`.
 - `src/windows/main/MainApp.tsx`: drop `import "./main.css"`.
 - Deleted `src/styles/{reset,theme,glass}.css` + `src/windows/main/main.css`.
 
 ## Tokens (@theme) — values unchanged, names normalized
+
 - Text renamed `--text*` → `--color-fg`/`-dim`/`-faint` (clean `text-fg`).
 - `--color-accent`, `-accent-2`, `-rec`, `-ok`; glass set `--color-glass`/`-strong`/`-border`/
   `-highlight`, `--color-hover`/`-active`.
@@ -26,6 +29,7 @@ utilities in JSX, complex/stateful/dynamic patterns → component classes in `@l
   both work.
 
 ## Components
+
 - **Simple wrappers → utilities in JSX** (class removed): `main-root`, `main-body`, `content`(+`glass`),
   `brand`, `spacer`, `route-center`(×3), `recording-root`, `rec-captions` — exact px mapping
   (`p-2`=8px, `gap-2`, `h-screen`, `p-6`=24px, `text-[13px]`, `p-[14px]`, …).
@@ -36,22 +40,26 @@ utilities in JSX, complex/stateful/dynamic patterns → component classes in `@l
   all keep working with no TSX changes.
 
 ## Verification
+
 - `bun run build` (tsc strict + Vite + Tailwind v4) — **OK** (69 modules; CSS 12.6→24.2 kB = preflight
-  + utilities, gzip 5.1 kB). All `@apply` utilities resolve; no unused-import TS errors.
+  - utilities, gzip 5.1 kB). All `@apply` utilities resolve; no unused-import TS errors.
 - Backend (Rust) untouched.
 - **Visual not testable headless** → run `bun run tauri dev` to confirm every screen is identical.
 
 ## Known caveat (preflight)
+
 Tailwind preflight removes default element margins (e.g. bare `<p>`). A few unstyled `.muted`
 paragraphs in empty/loading states (e.g. "Memuat…", "Tidak ada transkrip…") may sit slightly tighter
 than before. Trivial to restore with an explicit margin if undesired. Headings/buttons/inputs/lists all
 have explicit styles so are unaffected.
 
 ## Follow-up: full utility-first (no @layer components)
+
 Per user request, went all the way to utility-first. Removed the entire `@layer components` block;
 every component class (`.glass`, `.icon-btn`, `.rec-pill`, `.caption`, `.settings`, `.detail`, …) is now
 inline utility classes in JSX across all 7 components. `app.css` now holds only `@import`, `@theme`
 tokens, `@keyframes`, and `@layer base`.
+
 - Added `@theme` tokens so multi-part values stay single utilities: `--shadow-glass`, `--shadow-pill`
   (→ `shadow-glass`/`shadow-pill`) and `--animate-rec-pulse` (→ `animate-rec-pulse`). Native `<option>`
   dark bg moved to `@layer base` (`option{}`) since per-element styling isn't reliable.

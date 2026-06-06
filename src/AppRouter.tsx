@@ -1,5 +1,5 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import MainApp from "./windows/main/MainApp";
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import MainApp from './windows/main/MainApp';
 
 /**
  * Single-window app. The main window hosts the library, settings, and session

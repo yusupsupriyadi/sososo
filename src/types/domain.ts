@@ -10,13 +10,13 @@ export interface DeviceLists {
 }
 
 export type SessionStateName =
-  | "idle"
-  | "starting"
-  | "recording"
-  | "stopping"
-  | "stopped"
-  | "reconnecting"
-  | "error";
+  | 'idle'
+  | 'starting'
+  | 'recording'
+  | 'stopping'
+  | 'stopped'
+  | 'reconnecting'
+  | 'error';
 
 export interface SessionStateEvent {
   sessionId: number | null;
@@ -25,7 +25,7 @@ export interface SessionStateEvent {
   error?: string | null;
 }
 
-export type Source = "you" | "remote";
+export type Source = 'you' | 'remote';
 
 export interface TranscriptSegmentEvent {
   sessionId: number;
@@ -49,7 +49,7 @@ export interface StopResult {
   endedAt: string;
 }
 
-export type ApiService = "deepgram" | "openai";
+export type ApiService = 'deepgram' | 'openai';
 
 // --- Session history (persisted) ---
 

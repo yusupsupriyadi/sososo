@@ -1,34 +1,31 @@
-import { useEffect, useState } from "react";
-import {
-  hasApiKey,
-  listDevices,
-  setApiKey,
-  setDevices,
-} from "../../../lib/ipc";
+import { useEffect, useState } from 'react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { hasApiKey, listDevices, setApiKey, setDevices } from '../../../lib/ipc';
+import { IconCheck } from '../../../lib/icons';
 import {
   useConfigStore,
   UI_SCALE_MIN,
   UI_SCALE_MAX,
   TRANSCRIPT_SCALE_MIN,
   TRANSCRIPT_SCALE_MAX,
-} from "../../../state/configStore";
-import type { DeviceLists } from "../../../types/domain";
+} from '../../../state/configStore';
+import type { DeviceLists } from '../../../types/domain';
 
 const FIELD_CTRL =
-  "w-full flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent";
+  'w-full flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-[11px] py-[9px] text-[13px] text-fg outline-none focus:border-accent';
 const BTN =
-  "cursor-pointer rounded-sm border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.1)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap shadow-liquid hover:bg-[rgba(255,255,255,0.18)]";
-const H3 = "mb-3 text-[12px] uppercase tracking-[0.06em] text-fg-faint";
-const FIELD = "mb-3.5 flex flex-col gap-1.5";
-const FIELD_LABEL = "text-[13px] text-fg-dim";
+  'cursor-pointer rounded-sm border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.1)] px-4 py-[9px] text-[13px] text-fg whitespace-nowrap shadow-liquid hover:bg-[rgba(255,255,255,0.18)]';
+const H3 = 'mb-3 text-[12px] uppercase tracking-[0.06em] text-fg-faint';
+const FIELD = 'mb-3.5 flex flex-col gap-1.5';
+const FIELD_LABEL = 'text-[13px] text-fg-dim';
 
 export default function SettingsRoute() {
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
-  const [dgKey, setDgKey] = useState("");
-  const [oaKey, setOaKey] = useState("");
+  const [dgKey, setDgKey] = useState('');
+  const [oaKey, setOaKey] = useState('');
   const [dgSaved, setDgSaved] = useState(false);
   const [oaSaved, setOaSaved] = useState(false);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState('');
 
   // Device selection is shared with the Start-transcription screen via the config store.
   const inputDevice = useConfigStore((s) => s.inputDevice);
@@ -48,40 +45,40 @@ export default function SettingsRoute() {
         // the Start-transcription screen isn't clobbered.
         const cfg = useConfigStore.getState();
         if (cfg.inputDevice == null) {
-          setInputDevice(
-            d.input.find((x) => x.isDefault)?.id ?? d.input[0]?.id ?? null,
-          );
+          setInputDevice(d.input.find((x) => x.isDefault)?.id ?? d.input[0]?.id ?? null);
         }
         if (cfg.outputDevice == null) {
-          setOutputDevice(
-            d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? null,
-          );
+          setOutputDevice(d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? null);
         }
       })
       .catch((e) => setStatus(`Failed to load devices: ${e}`));
-    hasApiKey("deepgram").then(setDgSaved).catch(() => {});
-    hasApiKey("openai").then(setOaSaved).catch(() => {});
+    hasApiKey('deepgram')
+      .then(setDgSaved)
+      .catch(() => {});
+    hasApiKey('openai')
+      .then(setOaSaved)
+      .catch(() => {});
   }, [setInputDevice, setOutputDevice]);
 
   async function saveDevices() {
     try {
       await setDevices(inputDevice, outputDevice);
-      setStatus("Devices saved.");
+      setStatus('Devices saved.');
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
   }
 
-  async function saveKey(service: "deepgram" | "openai") {
-    const value = (service === "deepgram" ? dgKey : oaKey).trim();
+  async function saveKey(service: 'deepgram' | 'openai') {
+    const value = (service === 'deepgram' ? dgKey : oaKey).trim();
     if (!value) return;
     try {
       await setApiKey(service, value);
-      if (service === "deepgram") {
-        setDgKey("");
+      if (service === 'deepgram') {
+        setDgKey('');
         setDgSaved(true);
       } else {
-        setOaKey("");
+        setOaKey('');
         setOaSaved(true);
       }
       setStatus(`${service} API key saved.`);
@@ -98,10 +95,11 @@ export default function SettingsRoute() {
         <h3 className={H3}>API Keys</h3>
         <label className={FIELD}>
           <span className={FIELD_LABEL}>
-            Deepgram API Key{" "}
+            Deepgram API Key{' '}
             {dgSaved && (
-              <em className="ml-1.5 text-[11.5px] not-italic text-ok">
-                ✓ saved
+              <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
+                <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
+                saved
               </em>
             )}
           </span>
@@ -111,19 +109,20 @@ export default function SettingsRoute() {
               type="password"
               value={dgKey}
               onChange={(e) => setDgKey(e.target.value)}
-              placeholder={dgSaved ? "••••••••••••" : "Deepgram token…"}
+              placeholder={dgSaved ? '••••••••••••' : 'Deepgram token…'}
             />
-            <button className={BTN} onClick={() => void saveKey("deepgram")}>
+            <button className={BTN} onClick={() => void saveKey('deepgram')}>
               Save
             </button>
           </div>
         </label>
         <label className={FIELD}>
           <span className={FIELD_LABEL}>
-            OpenAI API Key{" "}
+            OpenAI API Key{' '}
             {oaSaved && (
-              <em className="ml-1.5 text-[11.5px] not-italic text-ok">
-                ✓ saved
+              <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
+                <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
+                saved
               </em>
             )}
           </span>
@@ -133,16 +132,15 @@ export default function SettingsRoute() {
               type="password"
               value={oaKey}
               onChange={(e) => setOaKey(e.target.value)}
-              placeholder={oaSaved ? "••••••••••••" : "sk-…"}
+              placeholder={oaSaved ? '••••••••••••' : 'sk-…'}
             />
-            <button className={BTN} onClick={() => void saveKey("openai")}>
+            <button className={BTN} onClick={() => void saveKey('openai')}>
               Save
             </button>
           </div>
         </label>
         <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
-          Keys are stored securely in Windows Credential Manager and are never
-          sent to the frontend.
+          Keys are stored securely in Windows Credential Manager and are never sent to the frontend.
         </p>
       </section>
 
@@ -152,36 +150,34 @@ export default function SettingsRoute() {
           <span className={FIELD_LABEL}>Microphone</span>
           <select
             className={FIELD_CTRL}
-            value={inputDevice ?? ""}
+            value={inputDevice ?? ''}
             onChange={(e) => setInputDevice(e.target.value || null)}
           >
             {devices?.input.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
-                {d.isDefault ? " (default)" : ""}
+                {d.isDefault ? ' (default)' : ''}
               </option>
             ))}
           </select>
         </label>
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>
-            System audio source (the output to loop back)
-          </span>
+          <span className={FIELD_LABEL}>System audio source (the output to loop back)</span>
           <select
             className={FIELD_CTRL}
-            value={outputDevice ?? ""}
+            value={outputDevice ?? ''}
             onChange={(e) => setOutputDevice(e.target.value || null)}
           >
             {devices?.output.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
-                {d.isDefault ? " (default)" : ""}
+                {d.isDefault ? ' (default)' : ''}
               </option>
             ))}
           </select>
         </label>
         <button
-          className="mt-1 cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] text-[#dbe8ff] whitespace-nowrap shadow-liquid hover:bg-[rgba(110,168,254,0.34)]"
+          className="mt-1 cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] whitespace-nowrap text-[#dbe8ff] shadow-liquid hover:bg-[rgba(110,168,254,0.34)]"
           onClick={() => void saveDevices()}
         >
           Save devices
@@ -194,7 +190,7 @@ export default function SettingsRoute() {
         <div className={FIELD}>
           <span className={FIELD_LABEL}>
             UI font size
-            <em className="ml-1.5 text-[11.5px] not-italic text-fg-faint">
+            <em className="ml-1.5 text-[11.5px] text-fg-faint not-italic">
               {Math.round(uiScale * 100)}%
             </em>
           </span>
@@ -215,7 +211,7 @@ export default function SettingsRoute() {
         <div className={FIELD}>
           <span className={FIELD_LABEL}>
             Transcript font size
-            <em className="ml-1.5 text-[11.5px] not-italic text-fg-faint">
+            <em className="ml-1.5 text-[11.5px] text-fg-faint not-italic">
               {Math.round(transcriptScale * 100)}%
             </em>
           </span>
@@ -233,7 +229,7 @@ export default function SettingsRoute() {
           </span>
           <div className="mt-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.04)] px-3 py-2">
             <div
-              className="uppercase tracking-[0.05em] text-accent"
+              className="tracking-[0.05em] text-accent uppercase"
               style={{ fontSize: `${11 * transcriptScale}px` }}
             >
               You
@@ -251,11 +247,10 @@ export default function SettingsRoute() {
       <section className="mb-7">
         <h3 className={H3}>Language</h3>
         <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
-          All languages now use Deepgram's <b>Nova-3</b> model (best accuracy,
-          including Indonesian). Pick the language on the main screen before you
-          start recording. The <i>Auto-detect (multilingual)</i> option recognizes
-          a mix of languages automatically, but choosing one specific language is
-          usually more accurate.
+          All languages now use Deepgram's <b>Nova-3</b> model (best accuracy, including
+          Indonesian). Pick the language on the main screen before you start recording. The{' '}
+          <i>Auto-detect (multilingual)</i> option recognizes a mix of languages automatically, but
+          choosing one specific language is usually more accurate.
         </p>
       </section>
 

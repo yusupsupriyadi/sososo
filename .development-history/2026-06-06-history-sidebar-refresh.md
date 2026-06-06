@@ -5,7 +5,7 @@ visible in the "Riwayat" sidebar list (and rename left the old title showing).
 
 ## Root cause
 
-- `SessionSidebar` is mounted persistently in `MainApp` *outside* `<Routes>`, so
+- `SessionSidebar` is mounted persistently in `MainApp` _outside_ `<Routes>`, so
   it never remounts on navigation.
 - Its reload effect depended only on the recording `state` machine. Delete/rename
   don't change `state`, so `listSessions()` was never refetched → stale list.

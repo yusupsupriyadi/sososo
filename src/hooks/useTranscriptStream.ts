@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import type { UnlistenFn } from "@tauri-apps/api/event";
-import { onSessionState, onTranscriptSegment } from "../lib/events";
-import { useTranscriptStore } from "../state/transcriptStore";
-import { useSessionStore } from "../state/sessionStore";
+import { useEffect } from 'react';
+import type { UnlistenFn } from '@tauri-apps/api/event';
+import { onSessionState, onTranscriptSegment } from '../lib/events';
+import { useTranscriptStore } from '../state/transcriptStore';
+import { useSessionStore } from '../state/sessionStore';
 
 /**
  * Subscribes the current window to backend session + transcript events and pipes
@@ -18,25 +18,20 @@ export function useTranscriptStream(): void {
     const { patch } = useSessionStore.getState();
 
     onSessionState((e) => {
-      if (e.state === "starting") reset();
+      if (e.state === 'starting') reset();
       // Reset the pause accounting at the start/end of a session.
-      const fresh =
-        e.state === "recording" ||
-        e.state === "stopped" ||
-        e.state === "idle";
+      const fresh = e.state === 'recording' || e.state === 'stopped' || e.state === 'idle';
       patch({
         state: e.state,
         sessionId: e.sessionId,
         error: e.error ?? null,
         startedAt:
-          e.state === "recording"
+          e.state === 'recording'
             ? Date.now()
-            : e.state === "stopped" || e.state === "idle"
+            : e.state === 'stopped' || e.state === 'idle'
               ? null
               : useSessionStore.getState().startedAt,
-        ...(fresh
-          ? { paused: false, pausedAt: null, pausedTotalMs: 0 }
-          : {}),
+        ...(fresh ? { paused: false, pausedAt: null, pausedTotalMs: 0 } : {}),
       });
     }).then(keep);
 

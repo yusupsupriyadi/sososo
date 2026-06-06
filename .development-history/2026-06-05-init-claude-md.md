@@ -4,14 +4,17 @@
 - **Task:** `/init` — analyze the repo and (re)generate `CLAUDE.md`.
 
 ## Goal
+
 Replace the minimal `CLAUDE.md` (which only carried the `.development-history` rule) with a high-signal
 guide (commands + architecture), preserving the development-history rule.
 
 ## Analyzed
+
 Full source tree (`src/`, `src-tauri/src/`) + config (`package.json`, `tsconfig.json`, `vite.config.ts`,
 `Cargo.toml`, `tauri.conf.json`, `capabilities/*.json`).
 
 ## Key findings (now in CLAUDE.md)
+
 - **Project:** `sososo` — Windows real-time meeting transcription. WASAPI loopback + mic → Deepgram live STT
   → glass overlay + main window. UI in Bahasa Indonesia.
 - **Stack:** Tauri 2 (Rust) + React 19 / React Router 7 / Zustand 5 / Vite 7 (TS). Package manager: **Bun**.
@@ -26,8 +29,10 @@ Full source tree (`src/`, `src-tauri/src/`) + config (`package.json`, `tsconfig.
 - **Milestones:** A/B/C done; D (SQLite) + E (AI summary) pending at this point.
 
 ## Environment
+
 - `bun` 1.3.10; `cargo` 1.96.0 (rustup, `~/.cargo/bin`, invoked via `bun run tauri *`). Not yet a git repo.
 
 ## Files changed
+
 - `CLAUDE.md` — rewritten (overview, commands, architecture, conventions); kept `.development-history` rule.
 - `.development-history/2026-06-05-init-claude-md.md` — this report (folder created).

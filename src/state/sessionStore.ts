@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { SessionStateName } from "../types/domain";
+import { create } from 'zustand';
+import type { SessionStateName } from '../types/domain';
 
 interface SessionStore {
   state: SessionStateName;
@@ -13,13 +13,13 @@ interface SessionStore {
   /** Total paused time so far (ms), excluded from the elapsed timer. */
   pausedTotalMs: number;
   error: string | null;
-  patch: (p: Partial<Omit<SessionStore, "patch" | "setPaused">>) => void;
+  patch: (p: Partial<Omit<SessionStore, 'patch' | 'setPaused'>>) => void;
   /** Toggle pause and keep the elapsed-time accounting consistent. */
   setPaused: (paused: boolean) => void;
 }
 
 export const useSessionStore = create<SessionStore>((set) => ({
-  state: "idle",
+  state: 'idle',
   sessionId: null,
   startedAt: null,
   paused: false,

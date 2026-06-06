@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /** Kode bahasa Deepgram (BCP-47, mis. "multi" | "id" | "en-US"). Daftar opsi
  *  yang ditampilkan ada di `lib/languages.ts`. */
@@ -35,7 +35,7 @@ export const TRANSCRIPT_SCALE_MAX = 1.6;
 export const useConfigStore = create<ConfigStore>()(
   persist(
     (set) => ({
-      language: "multi",
+      language: 'multi',
       systemOnly: false,
       inputDevice: null,
       outputDevice: null,
@@ -49,7 +49,7 @@ export const useConfigStore = create<ConfigStore>()(
       setTranscriptScale: (transcriptScale) => set({ transcriptScale }),
     }),
     {
-      name: "sososo-config",
+      name: 'sososo-config',
       // Only persist the appearance prefs; language/systemOnly stay in-memory
       // (they're already synced to the backend separately).
       partialize: (s) => ({

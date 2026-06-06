@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { TranscriptSegmentEvent } from "../types/domain";
+import { create } from 'zustand';
+import type { TranscriptSegmentEvent } from '../types/domain';
 
 export type Segment = TranscriptSegmentEvent;
 

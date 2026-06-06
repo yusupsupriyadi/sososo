@@ -3,12 +3,14 @@
 - **Date:** 2026-06-06
 
 ## Goal
+
 User wants a "liquid glass" look, referencing a concrete example (translucent fill +
 bright white border + `inset 0 1px 0 rgba(255,255,255,.75)` highlight + layered
 soft shadows + diagonal `before/after` white gradient sheen + `backdrop-blur-sm`).
 
 ## Decision on blur
-The example's `backdrop-blur-sm` frosts the image *behind* the control. In this app
+
+The example's `backdrop-blur-sm` frosts the image _behind_ the control. In this app
 the window is `transparent:true` with no acrylic, so `backdrop-filter` cannot reach
 the desktop behind a panel (it only blurs in-app backdrop, which is empty) → no
 visible frost. So blur was **omitted** (also consistent with the earlier "no blur"
@@ -17,6 +19,7 @@ layered shadow + diagonal sheen. (Real desktop frost would require re-adding nat
 acrylic — offered, not done.)
 
 ## Implementation (utility-first preserved)
+
 - `src/styles/app.css`:
   - Replaced `--shadow-glass`/`--shadow-pill` tokens with **`--shadow-liquid`**
     (`inset 0 1px 0 rgb(255 255 255/.6), 0 0 9px …, 0 3px 8px …`) → `shadow-liquid`
@@ -33,6 +36,7 @@ acrylic — offered, not done.)
   rebuild + finish, new-recording) for the glossy edge.
 
 ## Verification
+
 - `bun run build` (tsc strict + Vite + Tailwind v4) — **OK** (69 modules; CSS
   21.6→22.7 kB). `@utility` with `::before/::after` compiles fine. Grep confirms no
   leftover `shadow-glass`/`shadow-pill`/`bg-glass-strong` usages.
@@ -40,6 +44,7 @@ acrylic — offered, not done.)
   shadow depth) all live in `@utility liquid-glass` / `--shadow-liquid` — easy to dial.
 
 ## Notes / adjustable
+
 - Pill & titlebar now use `--color-glass` (0.58) instead of the old `-strong` (0.74),
   so slightly more transparent; can add a `liquid-glass-strong` variant if needed.
 - If the user wants true frosted glass (desktop blurred behind the floating widget),
