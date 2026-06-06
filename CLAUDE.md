@@ -102,6 +102,9 @@ Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the br
   (start-dragging, minimize, close); CSP is set in `tauri.conf.json`.
 
 ## Conventions & gotchas
+- **Multi-agent project**: more than one AI agent works on this repository, sometimes in parallel.
+  Touch only the files within your task scope, keep each commit to one focused change, and never bundle
+  unrelated modified/untracked files — another agent may own them. Pull/rebase before pushing if needed.
 - **English** for all user-facing UI strings (and for code, identifiers, and commit messages). The AI
   summary (OpenAI) is also generated in English.
 - **WASAPI needs MTA**: Tauri command worker threads may be STA, so `list_devices` enumerates on a
