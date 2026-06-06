@@ -1,118 +1,119 @@
-// Bahasa yang didukung Deepgram Nova-3 (live/streaming). Semua opsi memakai model
-// Nova-3 di backend. `multi` = auto-deteksi multilingual (code-switching). Daftar
-// mengacu pada Models & Languages Overview Deepgram, termasuk varian regional.
-// Sumber: https://developers.deepgram.com/docs/models-languages-overview
+// Languages supported by Deepgram Nova-3 (live/streaming). Every option runs on
+// the Nova-3 model in the backend. `multi` = multilingual auto-detect
+// (code-switching). List follows Deepgram's Models & Languages Overview,
+// including regional variants.
+// Source: https://developers.deepgram.com/docs/models-languages-overview
 
 export interface LanguageOption {
-  /** Kode BCP-47 yang dikirim ke Deepgram (mis. "id", "en-US", "multi"). */
+  /** BCP-47 code sent to Deepgram (e.g. "id", "en-US", "multi"). */
   code: string;
-  /** Label untuk UI (Bahasa Indonesia). */
+  /** Display label for the UI. */
   label: string;
 }
 
-// `multi` lalu `id` disematkan di atas (kasus pakai utama aplikasi ini), sisanya
-// dikelompokkan per bahasa dengan varian regional berdekatan.
+// `multi` then `id` pinned on top (this app's primary use case); the rest grouped
+// by language with regional variants kept adjacent.
 export const LANGUAGES: LanguageOption[] = [
-  { code: "multi", label: "Auto-deteksi (multilingual)" },
-  { code: "id", label: "Indonesia" },
+  { code: "multi", label: "Auto-detect (multilingual)" },
+  { code: "id", label: "Indonesian" },
 
-  // Arab + varian regional
-  { code: "ar", label: "Arab" },
-  { code: "ar-SA", label: "Arab (Arab Saudi)" },
-  { code: "ar-AE", label: "Arab (UEA)" },
-  { code: "ar-EG", label: "Arab (Mesir)" },
-  { code: "ar-QA", label: "Arab (Qatar)" },
-  { code: "ar-KW", label: "Arab (Kuwait)" },
-  { code: "ar-SY", label: "Arab (Suriah)" },
-  { code: "ar-LB", label: "Arab (Lebanon)" },
-  { code: "ar-PS", label: "Arab (Palestina)" },
-  { code: "ar-JO", label: "Arab (Yordania)" },
-  { code: "ar-SD", label: "Arab (Sudan)" },
-  { code: "ar-TD", label: "Arab (Chad)" },
-  { code: "ar-MA", label: "Arab (Maroko)" },
-  { code: "ar-DZ", label: "Arab (Aljazair)" },
-  { code: "ar-TN", label: "Arab (Tunisia)" },
-  { code: "ar-IQ", label: "Arab (Irak)" },
-  { code: "ar-IR", label: "Arab (Iran)" },
+  // Arabic + regional variants
+  { code: "ar", label: "Arabic" },
+  { code: "ar-SA", label: "Arabic (Saudi Arabia)" },
+  { code: "ar-AE", label: "Arabic (UAE)" },
+  { code: "ar-EG", label: "Arabic (Egypt)" },
+  { code: "ar-QA", label: "Arabic (Qatar)" },
+  { code: "ar-KW", label: "Arabic (Kuwait)" },
+  { code: "ar-SY", label: "Arabic (Syria)" },
+  { code: "ar-LB", label: "Arabic (Lebanon)" },
+  { code: "ar-PS", label: "Arabic (Palestine)" },
+  { code: "ar-JO", label: "Arabic (Jordan)" },
+  { code: "ar-SD", label: "Arabic (Sudan)" },
+  { code: "ar-TD", label: "Arabic (Chad)" },
+  { code: "ar-MA", label: "Arabic (Morocco)" },
+  { code: "ar-DZ", label: "Arabic (Algeria)" },
+  { code: "ar-TN", label: "Arabic (Tunisia)" },
+  { code: "ar-IQ", label: "Arabic (Iraq)" },
+  { code: "ar-IR", label: "Arabic (Iran)" },
 
-  { code: "nl", label: "Belanda" },
-  { code: "nl-BE", label: "Belanda (Belgia) / Flemish" },
-  { code: "be", label: "Belarus" },
+  { code: "nl", label: "Dutch" },
+  { code: "nl-BE", label: "Dutch (Belgium) / Flemish" },
+  { code: "be", label: "Belarusian" },
   { code: "bn", label: "Bengali" },
-  { code: "bs", label: "Bosnia" },
-  { code: "bg", label: "Bulgaria" },
-  { code: "cs", label: "Ceko" },
-  { code: "da", label: "Denmark" },
-  { code: "et", label: "Estonia" },
-  { code: "fi", label: "Finlandia" },
-  { code: "gu", label: "Gujarat" },
+  { code: "bs", label: "Bosnian" },
+  { code: "bg", label: "Bulgarian" },
+  { code: "cs", label: "Czech" },
+  { code: "da", label: "Danish" },
+  { code: "et", label: "Estonian" },
+  { code: "fi", label: "Finnish" },
+  { code: "gu", label: "Gujarati" },
   { code: "hi", label: "Hindi" },
-  { code: "hu", label: "Hungaria" },
-  { code: "he", label: "Ibrani" },
+  { code: "hu", label: "Hungarian" },
+  { code: "he", label: "Hebrew" },
 
-  // Inggris + varian regional
-  { code: "en", label: "Inggris" },
-  { code: "en-US", label: "Inggris (AS)" },
-  { code: "en-GB", label: "Inggris (Britania)" },
-  { code: "en-AU", label: "Inggris (Australia)" },
-  { code: "en-IN", label: "Inggris (India)" },
-  { code: "en-NZ", label: "Inggris (Selandia Baru)" },
+  // English + regional variants
+  { code: "en", label: "English" },
+  { code: "en-US", label: "English (US)" },
+  { code: "en-GB", label: "English (UK)" },
+  { code: "en-AU", label: "English (Australia)" },
+  { code: "en-IN", label: "English (India)" },
+  { code: "en-NZ", label: "English (New Zealand)" },
 
-  { code: "it", label: "Italia" },
-  { code: "ja", label: "Jepang" },
-  { code: "de", label: "Jerman" },
-  { code: "de-CH", label: "Jerman (Swiss)" },
+  { code: "it", label: "Italian" },
+  { code: "ja", label: "Japanese" },
+  { code: "de", label: "German" },
+  { code: "de-CH", label: "German (Switzerland)" },
   { code: "kn", label: "Kannada" },
-  { code: "zh-HK", label: "Kanton (Hong Kong)" },
-  { code: "ca", label: "Katalan" },
-  { code: "ko", label: "Korea" },
-  { code: "hr", label: "Kroasia" },
-  { code: "lv", label: "Latvia" },
-  { code: "lt", label: "Lituania" },
-  { code: "mk", label: "Makedonia" },
+  { code: "zh-HK", label: "Cantonese (Hong Kong)" },
+  { code: "ca", label: "Catalan" },
+  { code: "ko", label: "Korean" },
+  { code: "hr", label: "Croatian" },
+  { code: "lv", label: "Latvian" },
+  { code: "lt", label: "Lithuanian" },
+  { code: "mk", label: "Macedonian" },
 
   // Mandarin
-  { code: "zh", label: "Mandarin (Tiongkok)" },
-  { code: "zh-TW", label: "Mandarin (Tradisional)" },
+  { code: "zh", label: "Mandarin (China)" },
+  { code: "zh-TW", label: "Mandarin (Traditional)" },
 
   { code: "mr", label: "Marathi" },
-  { code: "ms", label: "Melayu" },
-  { code: "no", label: "Norwegia" },
-  { code: "fa", label: "Persia" },
-  { code: "pl", label: "Polandia" },
+  { code: "ms", label: "Malay" },
+  { code: "no", label: "Norwegian" },
+  { code: "fa", label: "Persian" },
+  { code: "pl", label: "Polish" },
 
-  // Portugis
-  { code: "pt", label: "Portugis" },
-  { code: "pt-BR", label: "Portugis (Brasil)" },
-  { code: "pt-PT", label: "Portugis (Portugal)" },
+  // Portuguese
+  { code: "pt", label: "Portuguese" },
+  { code: "pt-BR", label: "Portuguese (Brazil)" },
+  { code: "pt-PT", label: "Portuguese (Portugal)" },
 
-  // Prancis
-  { code: "fr", label: "Prancis" },
-  { code: "fr-CA", label: "Prancis (Kanada)" },
+  // French
+  { code: "fr", label: "French" },
+  { code: "fr-CA", label: "French (Canada)" },
 
-  { code: "ro", label: "Rumania" },
-  { code: "ru", label: "Rusia" },
-  { code: "sr", label: "Serbia" },
-  { code: "sk", label: "Slovakia" },
-  { code: "sl", label: "Slovenia" },
+  { code: "ro", label: "Romanian" },
+  { code: "ru", label: "Russian" },
+  { code: "sr", label: "Serbian" },
+  { code: "sk", label: "Slovak" },
+  { code: "sl", label: "Slovenian" },
 
-  // Spanyol
-  { code: "es", label: "Spanyol" },
-  { code: "es-419", label: "Spanyol (Amerika Latin)" },
+  // Spanish
+  { code: "es", label: "Spanish" },
+  { code: "es-419", label: "Spanish (Latin America)" },
 
-  { code: "sv", label: "Swedia" },
+  { code: "sv", label: "Swedish" },
   { code: "tl", label: "Tagalog" },
   { code: "ta", label: "Tamil" },
   { code: "te", label: "Telugu" },
   { code: "th", label: "Thai" },
-  { code: "tr", label: "Turki" },
-  { code: "uk", label: "Ukraina" },
+  { code: "tr", label: "Turkish" },
+  { code: "uk", label: "Ukrainian" },
   { code: "ur", label: "Urdu" },
-  { code: "vi", label: "Vietnam" },
-  { code: "el", label: "Yunani" },
+  { code: "vi", label: "Vietnamese" },
+  { code: "el", label: "Greek" },
 ];
 
-/** Cari label tampilan untuk sebuah kode bahasa (fallback ke kode itu sendiri). */
+/** Look up the display label for a language code (falls back to the code itself). */
 export function languageLabel(code: string): string {
   return LANGUAGES.find((l) => l.code === code)?.label ?? code;
 }

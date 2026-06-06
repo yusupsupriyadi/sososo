@@ -42,26 +42,26 @@ export default function LibraryRoute() {
       <div className="max-w-[440px] text-center text-fg-dim">
         <div className="mb-2 text-[44px]">🎙️</div>
         <h2 className="mb-3.5 text-[20px] font-semibold text-fg">
-          Mulai transkripsi
+          Start transcription
         </h2>
 
         {keyReady === false ? (
           <>
             <p className="mx-auto mt-3.5 max-w-[360px] text-[13px] leading-[1.5] text-fg-faint">
-              Deepgram API key belum diatur. Atur dulu untuk mulai transkripsi.
+              Deepgram API key isn't set. Set it first to start transcription.
             </p>
             <Link
               to="/main/settings"
               className={`${BIG_BTN_BASE} border-glass-border bg-[rgba(255,255,255,0.06)] text-fg hover:bg-hover`}
             >
-              ⚙ Buka Settings
+              ⚙ Open Settings
             </Link>
           </>
         ) : (
           <>
             <div className="mx-auto mb-5 flex max-w-[340px] flex-col gap-3 text-left">
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">Bahasa</span>
+                <span className="text-[12px] text-fg-faint">Language</span>
                 <select className={SELECT} value={language} onChange={onLanguage}>
                   {LANGUAGES.map((l) => (
                     <option key={l.code} value={l.code}>
@@ -71,14 +71,14 @@ export default function LibraryRoute() {
                 </select>
               </label>
               <label className="flex flex-col gap-[5px]">
-                <span className="text-[12px] text-fg-faint">Sumber audio</span>
+                <span className="text-[12px] text-fg-faint">Audio source</span>
                 <select
                   className={SELECT}
                   value={systemOnly ? "system" : "both"}
                   onChange={onSource}
                 >
-                  <option value="both">System + Mikrofon (meeting)</option>
-                  <option value="system">System saja (video/musik)</option>
+                  <option value="both">System + Microphone (meeting)</option>
+                  <option value="system">System only (video/music)</option>
                 </select>
               </label>
             </div>
@@ -88,12 +88,12 @@ export default function LibraryRoute() {
               onClick={() => void start()}
               disabled={state === "starting"}
             >
-              ● {state === "starting" ? "Memulai…" : "Mulai Transkripsi"}
+              ● {state === "starting" ? "Starting…" : "Start Transcription"}
             </button>
             <p className="mx-auto mt-3.5 max-w-[360px] text-[13px] leading-[1.5] text-fg-faint">
-              Saat mulai, jendela ini berubah jadi tampilan transkripsi langsung
-              dengan tombol <b>Jeda</b> & <b>Selesai</b> di atas. Bahasa spesifik
-              (Indonesia/English) biasanya lebih akurat daripada Auto.
+              When you start, this window turns into the live transcription view
+              with <b>Pause</b> & <b>Finish</b> buttons on top. A specific language
+              (e.g. English/Indonesian) is usually more accurate than Auto.
             </p>
           </>
         )}

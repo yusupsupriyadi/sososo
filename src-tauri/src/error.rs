@@ -24,7 +24,7 @@ impl From<rusqlite::Error> for AppError {
 
 impl From<reqwest::Error> for AppError {
     fn from(e: reqwest::Error) -> Self {
-        AppError::Ai(format!("permintaan ke OpenAI gagal: {e}"))
+        AppError::Ai(format!("request to OpenAI failed: {e}"))
     }
 }
 

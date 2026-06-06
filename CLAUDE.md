@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 audio (WASAPI loopback) + microphone, streams both to Deepgram for live speech-to-text, and shows
 live captions in a single transparent-glass window that switches to a full transcription view (with
 pause/finish) while recording, plus a library/settings/history UI when idle. User-facing UI copy is
-in **Bahasa Indonesia**.
+in **English** (the app was switched from Bahasa Indonesia to English).
 
 Stack: Tauri 2 (Rust) backend · React 19 + React Router 7 + Zustand 5 + Vite 7 + Tailwind CSS v4
 (TypeScript) frontend · **Bun** package manager.
@@ -102,7 +102,8 @@ Stop is cooperative via a `tokio_util::CancellationToken`; teardown joins the br
   (start-dragging, minimize, close); CSP is set in `tauri.conf.json`.
 
 ## Conventions & gotchas
-- **Bahasa Indonesia** for all user-facing UI strings; English for code, identifiers, and commit messages.
+- **English** for all user-facing UI strings (and for code, identifiers, and commit messages). The AI
+  summary (OpenAI) is also generated in English.
 - **WASAPI needs MTA**: Tauri command worker threads may be STA, so `list_devices` enumerates on a
   freshly spawned thread. Any new WASAPI work must run on a thread that called `initialize_mta()`.
 - **Loopback requires polling mode** (the WASAPI loopback flag is incompatible with event callbacks);
@@ -118,5 +119,3 @@ Document every work activity as a Markdown report in the **`.development-history
 if it does not exist). This folder doubles as the project knowledge base and additional documentation.
 **Write these reports in English and keep them as compact as possible** — prefer terse bullet points over
 prose, and capture only what is needed to understand the change (goal, key changes, decisions, verification).
-This is the one exception to the Bahasa-Indonesia convention, which applies to user-facing UI strings, not
-internal docs.

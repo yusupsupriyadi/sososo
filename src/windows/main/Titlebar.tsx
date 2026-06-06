@@ -23,7 +23,7 @@ export default function Titlebar() {
       </button>
       <button
         className={`${ICON_BTN} hover:bg-[rgba(255,93,93,0.22)] hover:text-[#ffd9d9]`}
-        title="Tutup"
+        title="Close"
         onClick={() => void closeSelf()}
       >
         ✕

@@ -36,12 +36,12 @@ export default function RecordingView() {
   const live = !paused && state === "recording";
   const status =
     state === "starting"
-      ? "Menyiapkan…"
+      ? "Starting…"
       : stopping
-        ? "Menyelesaikan…"
+        ? "Finishing…"
         : paused
-          ? "Dijeda"
-          : "Merekam";
+          ? "Paused"
+          : "Recording";
 
   return (
     <div className="flex h-screen w-screen flex-col items-center gap-2 p-2">
@@ -50,8 +50,8 @@ export default function RecordingView() {
           className={`${PILL_BTN} h-[30px] w-10 rounded-[9px] bg-[#f5c518] text-[#1b1b1b]`}
           onClick={() => void togglePause()}
           disabled={state !== "recording"}
-          title={paused ? "Lanjutkan" : "Jeda"}
-          aria-label={paused ? "Lanjutkan" : "Jeda"}
+          title={paused ? "Resume" : "Pause"}
+          aria-label={paused ? "Resume" : "Pause"}
         >
           {paused ? (
             <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
@@ -68,8 +68,8 @@ export default function RecordingView() {
           className={`${PILL_BTN} h-8 w-8 rounded-full bg-rec text-white`}
           onClick={() => void stop()}
           disabled={stopping || state === "starting"}
-          title="Selesai"
-          aria-label="Selesai"
+          title="Finish"
+          aria-label="Finish"
         >
           <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
             <rect x="1.5" y="1.5" width="9" height="9" rx="2" fill="currentColor" />
@@ -78,8 +78,8 @@ export default function RecordingView() {
         <span
           className="ml-0.5 inline-flex h-[30px] w-[22px] cursor-grab items-center justify-center rounded-[7px] text-fg-faint hover:bg-hover hover:text-fg-dim active:cursor-grabbing [&>svg]:pointer-events-none"
           data-tauri-drag-region
-          title="Geser untuk memindahkan"
-          aria-label="Geser untuk memindahkan"
+          title="Drag to move"
+          aria-label="Drag to move"
         >
           <svg viewBox="0 0 12 16" width="12" height="16" aria-hidden="true">
             <circle cx="3.5" cy="3" r="1.25" fill="currentColor" />
@@ -117,8 +117,8 @@ export default function RecordingView() {
           {segments.length === 0 ? (
             <p className="m-auto px-4 text-center text-[13px] italic text-fg-faint">
               {state === "starting"
-                ? "Menyambungkan ke Deepgram…"
-                : "Transkrip langsung akan muncul di sini saat ada suara."}
+                ? "Connecting to Deepgram…"
+                : "Live transcript will appear here when there's audio."}
             </p>
           ) : (
             segments.map((c) => (

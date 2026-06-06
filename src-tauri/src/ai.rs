@@ -4,8 +4,8 @@
 //! OpenAI key is read from the OS keychain (never the frontend) and the request
 //! is sent with the `reqwest` client already in the dependency tree (rustls).
 //! The stored transcript is rendered to a speaker-labelled plain-text block and
-//! the model is asked for a concise Bahasa Indonesia summary in a fixed Markdown
-//! shape (Ringkasan / Poin Penting / Tindak Lanjut).
+//! the model is asked for a concise English summary in a fixed Markdown
+//! shape (Summary / Key Points / Action Items).
 
 use std::time::Duration;
 
@@ -22,7 +22,7 @@ const ENDPOINT: &str = "https://api.openai.com/v1/chat/completions";
 /// stay bounded; longer transcripts are truncated with a visible marker.
 const MAX_TRANSCRIPT_CHARS: usize = 60_000;
 
-const SYSTEM_PROMPT: &str = "Anda adalah asisten yang merangkum transkrip rapat atau percakapan ke dalam Bahasa Indonesia yang ringkas, jelas, dan rapi. Gunakan HANYA informasi yang ada di transkrip — jangan mengarang fakta. Dalam transkrip, \"Anda\" adalah pengguna aplikasi (suara mikrofon) dan \"Lawan bicara\" adalah audio dari sistem/peserta lain. Jika transkrip terlalu pendek atau tidak bermakna, sampaikan hal itu dengan singkat alih-alih memaksakan ringkasan.";
+const SYSTEM_PROMPT: &str = "You are an assistant that summarizes meeting or conversation transcripts into clear, concise, well-structured English. Use ONLY information present in the transcript — do not invent facts. In the transcript, \"You\" is the app user (microphone audio) and \"Other\" is the system/other participants' audio. If the transcript is too short or not meaningful, say so briefly instead of forcing a summary.";
 
 #[derive(Deserialize)]
 struct ChatResponse {
@@ -51,7 +51,7 @@ struct ApiErrorBody {
 }
 
 /// Render stored transcript segments into a speaker-labelled plain-text block,
-/// e.g. `Anda: ...` / `Lawan bicara (pembicara 1): ...`.
+/// e.g. `You: ...` / `Other (speaker 1): ...`.
 pub fn render_transcript(segments: &[StoredSegment]) -> String {
     let mut out = String::new();
     for seg in segments {
@@ -59,13 +59,9 @@ pub fn render_transcript(segments: &[StoredSegment]) -> String {
         if text.is_empty() {
             continue;
         }
-        let who = if seg.source == "you" {
-            "Anda"
-        } else {
-            "Lawan bicara"
-        };
+        let who = if seg.source == "you" { "You" } else { "Other" };
         match seg.speaker.as_deref() {
-            Some(s) if !s.is_empty() => out.push_str(&format!("{who} (pembicara {s}): {text}\n")),
+            Some(s) if !s.is_empty() => out.push_str(&format!("{who} (speaker {s}): {text}\n")),
             _ => out.push_str(&format!("{who}: {text}\n")),
         }
     }
@@ -75,12 +71,12 @@ pub fn render_transcript(segments: &[StoredSegment]) -> String {
             cut -= 1;
         }
         out.truncate(cut);
-        out.push_str("\n[…transkrip dipotong karena terlalu panjang…]\n");
+        out.push_str("\n[…transcript truncated (too long)…]\n");
     }
     out
 }
 
-/// Generate a Bahasa Indonesia summary of the transcript. Returns
+/// Generate an English summary of the transcript. Returns
 /// `(summary_markdown, model_used)`.
 pub async fn summarize(
     api_key: &str,
@@ -91,17 +87,17 @@ pub async fn summarize(
     let transcript = render_transcript(segments);
     if transcript.trim().is_empty() {
         return Err(AppError::Ai(
-            "transkrip kosong, tidak ada yang bisa diringkas".into(),
+            "transcript is empty, nothing to summarize".into(),
         ));
     }
 
     let user_prompt = format!(
-        "Judul sesi: {title}\nKode bahasa transkrip: {language}\n\n\
-         Buat ringkasan dalam Bahasa Indonesia memakai format Markdown persis seperti ini:\n\n\
-         ## Ringkasan\n(2-4 kalimat inti pembicaraan)\n\n\
-         ## Poin Penting\n- (poin-poin utama, satu per baris)\n\n\
-         ## Tindak Lanjut\n- (keputusan atau action item; tulis \"Tidak ada\" bila memang tidak ada)\n\n\
-         Transkrip:\n{transcript}"
+        "Session title: {title}\nTranscript language code: {language}\n\n\
+         Write a summary in English using exactly this Markdown format:\n\n\
+         ## Summary\n(2-4 sentences of the core discussion)\n\n\
+         ## Key Points\n- (the main points, one per line)\n\n\
+         ## Action Items\n- (decisions or action items; write \"None\" if there are none)\n\n\
+         Transcript:\n{transcript}"
     );
 
     let body = serde_json::json!({
@@ -132,7 +128,7 @@ pub async fn summarize(
             .map(|e| e.error.message)
             .unwrap_or_else(|_| raw.clone());
         let hint = if status.as_u16() == 401 {
-            " (periksa kembali kunci API OpenAI di Pengaturan)"
+            " (check the OpenAI API key in Settings)"
         } else {
             ""
         };
@@ -140,14 +136,14 @@ pub async fn summarize(
     }
 
     let parsed: ChatResponse = serde_json::from_str(&raw)
-        .map_err(|e| AppError::Ai(format!("respons OpenAI tidak terbaca: {e}")))?;
+        .map_err(|e| AppError::Ai(format!("could not parse OpenAI response: {e}")))?;
     let summary = parsed
         .choices
         .into_iter()
         .next()
         .map(|c| c.message.content.trim().to_string())
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| AppError::Ai("OpenAI tidak mengembalikan ringkasan".into()))?;
+        .ok_or_else(|| AppError::Ai("OpenAI returned no summary".into()))?;
 
     Ok((summary, MODEL.to_string()))
 }

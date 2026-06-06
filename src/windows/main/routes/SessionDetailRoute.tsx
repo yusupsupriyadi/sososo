@@ -93,7 +93,7 @@ export default function SessionDetailRoute() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <p className="text-[13px] text-fg-faint">Memuat…</p>
+        <p className="text-[13px] text-fg-faint">Loading…</p>
       </div>
     );
   }
@@ -103,12 +103,12 @@ export default function SessionDetailRoute() {
       <div className="flex h-full items-center justify-center p-6">
         <div className="max-w-[420px] text-center text-fg-dim">
           <h2 className="mb-2 text-[18px] font-semibold text-fg">
-            Sesi tidak ditemukan
+            Session not found
           </h2>
           <p className="text-[13.5px] leading-[1.5]">
-            Rekaman ini mungkin sudah dihapus.{" "}
+            This recording may have been deleted.{" "}
             <Link to="/main" className="text-accent underline">
-              Kembali ke beranda
+              Back to home
             </Link>
           </p>
         </div>
@@ -148,7 +148,7 @@ export default function SessionDetailRoute() {
                   setEditing(true);
                 }}
               >
-                ✎ Ganti nama
+                ✎ Rename
               </button>
             )}
             {confirmDelete ? (
@@ -157,13 +157,13 @@ export default function SessionDetailRoute() {
                   className="cursor-pointer rounded-sm border border-[rgba(255,93,93,0.55)] bg-[rgba(255,93,93,0.24)] px-[11px] py-1.5 text-[12.5px] text-[#ffd9d9] whitespace-nowrap shadow-liquid hover:bg-hover hover:text-fg"
                   onClick={() => void doDelete()}
                 >
-                  Hapus permanen
+                  Delete permanently
                 </button>
                 <button
                   className={ACTION_BTN}
                   onClick={() => setConfirmDelete(false)}
                 >
-                  Batal
+                  Cancel
                 </button>
               </>
             ) : (
@@ -171,15 +171,15 @@ export default function SessionDetailRoute() {
                 className="cursor-pointer rounded-sm border border-[rgba(255,255,255,0.25)] bg-[rgba(255,255,255,0.08)] px-[11px] py-1.5 text-[12.5px] text-fg-dim whitespace-nowrap shadow-liquid hover:border-[rgba(255,93,93,0.4)] hover:bg-hover hover:text-[#ffb4b4]"
                 onClick={() => setConfirmDelete(true)}
               >
-                🗑 Hapus
+                🗑 Delete
               </button>
             )}
           </div>
         </div>
         <p className="mt-2.5 text-[12px] text-fg-faint">
           {formatDateTime(session.startedAt)} · {languageLabel(session.language)}{" "}
-          · {session.segmentCount} baris ·{" "}
-          {session.systemOnly ? "System saja" : "System + Mikrofon"}
+          · {session.segmentCount} lines ·{" "}
+          {session.systemOnly ? "System only" : "System + Microphone"}
         </p>
       </div>
 
@@ -187,7 +187,7 @@ export default function SessionDetailRoute() {
         <section className="mb-[22px] rounded-md border border-glass-border bg-[rgba(110,168,254,0.07)] px-[18px] py-4">
           <div className="mb-2.5 flex items-center justify-between gap-2.5">
             <h3 className="m-0 text-[12px] uppercase tracking-[0.06em] text-accent">
-              Ringkasan AI
+              AI Summary
             </h3>
             {session.summary && (
               <button
@@ -195,7 +195,7 @@ export default function SessionDetailRoute() {
                 onClick={() => void doSummarize()}
                 disabled={summarizing}
               >
-                {summarizing ? "Memproses…" : "↻ Buat ulang"}
+                {summarizing ? "Processing…" : "↻ Regenerate"}
               </button>
             )}
           </div>
@@ -205,7 +205,7 @@ export default function SessionDetailRoute() {
               <SummaryView text={session.summary} />
               {session.summarizedAt && (
                 <p className="mt-2.5 text-[11px] text-fg-faint">
-                  Dibuat {formatDateTime(session.summarizedAt)}
+                  Created {formatDateTime(session.summarizedAt)}
                   {session.summaryModel ? ` · ${session.summaryModel}` : ""}
                 </p>
               )}
@@ -213,9 +213,8 @@ export default function SessionDetailRoute() {
           ) : (
             <div className="flex flex-col items-start gap-3">
               <p className="m-0 text-[13px] leading-[1.5] text-fg-dim">
-                Selesaikan transkrip ini dengan membuat ringkasan otomatis —
-                ringkasan singkat, poin penting, dan tindak lanjut — memakai
-                OpenAI.
+                Finish this transcript by generating an automatic summary —
+                overview, key points, and action items — using OpenAI.
               </p>
               <button
                 className="cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] font-semibold text-[#dbe8ff] whitespace-nowrap shadow-liquid enabled:hover:bg-[rgba(110,168,254,0.34)] disabled:cursor-default disabled:opacity-60"
@@ -223,8 +222,8 @@ export default function SessionDetailRoute() {
                 disabled={summarizing}
               >
                 {summarizing
-                  ? "Membuat ringkasan…"
-                  : "✓ Selesaikan & Buat Ringkasan"}
+                  ? "Generating summary…"
+                  : "✓ Finish & Summarize"}
               </button>
             </div>
           )}
@@ -233,7 +232,7 @@ export default function SessionDetailRoute() {
 
       {segments.length === 0 ? (
         <p className="text-[13px] text-fg-faint">
-          Tidak ada transkrip tersimpan untuk sesi ini.
+          No transcript saved for this session.
         </p>
       ) : (
         <div className="flex flex-col gap-3">

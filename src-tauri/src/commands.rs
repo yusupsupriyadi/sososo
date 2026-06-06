@@ -76,7 +76,7 @@ pub fn start_session(
     let title = title
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty())
-        .unwrap_or_else(|| format!("Rekaman {}", chrono::Local::now().format("%d-%m-%Y %H:%M")));
+        .unwrap_or_else(|| format!("Recording {}", chrono::Local::now().format("%d-%m-%Y %H:%M")));
     let id = db.create_session(&title, &language, system_only, &started_at)?;
 
     let cancel = CancellationToken::new();
@@ -201,16 +201,13 @@ pub fn rename_session(db: State<'_, Db>, id: i64, title: String) -> AppResult<()
 pub async fn summarize_session(db: State<'_, Db>, id: i64) -> AppResult<String> {
     let detail = db
         .get_session(id)?
-        .ok_or_else(|| AppError::Session("sesi tidak ditemukan".into()))?;
+        .ok_or_else(|| AppError::Session("session not found".into()))?;
     if detail.segments.is_empty() {
-        return Err(AppError::Session(
-            "belum ada transkrip untuk diringkas".into(),
-        ));
+        return Err(AppError::Session("no transcript to summarize yet".into()));
     }
 
-    let key = keys::get_api_key("openai")?.ok_or_else(|| {
-        AppError::Config("Kunci API OpenAI belum diatur (buka Pengaturan)".into())
-    })?;
+    let key = keys::get_api_key("openai")?
+        .ok_or_else(|| AppError::Config("OpenAI API key is not set (open Settings)".into()))?;
 
     let (summary, model) = ai::summarize(
         &key,

@@ -30,15 +30,15 @@ export default function SessionSidebar() {
         end
         className="mb-1.5 block rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.22)] px-2.5 py-[9px] text-left text-[13px] font-semibold text-[#dbe8ff] no-underline shadow-liquid hover:bg-[rgba(110,168,254,0.32)]"
       >
-        ＋ Rekaman baru
+        ＋ New recording
       </NavLink>
       <div className="px-1.5 pt-1 pb-2 text-[11px] uppercase tracking-[0.06em] text-fg-faint">
-        Riwayat
+        History
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {sessions.length === 0 ? (
           <p className="p-1.5 text-[12px] leading-[1.5] text-fg-faint">
-            Belum ada rekaman tersimpan.
+            No recordings yet.
           </p>
         ) : (
           sessions.map((s) => (
@@ -55,7 +55,7 @@ export default function SessionSidebar() {
             >
               <span className="text-[13px]">{s.title}</span>
               <span className="text-[11px] text-fg-faint">
-                {formatDateTime(s.startedAt)} · {s.segmentCount} baris
+                {formatDateTime(s.startedAt)} · {s.segmentCount} lines
               </span>
             </NavLink>
           ))

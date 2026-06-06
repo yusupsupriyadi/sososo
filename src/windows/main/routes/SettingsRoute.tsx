@@ -5,6 +5,13 @@ import {
   setApiKey,
   setDevices,
 } from "../../../lib/ipc";
+import {
+  useConfigStore,
+  UI_SCALE_MIN,
+  UI_SCALE_MAX,
+  TRANSCRIPT_SCALE_MIN,
+  TRANSCRIPT_SCALE_MAX,
+} from "../../../state/configStore";
 import type { DeviceLists } from "../../../types/domain";
 
 const FIELD_CTRL =
@@ -25,6 +32,11 @@ export default function SettingsRoute() {
   const [oaSaved, setOaSaved] = useState(false);
   const [status, setStatus] = useState("");
 
+  const uiScale = useConfigStore((s) => s.uiScale);
+  const transcriptScale = useConfigStore((s) => s.transcriptScale);
+  const setUiScale = useConfigStore((s) => s.setUiScale);
+  const setTranscriptScale = useConfigStore((s) => s.setTranscriptScale);
+
   useEffect(() => {
     listDevices()
       .then((d) => {
@@ -34,7 +46,7 @@ export default function SettingsRoute() {
           d.output.find((x) => x.isDefault)?.id ?? d.output[0]?.id ?? "",
         );
       })
-      .catch((e) => setStatus(`Gagal memuat device: ${e}`));
+      .catch((e) => setStatus(`Failed to load devices: ${e}`));
     hasApiKey("deepgram").then(setDgSaved).catch(() => {});
     hasApiKey("openai").then(setOaSaved).catch(() => {});
   }, []);
@@ -42,7 +54,7 @@ export default function SettingsRoute() {
   async function saveDevices() {
     try {
       await setDevices(inputId || null, outputId || null);
-      setStatus("Device tersimpan.");
+      setStatus("Devices saved.");
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -60,7 +72,7 @@ export default function SettingsRoute() {
         setOaKey("");
         setOaSaved(true);
       }
-      setStatus(`${service} API key tersimpan.`);
+      setStatus(`${service} API key saved.`);
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -77,7 +89,7 @@ export default function SettingsRoute() {
             Deepgram API Key{" "}
             {dgSaved && (
               <em className="ml-1.5 text-[11.5px] not-italic text-ok">
-                ✓ tersimpan
+                ✓ saved
               </em>
             )}
           </span>
@@ -87,10 +99,10 @@ export default function SettingsRoute() {
               type="password"
               value={dgKey}
               onChange={(e) => setDgKey(e.target.value)}
-              placeholder={dgSaved ? "••••••••••••" : "Token Deepgram…"}
+              placeholder={dgSaved ? "••••••••••••" : "Deepgram token…"}
             />
             <button className={BTN} onClick={() => void saveKey("deepgram")}>
-              Simpan
+              Save
             </button>
           </div>
         </label>
@@ -99,7 +111,7 @@ export default function SettingsRoute() {
             OpenAI API Key{" "}
             {oaSaved && (
               <em className="ml-1.5 text-[11.5px] not-italic text-ok">
-                ✓ tersimpan
+                ✓ saved
               </em>
             )}
           </span>
@@ -112,20 +124,20 @@ export default function SettingsRoute() {
               placeholder={oaSaved ? "••••••••••••" : "sk-…"}
             />
             <button className={BTN} onClick={() => void saveKey("openai")}>
-              Simpan
+              Save
             </button>
           </div>
         </label>
         <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
-          Key disimpan aman di Windows Credential Manager dan tidak pernah
-          dikirim ke frontend.
+          Keys are stored securely in Windows Credential Manager and are never
+          sent to the frontend.
         </p>
       </section>
 
       <section className="mb-7">
         <h3 className={H3}>Audio Devices</h3>
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>Mikrofon</span>
+          <span className={FIELD_LABEL}>Microphone</span>
           <select
             className={FIELD_CTRL}
             value={inputId}
@@ -141,7 +153,7 @@ export default function SettingsRoute() {
         </label>
         <label className={FIELD}>
           <span className={FIELD_LABEL}>
-            Sumber system audio (output yang di-loopback)
+            System audio source (the output to loop back)
           </span>
           <select
             className={FIELD_CTRL}
@@ -160,18 +172,78 @@ export default function SettingsRoute() {
           className="mt-1 cursor-pointer rounded-sm border border-[rgba(255,255,255,0.3)] bg-[rgba(110,168,254,0.24)] px-4 py-[9px] text-[13px] text-[#dbe8ff] whitespace-nowrap shadow-liquid hover:bg-[rgba(110,168,254,0.34)]"
           onClick={() => void saveDevices()}
         >
-          Simpan device
+          Save devices
         </button>
       </section>
 
       <section className="mb-7">
-        <h3 className={H3}>Bahasa</h3>
+        <h3 className={H3}>Appearance</h3>
+
+        <div className={FIELD}>
+          <span className={FIELD_LABEL}>
+            UI font size
+            <em className="ml-1.5 text-[11.5px] not-italic text-fg-faint">
+              {Math.round(uiScale * 100)}%
+            </em>
+          </span>
+          <input
+            type="range"
+            min={UI_SCALE_MIN}
+            max={UI_SCALE_MAX}
+            step={0.05}
+            value={uiScale}
+            onChange={(e) => setUiScale(Number(e.target.value))}
+            className="w-full cursor-pointer accent-accent"
+          />
+          <span className="text-[11.5px] leading-[1.4] text-fg-faint">
+            Scales the whole interface (text, buttons, panels).
+          </span>
+        </div>
+
+        <div className={FIELD}>
+          <span className={FIELD_LABEL}>
+            Transcript font size
+            <em className="ml-1.5 text-[11.5px] not-italic text-fg-faint">
+              {Math.round(transcriptScale * 100)}%
+            </em>
+          </span>
+          <input
+            type="range"
+            min={TRANSCRIPT_SCALE_MIN}
+            max={TRANSCRIPT_SCALE_MAX}
+            step={0.05}
+            value={transcriptScale}
+            onChange={(e) => setTranscriptScale(Number(e.target.value))}
+            className="w-full cursor-pointer accent-accent"
+          />
+          <span className="text-[11.5px] leading-[1.4] text-fg-faint">
+            Transcript text &amp; speaker labels, in live recording and history.
+          </span>
+          <div className="mt-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.04)] px-3 py-2">
+            <div
+              className="uppercase tracking-[0.05em] text-accent"
+              style={{ fontSize: `${11 * transcriptScale}px` }}
+            >
+              You
+            </div>
+            <div
+              className="leading-[1.5] text-fg"
+              style={{ fontSize: `${14 * transcriptScale}px` }}
+            >
+              Sample live transcript line.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-7">
+        <h3 className={H3}>Language</h3>
         <p className="mt-2 text-[12px] leading-[1.5] text-fg-faint">
-          Semua bahasa kini memakai model <b>Nova-3</b> Deepgram (akurasi terbaik,
-          termasuk Bahasa Indonesia). Pilih bahasa di layar utama sebelum mulai
-          merekam. Opsi <i>Auto-deteksi (multilingual)</i> mengenali campuran
-          beberapa bahasa otomatis, tetapi memilih satu bahasa spesifik biasanya
-          lebih akurat.
+          All languages now use Deepgram's <b>Nova-3</b> model (best accuracy,
+          including Indonesian). Pick the language on the main screen before you
+          start recording. The <i>Auto-detect (multilingual)</i> option recognizes
+          a mix of languages automatically, but choosing one specific language is
+          usually more accurate.
         </p>
       </section>
 
