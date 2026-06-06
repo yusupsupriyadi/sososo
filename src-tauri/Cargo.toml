@@ -44,7 +44,7 @@ chrono = { version = "0.4", features = ["serde"] }  # ISO-8601 timestamps
 keyring = { version = "3", features = ["windows-native"] }  # API keys in Windows Credential Manager
 
 # --- persistence (Milestone D) ---
-rusqlite = { version = "0.32", features = ["bundled"] }  # embedded SQLite (sessions + transcript history)
+rusqlite = { version = "0.40", features = ["bundled"] }  # embedded SQLite (sessions + transcript history)
 
 # --- AI summary (Milestone E) ---
 # Call the OpenAI Chat Completions API directly over HTTP. reqwest is already in
