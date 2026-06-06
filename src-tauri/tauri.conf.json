@@ -35,6 +35,12 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Yusup Supriyadi",
+    "copyright": "Copyright © 2026 Yusup Supriyadi",
+    "category": "Productivity",
+    "homepage": "https://github.com/yusupsupriyadi/sososo",
+    "shortDescription": "Real-time meeting transcription with AI summaries",
+    "longDescription": "Captures Windows system audio and your microphone, streams both to Deepgram for live speech-to-text, and generates AI summaries via OpenAI. Bring your own API keys.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
