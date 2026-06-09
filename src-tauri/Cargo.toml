@@ -69,6 +69,10 @@ windows-capture = { path = "vendor/windows-capture" }
 [target.'cfg(target_os = "macos")'.dependencies]
 cpal = "0.17"                                             # CoreAudio capture (mic + BlackHole)
 keyring = { version = "3", features = ["apple-native"] }  # macOS Keychain
+# Window/screen recording via ScreenCaptureKit — records straight to MP4 with
+# system audio + mic (SCRecordingOutput). `macos_15_0` enables SCRecordingOutput
+# + microphone capture. Runtime needs macOS 14+ (recording) / 15+ (microphone).
+screencapturekit = { version = "7", features = ["macos_15_0"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # PulseAudio/PipeWire capture: mic + sink-monitor (system audio). PA converts to our

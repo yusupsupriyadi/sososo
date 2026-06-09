@@ -4,5 +4,7 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>sososo needs your microphone to transcribe what you say during a recording session.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>sososo records the meeting window you select, saved alongside its transcription.</string>
 </dict>
 </plist>

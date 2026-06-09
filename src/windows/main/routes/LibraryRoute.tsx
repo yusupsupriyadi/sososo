@@ -14,7 +14,7 @@ import {
 } from '../../../lib/ipc';
 import type { DeviceLists, WindowInfo } from '../../../types/domain';
 import { LANGUAGES, TRANSLATE_TARGETS } from '../../../lib/languages';
-import { isLinux, isMacOS } from '../../../lib/platform';
+import { isLinux } from '../../../lib/platform';
 import {
   IconAbout,
   IconAlert,
@@ -32,8 +32,8 @@ import {
   IconWindow,
 } from '../../../lib/icons';
 
-/** Video recording targets a window via Windows.Graphics.Capture — Windows only. */
-const IS_WINDOWS = !isMacOS && !isLinux;
+/** Video recording: Windows (WGC) + macOS (ScreenCaptureKit). Not yet on Linux. */
+const VIDEO_SUPPORTED = !isLinux;
 
 const BIG_BTN_BASE =
   'inline-flex items-center justify-center gap-2 cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline shadow-liquid transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60';
@@ -133,13 +133,13 @@ export default function LibraryRoute() {
   // Keep the backend in sync with the video-recording choice (Windows only).
   // Send "" (not null) for an unset window so the backend clears any prior pick.
   useEffect(() => {
-    if (!IS_WINDOWS) return;
+    if (!VIDEO_SUPPORTED) return;
     void setVideoOptions(videoEnabled, videoWindowId ?? '');
   }, [videoEnabled, videoWindowId]);
 
   // (Re)load the capturable window list whenever recording is switched on.
   useEffect(() => {
-    if (!IS_WINDOWS || !videoEnabled) return;
+    if (!VIDEO_SUPPORTED || !videoEnabled) return;
     refreshWindows();
   }, [videoEnabled]);
 
@@ -300,7 +300,7 @@ export default function LibraryRoute() {
                 </select>
               </label>
 
-              {IS_WINDOWS && (
+              {VIDEO_SUPPORTED && (
                 <div className="mt-0.5 flex flex-col gap-2 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.03)] p-2.5">
                   <label className="flex cursor-pointer items-center gap-2.5">
                     <input

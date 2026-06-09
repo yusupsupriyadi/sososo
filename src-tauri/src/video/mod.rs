@@ -20,7 +20,10 @@ mod mixer;
 #[cfg(target_os = "windows")]
 #[path = "windows.rs"]
 mod platform;
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+#[path = "macos.rs"]
+mod platform;
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 #[path = "unsupported.rs"]
 mod platform;
 
