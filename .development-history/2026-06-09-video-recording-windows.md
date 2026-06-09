@@ -66,3 +66,21 @@ and the UI hides the controls.
 - Two extra 48 kHz WASAPI capture clients run alongside the existing 16 kHz ones (4 total); the
   16 kHz/mono Deepgram path is untouched, so transcription quality is unaffected.
 - Branch: `feat/video-recording-windows`.
+
+## Follow-up: audio fixes (after first manual test)
+
+First test showed the recorded MP4 audio was **doubled** and **crackling** (recorded in System-only
+mode). Root causes + fixes:
+
+- **Crackle (confirmed):** `VideoAudioMixer` forced both 48 kHz streams to equal length every video
+  frame, splicing silence on the normal inter-stream WASAPI clock jitter (~30–60 splices/sec).
+  Rewrote it to mirror `audio::mixer::Interleaver`: pair-and-sum only `min(mic, system)` per drain,
+  keep the remainder, and silence-pad a side only past `max_skew` (~100 ms). Whole-stereo-frame
+  aligned (no L/R desync); saturating sum. 7 unit tests updated.
+- **Double:** the mixer can't duplicate content — the same audio was in both mic and system. In
+  System-only mode the video was still mixing the mic, so on speakers the mic re-captured the system
+  audio (heard twice) and the doubled signal clipped. Fix: `VideoStartConfig.system_only` now skips
+  the mic capture entirely in System-only mode → video track = system audio only. (Meeting mode still
+  mixes mic + system; use headphones to avoid acoustic echo.)
+- Verified: `cargo test` (34, incl. rewritten mixer tests), `cargo clippy` green. Manual re-test
+  pending (rebuild via `bun run tauri dev`).
