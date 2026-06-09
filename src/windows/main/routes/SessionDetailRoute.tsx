@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { HugeiconsIcon } from '@hugeicons/react';
 import clsx from 'clsx';
 import {
@@ -453,6 +454,16 @@ export default function SessionDetailRoute() {
           </span>
         </div>
       </div>
+
+      {session.videoPath && (
+        <section className="mb-[22px] overflow-hidden rounded-md border border-glass-border bg-black/30">
+          <video
+            controls
+            src={convertFileSrc(session.videoPath)}
+            className="block max-h-[420px] w-full bg-black"
+          />
+        </section>
+      )}
 
       {segments.length > 0 && (
         <section className="mb-[22px] rounded-md border border-glass-border bg-[rgba(110,168,254,0.07)] px-[18px] py-4">

@@ -12,6 +12,7 @@ import {
   IconPlay,
   IconRemote,
   IconStop,
+  IconVideo,
 } from '../../lib/icons';
 import { speakerColor } from '../../lib/speaker';
 import { useElapsedLabel } from '../../hooks/useElapsedTimer';
@@ -36,6 +37,7 @@ export default function RecordingView() {
   const segments = useTranscriptStore((s) => s.segments);
   const translations = useTranscriptStore((s) => s.translations);
   const transcriptScale = useConfigStore((s) => s.transcriptScale);
+  const videoEnabled = useConfigStore((s) => s.videoEnabled);
   const translateEnabled = useConfigStore((s) => s.translateEnabled);
   const setTranslateEnabled = useConfigStore((s) => s.setTranslateEnabled);
   const targetLanguage = useConfigStore((s) => s.targetLanguage);
@@ -138,6 +140,15 @@ export default function RecordingView() {
             )}
           />
           <span className="text-[12px] font-semibold text-fg-dim">{status}</span>
+          {videoEnabled && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rec"
+              title="Recording video"
+            >
+              <HugeiconsIcon icon={IconVideo} size={12} strokeWidth={2} aria-hidden={true} />
+              REC
+            </span>
+          )}
           <span className="ml-auto text-[12px] text-fg-dim tabular-nums">{elapsed}</span>
         </div>
 

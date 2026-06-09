@@ -4,9 +4,17 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { useSession } from '../../../hooks/useSession';
 import { useSessionStore } from '../../../state/sessionStore';
 import { useConfigStore, type LanguageCode } from '../../../state/configStore';
-import { hasApiKey, listDevices, setDevices, setTranscriptionOptions } from '../../../lib/ipc';
-import type { DeviceLists } from '../../../types/domain';
+import {
+  hasApiKey,
+  listDevices,
+  listWindows,
+  setDevices,
+  setTranscriptionOptions,
+  setVideoOptions,
+} from '../../../lib/ipc';
+import type { DeviceLists, WindowInfo } from '../../../types/domain';
 import { LANGUAGES, TRANSLATE_TARGETS } from '../../../lib/languages';
+import { isLinux, isMacOS } from '../../../lib/platform';
 import {
   IconAbout,
   IconAlert,
@@ -14,12 +22,18 @@ import {
   IconLanguage,
   IconMic,
   IconRecord,
+  IconRegenerate,
   IconRemote,
   IconRename,
   IconSettings,
   IconSpeaker,
+  IconVideo,
   IconWave,
+  IconWindow,
 } from '../../../lib/icons';
+
+/** Video recording targets a window via Windows.Graphics.Capture — Windows only. */
+const IS_WINDOWS = !isMacOS && !isLinux;
 
 const BIG_BTN_BASE =
   'inline-flex items-center justify-center gap-2 cursor-pointer rounded-full border px-[26px] py-[13px] text-[15px] font-semibold no-underline shadow-liquid transition duration-[120ms] active:scale-[0.98] disabled:cursor-default disabled:opacity-60';
@@ -63,16 +77,21 @@ export default function LibraryRoute() {
     outputDevice,
     translateEnabled,
     targetLanguage,
+    videoEnabled,
+    videoWindowId,
     setLanguage,
     setSystemOnly,
     setInputDevice,
     setOutputDevice,
     setTranslateEnabled,
     setTargetLanguage,
+    setVideoEnabled,
+    setVideoWindowId,
   } = useConfigStore();
   const [keyReady, setKeyReady] = useState<boolean | null>(null);
   const [openaiReady, setOpenaiReady] = useState<boolean | null>(null);
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
+  const [windows, setWindows] = useState<WindowInfo[]>([]);
   const [title, setTitle] = useState('');
 
   useEffect(() => {
@@ -110,6 +129,25 @@ export default function LibraryRoute() {
   useEffect(() => {
     void setDevices(inputDevice, outputDevice);
   }, [inputDevice, outputDevice]);
+
+  // Keep the backend in sync with the video-recording choice (Windows only).
+  // Send "" (not null) for an unset window so the backend clears any prior pick.
+  useEffect(() => {
+    if (!IS_WINDOWS) return;
+    void setVideoOptions(videoEnabled, videoWindowId ?? '');
+  }, [videoEnabled, videoWindowId]);
+
+  // (Re)load the capturable window list whenever recording is switched on.
+  useEffect(() => {
+    if (!IS_WINDOWS || !videoEnabled) return;
+    refreshWindows();
+  }, [videoEnabled]);
+
+  function refreshWindows() {
+    listWindows()
+      .then(setWindows)
+      .catch(() => setWindows([]));
+  }
 
   function onLanguage(e: React.ChangeEvent<HTMLSelectElement>) {
     setLanguage(e.target.value as LanguageCode);
@@ -261,6 +299,87 @@ export default function LibraryRoute() {
                   ))}
                 </select>
               </label>
+
+              {IS_WINDOWS && (
+                <div className="mt-0.5 flex flex-col gap-2 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.03)] p-2.5">
+                  <label className="flex cursor-pointer items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 shrink-0 cursor-pointer accent-[#6ea8fe]"
+                      checked={videoEnabled}
+                      onChange={(e) => setVideoEnabled(e.target.checked)}
+                    />
+                    <span className="inline-flex items-center gap-1.5 text-[13px] text-fg">
+                      <HugeiconsIcon
+                        icon={IconVideo}
+                        size={14}
+                        strokeWidth={1.8}
+                        aria-hidden={true}
+                      />
+                      Record video of a window
+                    </span>
+                  </label>
+                  {videoEnabled && (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          className={`${SELECT} min-w-0 flex-1`}
+                          value={videoWindowId ?? ''}
+                          onChange={(e) => setVideoWindowId(e.target.value || null)}
+                          aria-label="Window to record"
+                        >
+                          <option value="">Select a window…</option>
+                          {windows.map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.app ? `${w.app} — ${w.title}` : w.title}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm border border-glass-border bg-[rgba(255,255,255,0.05)] p-[9px] text-fg-dim shadow-liquid hover:bg-hover hover:text-fg"
+                          onClick={refreshWindows}
+                          title="Refresh window list"
+                          aria-label="Refresh window list"
+                        >
+                          <HugeiconsIcon
+                            icon={IconRegenerate}
+                            size={14}
+                            strokeWidth={1.8}
+                            aria-hidden={true}
+                          />
+                        </button>
+                      </div>
+                      {videoWindowId == null ? (
+                        <span className="inline-flex items-start gap-1 text-[11px] leading-snug text-[#ffb454]">
+                          <HugeiconsIcon
+                            icon={IconAlert}
+                            size={12}
+                            strokeWidth={1.8}
+                            className="mt-px shrink-0"
+                            aria-hidden={true}
+                          />
+                          <span>Pick the window (e.g. your meeting) to save it as video.</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-start gap-1 text-[11px] leading-snug text-fg-faint">
+                          <HugeiconsIcon
+                            icon={IconWindow}
+                            size={12}
+                            strokeWidth={1.8}
+                            className="mt-px shrink-0"
+                            aria-hidden={true}
+                          />
+                          <span>
+                            Saved with this session as an MP4 (video + mixed mic &amp; system
+                            audio).
+                          </span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="mt-0.5 flex flex-col gap-2 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.03)] p-2.5">
                 <label className="flex cursor-pointer items-center gap-2.5">

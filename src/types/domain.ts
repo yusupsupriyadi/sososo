@@ -9,6 +9,15 @@ export interface DeviceLists {
   output: DeviceInfo[];
 }
 
+/** A capturable top-level window for the video-recording picker (Windows). */
+export interface WindowInfo {
+  /** Opaque, stable-within-a-session id (raw HWND as a decimal string). */
+  id: string;
+  title: string;
+  /** Owning process/executable name (e.g. "Zoom.exe"). */
+  app: string;
+}
+
 export type SessionStateName =
   | 'idle'
   | 'starting'
@@ -70,6 +79,8 @@ export interface SessionSummary {
   summaryModel?: string | null;
   summarizedAt?: string | null;
   segmentCount: number;
+  /** Saved screen-recording file path (absolute), or null if none was recorded. */
+  videoPath?: string | null;
 }
 
 /** A persisted (finalized) transcript line. */

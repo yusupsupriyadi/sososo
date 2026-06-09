@@ -14,6 +14,10 @@ interface ConfigStore {
   inputDevice: string | null;
   /** Selected system-audio (output to loop back) device id. null = system default. */
   outputDevice: string | null;
+  /** Record the selected window's video alongside the transcription (Windows-only). */
+  videoEnabled: boolean;
+  /** Window id (raw HWND string) to record. In-memory only — HWNDs are per-run. */
+  videoWindowId: string | null;
   /** Whole-UI zoom multiplier (CSS zoom). 1 = 100%. */
   uiScale: number;
   /** Font multiplier for transcript text + speaker labels (live + history). 1 = 100%. */
@@ -35,6 +39,8 @@ interface ConfigStore {
   setSystemOnly: (s: boolean) => void;
   setInputDevice: (id: string | null) => void;
   setOutputDevice: (id: string | null) => void;
+  setVideoEnabled: (v: boolean) => void;
+  setVideoWindowId: (id: string | null) => void;
   setUiScale: (v: number) => void;
   setTranscriptScale: (v: number) => void;
   setGlassOpacity: (v: number) => void;
@@ -59,6 +65,8 @@ export const useConfigStore = create<ConfigStore>()(
       systemOnly: false,
       inputDevice: null,
       outputDevice: null,
+      videoEnabled: false,
+      videoWindowId: null,
       uiScale: 1,
       transcriptScale: 1,
       glassOpacity: 0.58,
@@ -70,6 +78,8 @@ export const useConfigStore = create<ConfigStore>()(
       setSystemOnly: (systemOnly) => set({ systemOnly }),
       setInputDevice: (inputDevice) => set({ inputDevice }),
       setOutputDevice: (outputDevice) => set({ outputDevice }),
+      setVideoEnabled: (videoEnabled) => set({ videoEnabled }),
+      setVideoWindowId: (videoWindowId) => set({ videoWindowId }),
       setUiScale: (uiScale) => set({ uiScale }),
       setTranscriptScale: (transcriptScale) => set({ transcriptScale }),
       setGlassOpacity: (glassOpacity) => set({ glassOpacity }),
@@ -90,6 +100,7 @@ export const useConfigStore = create<ConfigStore>()(
         targetLanguage: s.targetLanguage,
         autoSummarizeOnFinish: s.autoSummarizeOnFinish,
         chatCollapsed: s.chatCollapsed,
+        videoEnabled: s.videoEnabled,
       }),
     },
   ),

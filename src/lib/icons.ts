@@ -27,6 +27,9 @@ export {
   PauseIcon as IconPause,
   StopIcon as IconStop,
   DragDropVerticalIcon as IconDrag,
+  // Video recording
+  Video01Icon as IconVideo,
+  ComputerScreenShareIcon as IconWindow,
   // Session actions
   Edit02Icon as IconRename,
   Delete02Icon as IconDelete,

@@ -9,6 +9,7 @@ import type {
   SessionSummary,
   StartResult,
   StopResult,
+  WindowInfo,
 } from '../types/domain';
 
 // Tauri maps camelCase JS keys to snake_case Rust params automatically.
@@ -36,6 +37,16 @@ export const setTranscriptionOptions = (
 
 /** Pause/resume the active session (backend stops/forwards audio to Deepgram). */
 export const setPaused = (paused: boolean): Promise<void> => invoke('set_paused', { paused });
+
+// --- Video recording (Windows) ---
+
+/** List capturable windows for the Start-screen video picker. */
+export const listWindows = (): Promise<WindowInfo[]> => invoke('list_windows');
+
+/** Persist whether to record video and which window (raw HWND id) to capture.
+ *  Each arg is optional (null = leave unchanged); an empty `windowId` clears it. */
+export const setVideoOptions = (enabled: boolean | null, windowId: string | null): Promise<void> =>
+  invoke('set_video_options', { enabled, windowId });
 
 // --- Session history ---
 
