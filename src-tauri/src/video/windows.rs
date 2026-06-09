@@ -14,7 +14,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crossbeam_channel::{bounded, Receiver, Sender};
 use wasapi::{DeviceEnumerator, Direction, SampleType, StreamMode, WaveFormat};
@@ -266,6 +266,76 @@ struct Capture {
     mic_rx: Receiver<Vec<i16>>,
     sys_rx: Receiver<Vec<i16>>,
     mixer: VideoAudioMixer,
+    /// Frames sent so far + capture start, for a periodic "alive / fps" log line.
+    frames: u64,
+    start: Instant,
+}
+
+impl Capture {
+    /// The real per-frame work, split out so [`on_frame_arrived`] can run it under
+    /// `catch_unwind`: a panic must never unwind into the WinRT/COM frame callback
+    /// (that aborts the whole app) — we log it and stop the capture instead.
+    fn process_frame(&mut self, frame: &mut Frame) -> Result<(), HandlerError> {
+        // Build the encoder on the first frame using the frame's true dimensions
+        // (rounded to even for H.264 4:2:0) to avoid size mismatches/padding.
+        if self.encoder.is_none() {
+            let width = frame.width() & !1;
+            let height = frame.height() & !1;
+            eprintln!(
+                "[video] first frame {width}x{height}; building encoder -> {}",
+                self.out_path.display()
+            );
+            let encoder = VideoEncoder::new(
+                VideoSettingsBuilder::new(width, height).sub_type(VideoSettingsSubType::H264),
+                AudioSettingsBuilder::new()
+                    .sample_rate(VIDEO_SAMPLE_RATE)
+                    .channel_count(VIDEO_CHANNELS as u32)
+                    .bit_per_sample(16),
+                ContainerSettingsBuilder::new(),
+                &self.out_path,
+            )?;
+            self.encoder = Some(encoder);
+            // Discard audio captured during startup (before this first video
+            // frame) so the audio track starts aligned with video frame 0 instead
+            // of leading it (which would show up as an A/V delay from the start).
+            while self.mic_rx.try_recv().is_ok() {}
+            while self.sys_rx.try_recv().is_ok() {}
+            self.mixer = VideoAudioMixer::new(AUDIO_MIX_MAX_SKEW);
+        }
+
+        // Drain + mix this frame's worth of audio first (keeps borrows disjoint).
+        while let Ok(chunk) = self.mic_rx.try_recv() {
+            self.mixer.push_mic(&chunk);
+        }
+        while let Ok(chunk) = self.sys_rx.try_recv() {
+            self.mixer.push_system(&chunk);
+        }
+        let audio = self.mixer.drain_mixed_bytes();
+
+        let encoder = self.encoder.as_mut().expect("encoder built above");
+        if let Err(e) = encoder.send_frame(frame) {
+            eprintln!("[video] send_frame failed: {e}");
+            return Err(e.into());
+        }
+        if !audio.is_empty() {
+            // Timestamp arg is ignored by the encoder (monotonic audio clock).
+            if let Err(e) = encoder.send_audio_buffer(&audio, 0) {
+                eprintln!("[video] send_audio_buffer failed: {e}");
+                return Err(e.into());
+            }
+        }
+
+        self.frames += 1;
+        if self.frames.is_multiple_of(300) {
+            let secs = self.start.elapsed().as_secs_f32().max(0.001);
+            eprintln!(
+                "[video] {} frames in {secs:.1}s (~{:.0} fps)",
+                self.frames,
+                self.frames as f32 / secs
+            );
+        }
+        Ok(())
+    }
 }
 
 impl GraphicsCaptureApiHandler for Capture {
@@ -280,6 +350,8 @@ impl GraphicsCaptureApiHandler for Capture {
             mic_rx: flags.mic_rx,
             sys_rx: flags.sys_rx,
             mixer: VideoAudioMixer::new(AUDIO_MIX_MAX_SKEW),
+            frames: 0,
+            start: Instant::now(),
         })
     }
 
@@ -288,40 +360,20 @@ impl GraphicsCaptureApiHandler for Capture {
         frame: &mut Frame,
         _capture_control: InternalCaptureControl,
     ) -> Result<(), Self::Error> {
-        // Build the encoder on the first frame using the frame's true dimensions
-        // (rounded to even for H.264 4:2:0). Doing it here — rather than from the
-        // window rect — avoids size mismatches and per-frame surface padding.
-        if self.encoder.is_none() {
-            let width = frame.width() & !1;
-            let height = frame.height() & !1;
-            let encoder = VideoEncoder::new(
-                VideoSettingsBuilder::new(width, height).sub_type(VideoSettingsSubType::H264),
-                AudioSettingsBuilder::new()
-                    .sample_rate(VIDEO_SAMPLE_RATE)
-                    .channel_count(VIDEO_CHANNELS as u32)
-                    .bit_per_sample(16),
-                ContainerSettingsBuilder::new(),
-                &self.out_path,
-            )?;
-            self.encoder = Some(encoder);
+        // Never let a panic unwind into the COM frame callback (that aborts the
+        // whole process). Catch it, log the reason, and stop the capture cleanly.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.process_frame(frame))) {
+            Ok(result) => result,
+            Err(panic) => {
+                let msg = panic
+                    .downcast_ref::<&str>()
+                    .map(|s| (*s).to_string())
+                    .or_else(|| panic.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "unknown panic".to_string());
+                eprintln!("[video] capture handler panicked: {msg}");
+                Err(format!("video capture panicked: {msg}").into())
+            }
         }
-
-        // Drain + mix this frame's worth of audio first (keeps borrows disjoint).
-        while let Ok(chunk) = self.mic_rx.try_recv() {
-            self.mixer.push_mic(&chunk);
-        }
-        while let Ok(chunk) = self.sys_rx.try_recv() {
-            self.mixer.push_system(&chunk);
-        }
-        let audio = self.mixer.drain_mixed_bytes();
-
-        let encoder = self.encoder.as_mut().expect("encoder built above");
-        encoder.send_frame(frame)?;
-        if !audio.is_empty() {
-            // Timestamp arg is ignored by the encoder (monotonic audio clock).
-            encoder.send_audio_buffer(&audio, 0)?;
-        }
-        Ok(())
     }
 
     fn on_closed(&mut self) -> Result<(), Self::Error> {
@@ -355,6 +407,7 @@ pub struct VideoRecorder {
 impl VideoRecorder {
     /// Stop recording and finalize the MP4. Returns the saved file path.
     pub fn stop(mut self) -> AppResult<PathBuf> {
+        eprintln!("[video] stopping recording -> {}", self.out_path.display());
         if let Some(control) = self.control.take() {
             // `stop()` posts WM_QUIT and joins the capture thread; as the
             // returned-by-value `CaptureControl` drops, the last handler `Arc`
@@ -364,6 +417,7 @@ impl VideoRecorder {
                 .stop()
                 .map_err(|e| AppError::Video(format!("stop capture: {e}")))?;
         }
+        eprintln!("[video] recording finalized -> {}", self.out_path.display());
         // The mic/system `AudioCap`s stop + join via their `Drop` as `self` ends.
         Ok(self.out_path)
     }
@@ -383,6 +437,12 @@ pub fn start_window_recording(cfg: VideoStartConfig) -> AppResult<VideoRecorder>
             "the selected window is no longer available".into(),
         ));
     }
+
+    eprintln!(
+        "[video] starting window recording (system_only={}) -> {}",
+        cfg.system_only,
+        cfg.out_path.display()
+    );
 
     // System audio is always captured. The mic is mixed in only when NOT in
     // system-only mode: recording a video/music shouldn't capture your mic — it
