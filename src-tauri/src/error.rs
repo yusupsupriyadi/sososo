@@ -6,6 +6,8 @@ use thiserror::Error;
 pub enum AppError {
     #[error("audio error: {0}")]
     Audio(String),
+    #[error("video error: {0}")]
+    Video(String),
     #[error("session error: {0}")]
     Session(String),
     #[error("config error: {0}")]
@@ -46,6 +48,7 @@ mod tests {
     #[test]
     fn display_strings_are_prefixed_by_category() {
         assert_eq!(AppError::Audio("x".into()).to_string(), "audio error: x");
+        assert_eq!(AppError::Video("x".into()).to_string(), "video error: x");
         assert_eq!(
             AppError::Session("x".into()).to_string(),
             "session error: x"

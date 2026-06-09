@@ -14,6 +14,7 @@ use tokio_util::sync::CancellationToken;
 use crate::audio::{capture, mixer::Interleaver, TARGET_SAMPLE_RATE};
 use crate::db::Db;
 use crate::events::{self, SessionState, TranscriptSegment};
+use crate::video::{self, VideoStartConfig};
 
 fn now() -> String {
     Utc::now().to_rfc3339()
@@ -54,6 +55,7 @@ pub fn spawn_session(
     system_only: bool,
     cancel: CancellationToken,
     paused: Arc<AtomicBool>,
+    video_cfg: Option<VideoStartConfig>,
 ) {
     tauri::async_runtime::spawn(run_session(
         app,
@@ -65,6 +67,7 @@ pub fn spawn_session(
         system_only,
         cancel,
         paused,
+        video_cfg,
     ));
 }
 
@@ -79,6 +82,7 @@ async fn run_session(
     system_only: bool,
     cancel: CancellationToken,
     paused: Arc<AtomicBool>,
+    video_cfg: Option<VideoStartConfig>,
 ) {
     let _ = app.emit(
         events::SESSION_STATE,
@@ -190,6 +194,19 @@ async fn run_session(
         SessionState::new(Some(session_id), "recording").with_started(now()),
     );
 
+    // Start the optional window video recording now that capture is live. Video
+    // is best-effort: a failure here is logged but never blocks transcription.
+    let recorder = match video_cfg {
+        Some(cfg) => match video::start_window_recording(cfg) {
+            Ok(r) => Some(r),
+            Err(e) => {
+                eprintln!("[session] video recording failed to start: {e}");
+                None
+            }
+        },
+        None => None,
+    };
+
     // 4) Stream transcripts to the UI until stopped or the stream ends.
     loop {
         tokio::select! {
@@ -214,6 +231,23 @@ async fn run_session(
     }
     sys.stop();
     let _ = bridge.await;
+    // Stop the video recording (finalizes the MP4) and persist its path BEFORE
+    // finalize_session, so a recording with no transcript is still kept. The
+    // stop joins the encoder's transcode thread, so run it off the async worker.
+    if let Some(recorder) = recorder {
+        match tokio::task::spawn_blocking(move || recorder.stop()).await {
+            Ok(Ok(path)) => {
+                if let Err(e) = app
+                    .state::<Db>()
+                    .set_video_path(session_id, &path.to_string_lossy())
+                {
+                    eprintln!("[session] db set_video_path: {e}");
+                }
+            }
+            Ok(Err(e)) => eprintln!("[session] stop video recording: {e}"),
+            Err(e) => eprintln!("[session] video stop task panicked: {e}"),
+        }
+    }
     // Persist the end time (or drop the row if nothing was transcribed).
     if let Err(e) = app.state::<Db>().finalize_session(session_id, &now()) {
         eprintln!("[session] db finalize: {e}");

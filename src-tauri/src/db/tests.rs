@@ -61,6 +61,41 @@ fn finalize_deletes_a_session_with_no_segments() {
 }
 
 #[test]
+fn finalize_keeps_a_video_only_session_with_no_segments() {
+    // A recording with no transcript must still be kept (we'd otherwise orphan
+    // the saved .mp4). The session lifecycle sets the path before finalizing.
+    let db = mem_db();
+    let id = db
+        .create_session("Recorded", "en", false, "2026-01-01T00:00:00Z")
+        .unwrap();
+    db.set_video_path(id, "C:/recordings/1.mp4").unwrap();
+    let kept = db.finalize_session(id, "2026-01-01T00:05:00Z").unwrap();
+    assert!(kept);
+    let detail = db.get_session(id).unwrap().expect("kept for its video");
+    assert_eq!(detail.segments.len(), 0);
+    assert_eq!(
+        detail.session.video_path.as_deref(),
+        Some("C:/recordings/1.mp4")
+    );
+}
+
+#[test]
+fn video_path_is_absent_by_default_and_round_trips() {
+    let db = mem_db();
+    let id = db.create_session("S", "en", false, "t").unwrap();
+    db.upsert_segment(&seg(id, "x", "you", "hi")).unwrap();
+    assert_eq!(
+        db.get_session(id).unwrap().unwrap().session.video_path,
+        None
+    );
+    db.set_video_path(id, "/tmp/v.mp4").unwrap();
+    assert_eq!(
+        db.list_sessions().unwrap()[0].video_path.as_deref(),
+        Some("/tmp/v.mp4")
+    );
+}
+
+#[test]
 fn upsert_segment_is_idempotent_on_segment_id() {
     let db = mem_db();
     let id = db.create_session("S", "en", false, "t").unwrap();

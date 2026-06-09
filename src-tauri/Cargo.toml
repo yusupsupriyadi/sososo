@@ -21,7 +21,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["macos-private-api"] }
+tauri = { version = "2", features = ["macos-private-api", "protocol-asset"] }
 tauri-plugin-opener = "2"
 # In-app auto-update from GitHub Releases (signed updater artifacts + latest.json).
 # `process` is needed for `relaunch()` after an update is installed.
@@ -60,6 +60,7 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "rus
 [target.'cfg(target_os = "windows")'.dependencies]
 wasapi = "0.23"                                             # WASAPI loopback + mic, polled
 keyring = { version = "3", features = ["windows-native"] }  # Windows Credential Manager
+windows-capture = "2.0.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cpal = "0.17"                                             # CoreAudio capture (mic + BlackHole)

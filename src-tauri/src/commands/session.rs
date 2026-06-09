@@ -4,11 +4,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use serde::Serialize;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tokio_util::sync::CancellationToken;
 
 use crate::error::{AppError, AppResult};
 use crate::state::{ActiveSession, AppState};
+use crate::video::VideoStartConfig;
 use crate::{db::Db, keys, session};
 
 #[derive(Serialize)]
@@ -35,6 +36,8 @@ pub fn start_session(
     let output = state.output_device.lock().unwrap().clone();
     let language = state.language.lock().unwrap().clone();
     let system_only = *state.system_only.lock().unwrap();
+    let video_enabled = *state.video_enabled.lock().unwrap();
+    let video_window = state.video_window.lock().unwrap().clone();
 
     // Create the persisted session row up front so its id can be returned
     // synchronously; a blank title falls back to a date/time label.
@@ -50,6 +53,10 @@ pub fn start_session(
         });
     let id = db.create_session(&title, &language, system_only, &started_at)?;
 
+    // Prepare the video recording (output path + dir) up front; it's actually
+    // started inside the session task. Best-effort — never blocks the session.
+    let video_cfg = build_video_cfg(&app, id, video_enabled, video_window, &input, &output);
+
     let cancel = CancellationToken::new();
     let paused = Arc::new(AtomicBool::new(false));
     session::spawn_session(
@@ -62,12 +69,48 @@ pub fn start_session(
         system_only,
         cancel.clone(),
         paused.clone(),
+        video_cfg,
     );
     *state.session.lock().unwrap() = Some(ActiveSession { id, cancel, paused });
 
     Ok(StartResult {
         session_id: id,
         started_at,
+    })
+}
+
+/// Build the video-recording config when recording is enabled and a window is
+/// chosen, creating the destination `recordings/` directory. Returns `None`
+/// (logging any path error) when video is off or the path can't be prepared —
+/// video is best-effort and must never block starting a session.
+fn build_video_cfg(
+    app: &AppHandle,
+    session_id: i64,
+    enabled: bool,
+    window: Option<String>,
+    mic_device: &Option<String>,
+    system_device: &Option<String>,
+) -> Option<VideoStartConfig> {
+    if !enabled {
+        return None;
+    }
+    let window_id = window?;
+    let dir = match app.path().app_data_dir() {
+        Ok(d) => d.join("recordings"),
+        Err(e) => {
+            eprintln!("[session] video app_data_dir: {e}");
+            return None;
+        }
+    };
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        eprintln!("[session] create recordings dir: {e}");
+        return None;
+    }
+    Some(VideoStartConfig {
+        window_id,
+        mic_device: mic_device.clone(),
+        system_device: system_device.clone(),
+        out_path: dir.join(format!("{session_id}.mp4")),
     })
 }
 

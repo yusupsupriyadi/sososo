@@ -9,6 +9,7 @@ mod events;
 mod keys;
 mod session;
 mod state;
+mod video;
 
 use tauri::Manager;
 
@@ -25,6 +26,8 @@ pub fn run() {
             commands::list_devices,
             commands::set_devices,
             commands::set_transcription_options,
+            commands::list_windows,
+            commands::set_video_options,
             commands::start_session,
             commands::stop_session,
             commands::set_api_key,

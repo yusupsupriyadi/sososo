@@ -24,6 +24,12 @@ pub struct AppState {
     /// When true, capture only system audio (no microphone) — cleaner for
     /// transcribing videos/music; false = system + mic (meetings).
     pub system_only: Mutex<bool>,
+    /// When true, also record the selected window's video (Windows-only) for the
+    /// session. Set from the Start screen's "Record video" toggle.
+    pub video_enabled: Mutex<bool>,
+    /// The window to record (raw HWND as a decimal string), or `None` if none is
+    /// selected. Mirrors `video::WindowInfo::id`.
+    pub video_window: Mutex<Option<String>>,
 }
 
 impl Default for AppState {
@@ -34,6 +40,8 @@ impl Default for AppState {
             output_device: Mutex::new(None),
             language: Mutex::new("multi".to_string()),
             system_only: Mutex::new(false),
+            video_enabled: Mutex::new(false),
+            video_window: Mutex::new(None),
         }
     }
 }

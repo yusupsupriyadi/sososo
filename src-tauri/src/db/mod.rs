@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     ended_at      TEXT,
     summary       TEXT,
     summary_model TEXT,
-    summarized_at TEXT
+    summarized_at TEXT,
+    video_path    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS segments (
@@ -116,6 +117,9 @@ pub struct SessionSummary {
     pub summary: Option<String>,
     pub summary_model: Option<String>,
     pub summarized_at: Option<String>,
+    /// Absolute path to the saved screen recording (`.mp4`), or `None` if the
+    /// session had no video recorded.
+    pub video_path: Option<String>,
     pub segment_count: i64,
 }
 
@@ -200,6 +204,10 @@ fn migrate(conn: &Connection) -> AppResult<()> {
             "summarized_at",
             "ALTER TABLE sessions ADD COLUMN summarized_at TEXT",
         ),
+        (
+            "video_path",
+            "ALTER TABLE sessions ADD COLUMN video_path TEXT",
+        ),
     ] {
         if !existing.iter().any(|c| c == name) {
             conn.execute(ddl, [])?;
@@ -271,6 +279,7 @@ fn row_to_summary(row: &rusqlite::Row<'_>) -> rusqlite::Result<SessionSummary> {
         summary: row.get(6)?,
         summary_model: row.get(7)?,
         summarized_at: row.get(8)?,
-        segment_count: row.get(9)?,
+        video_path: row.get(9)?,
+        segment_count: row.get(10)?,
     })
 }

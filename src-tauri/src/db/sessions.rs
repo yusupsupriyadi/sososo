@@ -34,7 +34,17 @@ impl Db {
             [id],
             |r| r.get(0),
         )?;
-        if count == 0 {
+        // Keep a recording even if nothing was transcribed — a saved video is
+        // worth preserving on its own.
+        let has_video: bool = conn
+            .query_row(
+                "SELECT video_path IS NOT NULL FROM sessions WHERE id = ?1",
+                [id],
+                |r| r.get(0),
+            )
+            .optional()?
+            .unwrap_or(false);
+        if count == 0 && !has_video {
             conn.execute("DELETE FROM sessions WHERE id = ?1", [id])?;
             Ok(false)
         } else {
@@ -51,7 +61,7 @@ impl Db {
         let conn = self.0.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT s.id, s.title, s.language, s.system_only, s.started_at, s.ended_at, \
-                    s.summary, s.summary_model, s.summarized_at, \
+                    s.summary, s.summary_model, s.summarized_at, s.video_path, \
                     COUNT(seg.id) AS segment_count \
              FROM sessions s \
              LEFT JOIN segments seg ON seg.session_id = s.id \
@@ -72,7 +82,7 @@ impl Db {
         let session = conn
             .query_row(
                 "SELECT s.id, s.title, s.language, s.system_only, s.started_at, s.ended_at, \
-                        s.summary, s.summary_model, s.summarized_at, \
+                        s.summary, s.summary_model, s.summarized_at, s.video_path, \
                         COUNT(seg.id) AS segment_count \
                  FROM sessions s \
                  LEFT JOIN segments seg ON seg.session_id = s.id \
@@ -125,6 +135,16 @@ impl Db {
         conn.execute(
             "UPDATE sessions SET title = ?1 WHERE id = ?2",
             rusqlite::params![title, id],
+        )?;
+        Ok(())
+    }
+
+    /// Record the saved screen-recording path for a session.
+    pub fn set_video_path(&self, id: i64, path: &str) -> AppResult<()> {
+        let conn = self.0.lock().unwrap();
+        conn.execute(
+            "UPDATE sessions SET video_path = ?1 WHERE id = ?2",
+            rusqlite::params![path, id],
         )?;
         Ok(())
     }
