@@ -238,6 +238,9 @@ pub enum AudioEncoderSource {
     Buffer(Vec<u8>),
 }
 
+// LOCAL PATCH (sososo): width/height/format are no longer read now that
+// build_padded_surface creates a fresh texture per frame (see that fn).
+#[allow(dead_code)]
 struct CachedSurface {
     width: u32,
     height: u32,
@@ -701,8 +704,6 @@ pub struct VideoEncoder {
     target_width: u32,
     target_height: u32,
     target_color_format: ColorFormat,
-
-    cached_surface: Option<CachedSurface>,
 }
 
 impl VideoEncoder {
@@ -976,7 +977,6 @@ impl VideoEncoder {
             target_width,
             target_height,
             target_color_format,
-            cached_surface: None,
         })
     }
 
@@ -1113,24 +1113,20 @@ impl VideoEncoder {
             target_width,
             target_height,
             target_color_format,
-            cached_surface: None,
         })
     }
 
     fn build_padded_surface(&mut self, frame: &Frame) -> Result<SendDirectX<IDirect3DSurface>, VideoEncoderError> {
+        // LOCAL PATCH (sososo): allocate a FRESH target texture per frame instead
+        // of reusing one cached texture. The produced surface is handed to an async
+        // transcode thread; reusing a single texture lets the next captured frame
+        // overwrite it before it is encoded → flicker/tearing. A fresh texture per
+        // frame — kept alive by the returned surface ref until the encoder consumes
+        // it — removes the race (the approach Microsoft's reference recorder uses).
         let frame_format = frame.color_format();
-        let needs_recreate = self.cached_surface.as_ref().is_none_or(|cache| {
-            cache.format != frame_format || cache.width != self.target_width || cache.height != self.target_height
-        });
-
-        if needs_recreate {
-            let surface =
-                Self::create_cached_surface(frame.device(), self.target_width, self.target_height, frame_format)?;
-            self.cached_surface = Some(surface);
-            self.target_color_format = frame_format;
-        }
-
-        let cache = self.cached_surface.as_mut().expect("cached_surface must be populated before use");
+        self.target_color_format = frame_format;
+        let cache =
+            Self::create_cached_surface(frame.device(), self.target_width, self.target_height, frame_format)?;
         let context = frame.device_context();
 
         if let Some(rtv) = &cache.render_target_view {
@@ -1182,11 +1178,10 @@ impl VideoEncoder {
             }
         };
 
-        let surface = if frame.width() == self.target_width && frame.height() == self.target_height {
-            SendDirectX::new(frame.as_raw_surface().clone())
-        } else {
-            self.build_padded_surface(frame)?
-        };
+        // LOCAL PATCH (sososo): always copy into a fresh per-frame texture (see
+        // build_padded_surface). Never hand the capture pool's own surface to the
+        // async encoder — it gets recycled before encoding → flicker.
+        let surface = self.build_padded_surface(frame)?;
 
         self.frame_sender.send(Some((VideoEncoderSource::DirectX(surface), timestamp)))?;
 
