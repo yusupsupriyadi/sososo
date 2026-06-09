@@ -84,3 +84,32 @@ mode). Root causes + fixes:
   mixes mic + system; use headphones to avoid acoustic echo.)
 - Verified: `cargo test` (34, incl. rewritten mixer tests), `cargo clippy` green. Manual re-test
   pending (rebuild via `bun run tauri dev`).
+
+## Follow-up: playback flicker ("ngeblink") + A/V lag — research & fix
+
+Next test report: the saved MP4 itself (same in VLC + Windows player, so it's the recording not the
+in-app player) **flickers/tears** and audio **lags** the video.
+
+Researched the established best practice (MS _Screen capture to video_ tutorial + **SimpleRecorder**
+sample; `Direct3D11CaptureFramePool.CreateFreeThreaded` docs; `windows-capture` & `windows-record`
+repos). Findings:
+
+- **Root cause of flicker:** the canonical MS recorder copies each captured frame into a fresh
+  composition texture _on demand_ before encoding, so the capture pool can't overwrite a surface
+  mid-encode. `windows-capture` 2.0.0 instead creates the frame pool with **1 buffer** and sends the
+  surface to an **async** transcode thread with no safe copy → the pool recycles the surface before
+  it's encoded → torn/flickering frames. Choppy video against continuous audio reads as "audio telat".
+- **`windows-record` alternative** rejected: v0.1.0, Desktop-Duplication (whole-monitor, crops to the
+  window → breaks when occluded/minimized), and "robust audio sync" is still an open TODO.
+
+Fixes shipped:
+
+- **Cap capture to 30 fps** (`MinimumUpdateInterval` + encoder `frame_rate(30)`) — doubles the
+  encoder's per-frame headroom and halves load (`src/video/windows.rs`).
+- **Vendored `windows-capture` 2.0.0** into `src-tauri/vendor/windows-capture` and **patched the frame
+  pool from 1 → 3 buffers** (`Create` + `Recreate` in `src/graphics_capture_api.rs`, marked
+  "LOCAL PATCH"), matching MS double/triple-buffering guidance so a sent surface stays valid for
+  several frames. `Cargo.toml` now uses `windows-capture = { path = "vendor/windows-capture" }`.
+- Verified: `cargo check`/`clippy`/`test` (34) green with the vendored crate. Manual re-test pending.
+- If a residual constant A/V offset remains after flicker is gone, next step is AAC priming-delay
+  compensation; widen-skew or per-frame copy in `build_padded_surface` if odd-sized windows still tear.
