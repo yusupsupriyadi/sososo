@@ -47,6 +47,10 @@ pub struct VideoStartConfig {
     pub mic_device: Option<String>,
     /// System-audio (render/loopback) device id, or `None` for the system default.
     pub system_device: Option<String>,
+    /// When `true`, record system audio only (no mic) into the video track —
+    /// mirrors the session's audio-source mode so a video/music recording doesn't
+    /// double up your mic with the system audio.
+    pub system_only: bool,
     /// Destination `.mp4` path (its parent directory must already exist).
     pub out_path: PathBuf,
 }

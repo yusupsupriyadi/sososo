@@ -55,7 +55,15 @@ pub fn start_session(
 
     // Prepare the video recording (output path + dir) up front; it's actually
     // started inside the session task. Best-effort — never blocks the session.
-    let video_cfg = build_video_cfg(&app, id, video_enabled, video_window, &input, &output);
+    let video_cfg = build_video_cfg(
+        &app,
+        id,
+        video_enabled,
+        video_window,
+        &input,
+        &output,
+        system_only,
+    );
 
     let cancel = CancellationToken::new();
     let paused = Arc::new(AtomicBool::new(false));
@@ -90,6 +98,7 @@ fn build_video_cfg(
     window: Option<String>,
     mic_device: &Option<String>,
     system_device: &Option<String>,
+    system_only: bool,
 ) -> Option<VideoStartConfig> {
     if !enabled {
         return None;
@@ -110,6 +119,7 @@ fn build_video_cfg(
         window_id,
         mic_device: mic_device.clone(),
         system_device: system_device.clone(),
+        system_only,
         out_path: dir.join(format!("{session_id}.mp4")),
     })
 }

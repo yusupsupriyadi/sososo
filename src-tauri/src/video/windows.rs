@@ -38,6 +38,9 @@ use crate::error::{AppError, AppResult};
 /// The video recording's audio-track format (the encoder's AAC defaults too).
 const VIDEO_SAMPLE_RATE: u32 = 48_000;
 const VIDEO_CHANNELS: u16 = 2;
+/// Max drift (interleaved samples) tolerated between the mic and system streams
+/// before the starved side is silence-padded — ~100 ms at 48 kHz stereo.
+const AUDIO_MIX_MAX_SKEW: usize = 9_600;
 
 /// Handler error type. `Box<dyn Error + Send + Sync>` keeps the trait happy and
 /// absorbs the encoder/WinRT errors via `?`.
@@ -276,7 +279,7 @@ impl GraphicsCaptureApiHandler for Capture {
             out_path: flags.out_path,
             mic_rx: flags.mic_rx,
             sys_rx: flags.sys_rx,
-            mixer: VideoAudioMixer::new(),
+            mixer: VideoAudioMixer::new(AUDIO_MIX_MAX_SKEW),
         })
     }
 
@@ -342,8 +345,9 @@ impl GraphicsCaptureApiHandler for Capture {
 pub struct VideoRecorder {
     control: Option<CaptureControl<Capture, HandlerError>>,
     // Field order matters for Drop: `control` is taken+stopped first in `stop()`;
-    // these two stop via their own `Drop` when the recorder is dropped.
-    _mic: AudioCap,
+    // these stop via their own `Drop` when the recorder is dropped. `_mic` is
+    // `None` in system-only mode (no mic captured for the video track).
+    _mic: Option<AudioCap>,
     _sys: AudioCap,
     out_path: PathBuf,
 }
@@ -380,8 +384,18 @@ pub fn start_window_recording(cfg: VideoStartConfig) -> AppResult<VideoRecorder>
         ));
     }
 
-    // Start the audio feeders first; if capture start fails, their `Drop` stops them.
-    let (mic_rx, mic) = start_audio_capture(AudioSource::Mic, cfg.mic_device)?;
+    // System audio is always captured. The mic is mixed in only when NOT in
+    // system-only mode: recording a video/music shouldn't capture your mic — it
+    // would double up with the system audio (and clip). When skipped, the mixer
+    // pads the mic side with silence, yielding a clean system-only track.
+    let (mic_rx, mic) = if cfg.system_only {
+        let (mic_tx, mic_rx) = bounded::<Vec<i16>>(1);
+        drop(mic_tx); // disconnected receiver — the handler never gets mic audio
+        (mic_rx, None)
+    } else {
+        let (rx, cap) = start_audio_capture(AudioSource::Mic, cfg.mic_device)?;
+        (rx, Some(cap))
+    };
     let (sys_rx, sys) = start_audio_capture(AudioSource::Loopback, cfg.system_device)?;
 
     let flags = CaptureFlags {
