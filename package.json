@@ -20,7 +20,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,jsonc,css,md,html,yml,yaml}": "prettier --write",
-    "src-tauri/**/*.rs": "rustfmt --edition 2021"
+    "src-tauri/!(vendor)/**/*.rs": "rustfmt --edition 2021"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.2.0",

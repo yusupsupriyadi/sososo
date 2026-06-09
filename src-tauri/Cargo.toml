@@ -60,7 +60,11 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "rus
 [target.'cfg(target_os = "windows")'.dependencies]
 wasapi = "0.23"                                             # WASAPI loopback + mic, polled
 keyring = { version = "3", features = ["windows-native"] }  # Windows Credential Manager
-windows-capture = "2.0.0"
+# Vendored + locally patched (vendor/windows-capture): frame pool uses 3 buffers
+# instead of 1 so the async video encoder doesn't read surfaces the capture pool
+# has already recycled (the cause of recording flicker/tearing). See that crate's
+# src/graphics_capture_api.rs "LOCAL PATCH" notes.
+windows-capture = { path = "vendor/windows-capture" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cpal = "0.17"                                             # CoreAudio capture (mic + BlackHole)

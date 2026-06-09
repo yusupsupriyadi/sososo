@@ -5742,8 +5742,6 @@ dependencies = [
 [[package]]
 name = "windows-capture"
 version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f9460c7b82f6b7d314d85b45610481f26a1159a42dadf1e13a329041553e060"
 dependencies = [
  "parking_lot",
  "rayon",

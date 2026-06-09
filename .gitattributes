@@ -12,3 +12,6 @@
 *.wav binary
 *.woff binary
 *.woff2 binary
+
+# Vendored third-party crate — exclude from GitHub language stats / diffs.
+src-tauri/vendor/** linguist-vendored

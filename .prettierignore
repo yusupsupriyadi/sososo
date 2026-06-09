@@ -13,3 +13,6 @@ src-tauri/gen/
 bun.lockb
 *.lock
 *.log
+
+# Vendored third-party crate — kept pristine (patched upstream code, not ours to format)
+src-tauri/vendor/
