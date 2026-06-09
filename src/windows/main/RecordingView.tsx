@@ -21,6 +21,8 @@ import { useConfigStore } from '../../state/configStore';
 import { languageLabel, TRANSLATE_TARGETS } from '../../lib/languages';
 import { enterRecordingWindow, exitRecordingWindow } from '../../lib/window';
 import { isMacOS } from '../../lib/platform';
+import { ConnectingState, FinishingState, ListeningState, LoadingDots } from './LiveStatusViews';
+import { liveBodyState, sessionStatusLabel } from './recordingStatus';
 
 const PILL_BTN =
   'inline-flex cursor-pointer items-center justify-center shadow-liquid transition duration-[120ms] enabled:hover:brightness-[1.12] enabled:active:scale-[0.92] disabled:cursor-default disabled:opacity-55';
@@ -61,8 +63,8 @@ export default function RecordingView() {
 
   const stopping = state === 'stopping';
   const live = !paused && state === 'recording';
-  const status =
-    state === 'starting' ? 'Starting…' : stopping ? 'Finishing…' : paused ? 'Paused' : 'Recording';
+  const status = sessionStatusLabel(state, paused);
+  const bodyState = liveBodyState(state, segments.length);
 
   return (
     <div
@@ -134,9 +136,11 @@ export default function RecordingView() {
               'h-[9px] w-[9px] shrink-0 rounded-full',
               live
                 ? 'animate-rec-pulse bg-rec'
-                : state === 'error'
-                  ? 'bg-[#ffb454]'
-                  : 'bg-fg-faint',
+                : state === 'starting'
+                  ? 'animate-pulse bg-accent'
+                  : state === 'stopping' || state === 'reconnecting' || state === 'error'
+                    ? 'animate-pulse bg-[#ffb454]'
+                    : 'bg-fg-faint',
             )}
           />
           <span className="text-[12px] font-semibold text-fg-dim">{status}</span>
@@ -172,12 +176,14 @@ export default function RecordingView() {
         )}
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-[14px]">
-          {segments.length === 0 ? (
-            <p className="m-auto px-4 text-center text-[13px] text-fg-faint italic">
-              {state === 'starting'
-                ? 'Connecting to Deepgram…'
-                : "Live transcript will appear here when there's audio."}
-            </p>
+          {bodyState === 'connecting' ? (
+            <ConnectingState />
+          ) : bodyState === 'reconnecting' ? (
+            <ConnectingState variant="reconnecting" />
+          ) : bodyState === 'finishing' ? (
+            <FinishingState />
+          ) : bodyState === 'listening' ? (
+            <ListeningState />
           ) : (
             segments.map((c) => (
               <div key={c.segmentId} className="flex flex-col gap-0.5">
@@ -238,10 +244,11 @@ function TranslationLine({ entry, scale }: { entry?: TranslationEntry; scale: nu
   if (entry.status === 'pending') {
     return (
       <span
-        className="border-l-2 border-[rgba(255,192,77,0.35)] pl-2 text-fg-faint italic"
+        className="inline-flex w-fit items-center gap-1.5 border-l-2 border-[rgba(255,192,77,0.35)] pl-2 text-[#ffc04d]/70 italic"
         style={{ fontSize: `${12 * scale}px` }}
       >
-        Translating…
+        Translating
+        <LoadingDots />
       </span>
     );
   }

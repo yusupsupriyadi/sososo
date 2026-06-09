@@ -38,8 +38,12 @@
      Windows, San Francisco on macOS); explicit names are fallbacks */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* animation → `animate-rec-pulse` */
+  /* animations → `animate-rec-pulse`, `animate-eq-bar`, `animate-loading-dot` */
   --animate-rec-pulse: rec-pulse 1.4s infinite;
+  /* live "listening" equalizer bar (paired with a per-bar animation-delay) */
+  --animate-eq-bar: eq-bar 1.05s ease-in-out infinite;
+  /* staggered loading dots (connecting / translating) */
+  --animate-loading-dot: loading-dot 1.4s ease-in-out infinite;
 }
 
 @keyframes rec-pulse {
@@ -51,6 +55,45 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgb(255 93 93 / 0);
+  }
+}
+
+/* live "listening" equalizer: bars breathe between 35% and full height */
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* loading dots: a soft lift + fade, staggered via per-dot animation-delay */
+@keyframes loading-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Respect reduced-motion: hold the loaders steady (visible, not animating)
+   instead of looping. Built-in animate-spin/ping inherit Tailwind's own
+   reduced-motion handling. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-eq-bar,
+  .animate-loading-dot,
+  .animate-rec-pulse {
+    animation: none;
+  }
+  .animate-eq-bar {
+    transform: scaleY(0.7);
   }
 }
 
