@@ -41,6 +41,11 @@ const VIDEO_CHANNELS: u16 = 2;
 /// Max drift (interleaved samples) tolerated between the mic and system streams
 /// before the starved side is silence-padded — ~100 ms at 48 kHz stereo.
 const AUDIO_MIX_MAX_SKEW: usize = 9_600;
+/// Capture frame-rate cap (fps). 30 is plenty for screen/meeting recording and
+/// gives the encoder + the (single-buffer) capture frame pool far more headroom
+/// per frame — reducing the surface-reuse race that shows up as flicker/tearing
+/// and choppy playback when capture outruns the encoder.
+const TARGET_FPS: u32 = 30;
 
 /// Handler error type. `Box<dyn Error + Send + Sync>` keeps the trait happy and
 /// absorbs the encoder/WinRT errors via `?`.
@@ -286,7 +291,9 @@ impl Capture {
                 self.out_path.display()
             );
             let encoder = VideoEncoder::new(
-                VideoSettingsBuilder::new(width, height).sub_type(VideoSettingsSubType::H264),
+                VideoSettingsBuilder::new(width, height)
+                    .frame_rate(TARGET_FPS)
+                    .sub_type(VideoSettingsSubType::H264),
                 AudioSettingsBuilder::new()
                     .sample_rate(VIDEO_SAMPLE_RATE)
                     .channel_count(VIDEO_CHANNELS as u32)
@@ -468,7 +475,8 @@ pub fn start_window_recording(cfg: VideoStartConfig) -> AppResult<VideoRecorder>
         CursorCaptureSettings::Default,
         DrawBorderSettings::Default,
         SecondaryWindowSettings::Default,
-        MinimumUpdateIntervalSettings::Default,
+        // Cap delivery to ~TARGET_FPS so capture doesn't outrun the encoder.
+        MinimumUpdateIntervalSettings::Custom(Duration::from_millis(1000 / u64::from(TARGET_FPS))),
         DirtyRegionSettings::Default,
         ColorFormat::Bgra8,
         flags,
