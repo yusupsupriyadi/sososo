@@ -361,6 +361,21 @@ export default function LibraryRoute() {
                           />
                           <span>Pick the window (e.g. your meeting) to save it as video.</span>
                         </span>
+                      ) : !systemOnly ? (
+                        <span className="inline-flex items-start gap-1 text-[11px] leading-snug text-fg-faint">
+                          <HugeiconsIcon
+                            icon={IconMic}
+                            size={12}
+                            strokeWidth={1.8}
+                            className="mt-px shrink-0"
+                            aria-hidden={true}
+                          />
+                          <span>
+                            Saved as MP4 with your mic + system audio. Use headphones — on speakers
+                            the mic re-records the system sound (doubling). To capture a video/music
+                            without your voice, switch to System only.
+                          </span>
+                        </span>
                       ) : (
                         <span className="inline-flex items-start gap-1 text-[11px] leading-snug text-fg-faint">
                           <HugeiconsIcon
@@ -371,7 +386,7 @@ export default function LibraryRoute() {
                             aria-hidden={true}
                           />
                           <span>
-                            Saved with this session as an MP4 (video + mixed mic &amp; system
+                            Saved with this session as an MP4 (video + the window&apos;s system
                             audio).
                           </span>
                         </span>
