@@ -113,3 +113,15 @@ Fixes shipped:
 - Verified: `cargo check`/`clippy`/`test` (34) green with the vendored crate. Manual re-test pending.
 - If a residual constant A/V offset remains after flicker is gone, next step is AAC priming-delay
   compensation; widen-skew or per-frame copy in `build_padded_surface` if odd-sized windows still tear.
+
+### Update: 3 buffers wasn't enough — per-frame copy was the real fix
+
+Re-test: **audio now fine** (A/V sync resolved), but video **still tore** — user described it as
+"splitting / black / broken-TV", the textbook signature of an encoder reading a recycled GPU surface.
+So more frame-pool buffers alone didn't help. Patched the vendored encoder to match Microsoft's
+reference exactly: `VideoEncoder::build_padded_surface` now allocates a **fresh target texture per
+frame** (kept alive by the returned surface ref until the encoder consumes it) instead of reusing one
+cached texture, and `send_frame` **always copies** rather than handing the capture pool's own surface
+to the async transcoder. Removes the recycle race for any window size / encoder speed.
+(`src-tauri/vendor/windows-capture/src/encoder.rs`, "LOCAL PATCH".) Verified `cargo build`/`clippy`/
+`test` green; manual re-test pending.
