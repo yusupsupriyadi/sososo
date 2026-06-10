@@ -46,6 +46,15 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # The screencapturekit crate's Swift bridge (and its apple-* deps) target
+      # the newest macOS SDK; the runner's default Xcode (16.x, macOS 15 SDK) is
+      # too old to compile it, so select the latest stable Xcode instead.
+      - name: Select latest Xcode
+        if: matrix.os == 'macos-latest'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -69,6 +78,14 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      # The release ships a universal macOS binary, so make sure the Intel half
+      # keeps compiling too (the Swift bridge cross-compiles per target).
+      - name: Check x86_64-apple-darwin
+        if: matrix.os == 'macos-latest'
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo check --manifest-path src-tauri/Cargo.toml --target x86_64-apple-darwin
 
       - name: Rust tests
         run: cargo test --manifest-path src-tauri/Cargo.toml

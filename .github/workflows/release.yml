@@ -57,6 +57,15 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
+      # The screencapturekit crate's Swift bridge (and its apple-* deps) target
+      # the newest macOS SDK; the runner's default Xcode (16.x, macOS 15 SDK) is
+      # too old to compile it, so select the latest stable Xcode instead.
+      - name: Select latest Xcode
+        if: matrix.os == 'macos-latest'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
