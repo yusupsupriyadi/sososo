@@ -42,7 +42,10 @@ pub struct WindowInfo {
 }
 
 /// Everything the backend needs to record one window with a muxed mic+system
-/// audio track.
+/// audio track. Only the Windows backend reads every field — macOS lets
+/// ScreenCaptureKit pick the default audio devices, and the non-Windows stub
+/// reads none — so the dead-code lint is allowed off Windows.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
 pub struct VideoStartConfig {
     /// Target window id (raw HWND, decimal string) from [`list_windows`].
     pub window_id: String,
