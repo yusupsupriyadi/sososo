@@ -76,11 +76,11 @@ export default function SettingsRoute() {
   const [summaryLang, setSummaryLang] = useState('auto');
   // Active AI provider for summaries + live translation + chat, persisted in the DB.
   const [aiProvider, setAiProviderState] = useState<AiProvider>('openai');
-  // Chosen model for the active provider (non-llama; llama uses the block below).
+  // Chosen model for the active provider (shared across all providers, incl. llama).
   const [model, setModel] = useState('');
-  // Local-Llama backend config (only relevant when the active provider is "llama").
+  // Local-Llama base URL (only relevant when the active provider is "llama"; the
+  // model uses the shared `model` state above like every other provider).
   const [llamaBaseUrl, setLlamaBaseUrl] = useState('');
-  const [llamaModel, setLlamaModel] = useState('');
 
   // Device selection is shared with the Start-transcription screen via the config store.
   const inputDevice = useConfigStore((s) => s.inputDevice);
@@ -134,17 +134,13 @@ export default function SettingsRoute() {
       .then(setAiProviderState)
       .catch(() => {});
     getLlamaConfig()
-      .then((c) => {
-        setLlamaBaseUrl(c.baseUrl);
-        setLlamaModel(c.model);
-      })
+      .then((c) => setLlamaBaseUrl(c.baseUrl))
       .catch(() => {});
   }, [setInputDevice, setOutputDevice]);
 
-  // Load the active provider's chosen model whenever it changes (llama uses its
-  // own config block, loaded above).
+  // Load the active provider's chosen model whenever it changes (works for every
+  // provider, including llama — both read the unified `ai_model:<id>` setting).
   useEffect(() => {
-    if (aiProvider === 'llama') return;
     getAiModel(aiProvider)
       .then(setModel)
       .catch(() => {});
@@ -207,7 +203,7 @@ export default function SettingsRoute() {
 
   async function saveLlamaConfig() {
     try {
-      await setLlamaConfig(llamaBaseUrl, llamaModel);
+      await setLlamaConfig(llamaBaseUrl, model);
       setStatus('Local Llama settings saved.');
     } catch (e) {
       setStatus(`Error: ${e}`);
@@ -222,6 +218,10 @@ export default function SettingsRoute() {
       setStatus(`Error: ${e}`);
     }
   }
+
+  // The active provider's key metadata — undefined for local Llama (no cloud key).
+  const activeProvider = AI_PROVIDERS.find((p) => p.id === aiProvider);
+  const activeLabel = PROVIDER_OPTIONS.find((p) => p.id === aiProvider)?.label ?? 'this provider';
 
   // Derive the App-update status line from the updater store.
   const { msg: updateMsg, warn: updateMsgWarn } = deriveUpdateStatus(
@@ -318,47 +318,12 @@ export default function SettingsRoute() {
           <span className={BADGE_OPT}>Optional</span>
         </div>
         <p className="mb-3 text-[11.5px] leading-[1.5] text-fg-faint">
-          These are separate from Deepgram. Skip them entirely if you only need transcription —
-          recording and live captions work with the Deepgram key alone. You only need a key for the{' '}
-          <b className="text-fg-dim">active provider</b> selected below.
+          Separate from Deepgram — skip entirely if you only need transcription. Pick a provider,
+          then configure just that one: its API key (cloud) or a local server (Llama).
         </p>
-        {AI_PROVIDERS.map((p) => (
-          <div key={p.id}>
-            <label className={FIELD}>
-              <span className={FIELD_LABEL}>
-                {p.label} API Key{' '}
-                {aiSaved[p.id] && (
-                  <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
-                    <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
-                    saved
-                  </em>
-                )}
-              </span>
-              <div className="flex gap-2">
-                <input
-                  className={FIELD_CTRL}
-                  type="password"
-                  value={aiKeys[p.id] ?? ''}
-                  onChange={(e) => setAiKeys((k) => ({ ...k, [p.id]: e.target.value }))}
-                  placeholder={aiSaved[p.id] ? '••••••••••••' : p.placeholder}
-                />
-                <button className={BTN} onClick={() => void saveAiKey(p.id)}>
-                  Save
-                </button>
-              </div>
-            </label>
-            <button
-              type="button"
-              className="mb-1 inline-flex w-fit cursor-pointer items-center gap-1.5 text-[12px] text-fg-dim hover:text-accent hover:underline"
-              onClick={() => void openExternal(p.keysUrl)}
-            >
-              Get a {p.label} API key (optional — for AI summaries)
-              <HugeiconsIcon icon={IconExternal} size={12} strokeWidth={1.8} aria-hidden={true} />
-            </button>
-          </div>
-        ))}
+        {/* Pick the provider first — only its own fields show below. */}
         <label className={FIELD}>
-          <span className={FIELD_LABEL}>Active AI provider</span>
+          <span className={FIELD_LABEL}>AI provider</span>
           <select
             className={FIELD_CTRL}
             value={aiProvider}
@@ -370,12 +335,75 @@ export default function SettingsRoute() {
               </option>
             ))}
           </select>
-          <span className="text-[11.5px] leading-[1.4] text-fg-faint">
-            Powers AI session summaries, live translation, and transcript chat. Set the matching API
-            key above, or configure a local server below for <b className="text-fg-dim">Llama</b>.
-          </span>
         </label>
-        {aiProvider !== 'llama' && (
+        {/* The selected provider's config — and nothing else. */}
+        <div className="mb-3.5 flex flex-col gap-2.5 rounded-sm border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.04)] px-3 py-3">
+          {activeProvider ? (
+            <>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>
+                  {activeProvider.label} API key{' '}
+                  {aiSaved[activeProvider.id] && (
+                    <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
+                      <HugeiconsIcon
+                        icon={IconCheck}
+                        size={13}
+                        strokeWidth={2}
+                        aria-hidden={true}
+                      />
+                      saved
+                    </em>
+                  )}
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    className={FIELD_CTRL}
+                    type="password"
+                    value={aiKeys[activeProvider.id] ?? ''}
+                    onChange={(e) =>
+                      setAiKeys((k) => ({ ...k, [activeProvider.id]: e.target.value }))
+                    }
+                    placeholder={
+                      aiSaved[activeProvider.id] ? '••••••••••••' : activeProvider.placeholder
+                    }
+                  />
+                  <button className={BTN} onClick={() => void saveAiKey(activeProvider.id)}>
+                    Save
+                  </button>
+                </div>
+              </label>
+              <button
+                type="button"
+                className="-mt-1 inline-flex w-fit cursor-pointer items-center gap-1.5 text-[12px] text-fg-dim hover:text-accent hover:underline"
+                onClick={() => void openExternal(activeProvider.keysUrl)}
+              >
+                Get a {activeProvider.label} API key
+                <HugeiconsIcon icon={IconExternal} size={12} strokeWidth={1.8} aria-hidden={true} />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-[12px] leading-[1.5] text-fg-dim">
+                Runs against a <b className="text-fg">local, OpenAI-compatible</b> server — no cloud
+                key needed. Works with <b className="text-fg-dim">Ollama</b> (default),{' '}
+                <b className="text-fg-dim">LM Studio</b>, or{' '}
+                <b className="text-fg-dim">llama.cpp</b>.
+              </span>
+              <label className={FIELD}>
+                <span className={FIELD_LABEL}>Local server base URL</span>
+                <input
+                  className={FIELD_CTRL}
+                  type="text"
+                  value={llamaBaseUrl}
+                  onChange={(e) => setLlamaBaseUrl(e.target.value)}
+                  placeholder="http://localhost:11434/v1"
+                  spellCheck={false}
+                  autoCapitalize="off"
+                />
+              </label>
+            </>
+          )}
+          {/* Model — every provider has one. */}
           <label className={FIELD}>
             <span className={FIELD_LABEL}>Model</span>
             <div className="flex gap-2">
@@ -389,7 +417,10 @@ export default function SettingsRoute() {
                 spellCheck={false}
                 autoCapitalize="off"
               />
-              <button className={BTN} onClick={() => void saveModel()}>
+              <button
+                className={BTN}
+                onClick={() => void (aiProvider === 'llama' ? saveLlamaConfig() : saveModel())}
+              >
                 Save
               </button>
             </div>
@@ -399,56 +430,12 @@ export default function SettingsRoute() {
               ))}
             </datalist>
             <span className="text-[11.5px] leading-[1.4] text-fg-faint">
-              Which model{' '}
-              {PROVIDER_OPTIONS.find((p) => p.id === aiProvider)?.label ?? 'this provider'} uses.
-              Pick a suggestion or type any model the provider supports.
+              Which model {activeLabel} uses — pick a suggestion or type any it supports.
+              {aiProvider === 'llama' &&
+                " Make sure it's one you've pulled (e.g. ollama pull llama3.1)."}
             </span>
           </label>
-        )}
-        {aiProvider === 'llama' && (
-          <div className="mb-3.5 flex flex-col gap-2.5 rounded-sm border border-[rgba(110,168,254,0.28)] bg-[rgba(110,168,254,0.08)] px-3 py-3">
-            <span className="text-[12px] leading-[1.5] text-fg-dim">
-              Runs against a <b className="text-fg">local, OpenAI-compatible</b> server — no cloud
-              key needed. Works with <b className="text-fg-dim">Ollama</b> (default),{' '}
-              <b className="text-fg-dim">LM Studio</b>, or <b className="text-fg-dim">llama.cpp</b>.
-              Make sure the model below is one you&apos;ve actually pulled (e.g.{' '}
-              <code className="text-fg-dim">ollama pull llama3.1</code>).
-            </span>
-            <label className={FIELD}>
-              <span className={FIELD_LABEL}>Local server base URL</span>
-              <input
-                className={FIELD_CTRL}
-                type="text"
-                value={llamaBaseUrl}
-                onChange={(e) => setLlamaBaseUrl(e.target.value)}
-                placeholder="http://localhost:11434/v1"
-                spellCheck={false}
-                autoCapitalize="off"
-              />
-            </label>
-            <label className={FIELD}>
-              <span className={FIELD_LABEL}>Model</span>
-              <input
-                className={FIELD_CTRL}
-                type="text"
-                value={llamaModel}
-                onChange={(e) => setLlamaModel(e.target.value)}
-                list="models-llama"
-                placeholder="llama3.1"
-                spellCheck={false}
-                autoCapitalize="off"
-              />
-              <datalist id="models-llama">
-                {MODEL_SUGGESTIONS.llama.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
-            </label>
-            <button className={`${BTN} w-fit`} onClick={() => void saveLlamaConfig()}>
-              Save local Llama settings
-            </button>
-          </div>
-        )}
+        </div>
         <label className="mb-3.5 flex cursor-pointer items-start gap-2.5">
           <input
             type="checkbox"
@@ -460,7 +447,7 @@ export default function SettingsRoute() {
             <span className={FIELD_LABEL}>Auto-summarize when a recording finishes</span>
             <span className="text-[11.5px] leading-[1.4] text-fg-faint">
               Generates the AI summary automatically as soon as a recording ends, using the active
-              provider above. Needs that provider&apos;s API key — otherwise it&apos;s skipped.
+              provider above. Needs that provider set up — otherwise it&apos;s skipped.
             </span>
           </span>
         </label>
