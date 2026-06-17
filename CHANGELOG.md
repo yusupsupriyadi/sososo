@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-17
+
 ### Added
 
+- **Choose your AI provider — beyond OpenAI & Gemini.** The AI session summary,
+  live translation, and transcript chat now run on a provider of your choice.
+  Added **Anthropic (Claude)**, **GLM (Zhipu AI)**, **Kimi (Moonshot)**, **Grok
+  (xAI)**, **DeepSeek**, and **local Llama** — the last via any OpenAI-compatible
+  local server (**Ollama**, **LM Studio**, **llama.cpp**), so models like Llama
+  or Qwen can run fully on your machine with no cloud key. Each cloud provider
+  stores its own API key in the OS keychain; the active provider is picked in
+  **Settings → API Keys**. (Resolves [#10].)
+- **Per-provider model selection.** Every provider has its own configurable
+  **model** — a free-text field with common suggestions — defaulting to a
+  fast/cheap tier (OpenAI `gpt-4o-mini`, Gemini `gemini-2.5-flash`, Claude
+  `claude-haiku-4-5`, GLM `glm-4.6`, Kimi `kimi-k2.5`, Grok `grok-4`, DeepSeek
+  `deepseek-chat`, Ollama `llama3.1`). For local Llama you also set the server
+  base URL (defaults to Ollama at `http://localhost:11434/v1`).
 - **System tray with close-to-tray.** sososo now lives in the system tray: a
   tray icon with an **Open / Quit** menu (left-click reopens the window). By
   default, **closing the window hides the app to the tray instead of
@@ -38,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Streamlined AI settings.** Settings → API Keys now puts the AI-provider
+  dropdown first and shows **only the selected provider's fields** — its API key
+  (or the base URL for local Llama) plus the model — instead of listing every
+  provider's key input at once.
 - **Visual window picker for video recording (Windows).** The Start screen's
   "Record video of a window" selector is no longer a plain dropdown of window
   titles: choosing now opens a Zoom-style dialog showing a **live thumbnail of
@@ -298,7 +318,8 @@ First public release. **Windows only** — macOS and Linux are not yet tested.
 - Formatting SOP — Prettier (with Tailwind class sorting) + rustfmt, enforced by
   a Husky pre-commit hook — plus CI and a Windows release workflow.
 
-[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.8.0...HEAD
+[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/yusupsupriyadi/sososo/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.6.0...v0.7.0
@@ -309,3 +330,4 @@ First public release. **Windows only** — macOS and Linux are not yet tested.
 [0.3.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yusupsupriyadi/sososo/releases/tag/v0.1.0
+[#10]: https://github.com/yusupsupriyadi/sososo/issues/10
