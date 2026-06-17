@@ -18,10 +18,24 @@ const SUMMARY_LANGUAGE_KEY: &str = "summary_language";
 /// "llama").
 const AI_PROVIDER_KEY: &str = "ai_provider";
 
-/// `app_settings` keys for the local-Llama backend (OpenAI-compatible base URL +
-/// model name); only used when the active provider is `llama`.
+/// `app_settings` key for the local-Llama base URL (OpenAI-compatible); only used
+/// when the active provider is `llama`. The model is stored like any other
+/// provider's, under `ai_model:llama` (see [`ai_model_key`]).
 const LLAMA_BASE_URL_KEY: &str = "llama_base_url";
-const LLAMA_MODEL_KEY: &str = "llama_model";
+
+/// `app_settings` key holding a provider's chosen model (`ai_model:<id>`).
+fn ai_model_key(provider: ai::Provider) -> String {
+    format!("ai_model:{}", provider.id())
+}
+
+/// The user's chosen model for `provider`, or its built-in default when unset.
+fn resolve_model(db: &Db, provider: ai::Provider) -> AppResult<String> {
+    Ok(db
+        .get_setting(&ai_model_key(provider))?
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| provider.default_model().to_string()))
+}
 
 /// How many of the most recent chat turns to send to the model per request. The
 /// full transcript is always sent as context, so older turns are dropped first to
@@ -69,41 +83,56 @@ fn resolve_backend(db: &Db) -> AppResult<ai::Backend> {
     Ok(match provider {
         ai::Provider::LlamaLocal => {
             // Local server (Ollama / LM Studio / llama.cpp): no cloud key; the
-            // base URL + model come from settings (defaults point at Ollama).
+            // base URL comes from settings, the model like any other provider's.
             let base = db
                 .get_setting(LLAMA_BASE_URL_KEY)?
                 .filter(|s| !s.trim().is_empty())
                 .unwrap_or_else(|| ai::LLAMA_DEFAULT_BASE_URL.to_string());
-            let model = db
-                .get_setting(LLAMA_MODEL_KEY)?
-                .filter(|s| !s.trim().is_empty())
-                .unwrap_or_else(|| ai::LLAMA_DEFAULT_MODEL.to_string());
             ai::Backend::OpenAiCompatible {
                 endpoint: ai::llama_chat_url(&base),
-                model: model.trim().to_string(),
+                model: resolve_model(db, ai::Provider::LlamaLocal)?,
                 label: ai::Provider::LlamaLocal.label(),
                 api_key: ai::LLAMA_PLACEHOLDER_KEY.to_string(),
             }
         }
         ai::Provider::Gemini => ai::Backend::Gemini {
+            model: resolve_model(db, ai::Provider::Gemini)?,
             api_key: require_key(ai::Provider::Gemini)?,
         },
         ai::Provider::Anthropic => ai::Backend::Anthropic {
+            model: resolve_model(db, ai::Provider::Anthropic)?,
             api_key: require_key(ai::Provider::Anthropic)?,
         },
         cloud => {
             // OpenAI / GLM / Kimi / Grok / DeepSeek — all OpenAI-compatible.
-            let (endpoint, model) = cloud
+            let (endpoint, _default_model) = cloud
                 .openai_compatible()
                 .expect("non-local, non-Gemini/Anthropic provider is OpenAI-compatible");
             ai::Backend::OpenAiCompatible {
                 endpoint: endpoint.to_string(),
-                model: model.to_string(),
+                model: resolve_model(db, cloud)?,
                 label: cloud.label(),
                 api_key: require_key(cloud)?,
             }
         }
     })
+}
+
+/// Read the chosen model for a provider (stored override or its built-in
+/// default). Used by Settings to populate the per-provider model field.
+#[tauri::command]
+pub fn get_ai_model(db: State<'_, Db>, provider: String) -> AppResult<String> {
+    let p = ai::Provider::try_from_setting(&provider)
+        .ok_or_else(|| AppError::Config(format!("unknown AI provider: {provider}")))?;
+    resolve_model(&db, p)
+}
+
+/// Persist the chosen model for a provider. An empty value resets to the default.
+#[tauri::command]
+pub fn set_ai_model(db: State<'_, Db>, provider: String, model: String) -> AppResult<()> {
+    let p = ai::Provider::try_from_setting(&provider)
+        .ok_or_else(|| AppError::Config(format!("unknown AI provider: {provider}")))?;
+    db.set_setting(&ai_model_key(p), model.trim())
 }
 
 /// The persisted local-Llama backend config, returned to Settings.
@@ -117,17 +146,16 @@ pub struct LlamaConfig {
 }
 
 /// Read the local-Llama base URL + model, falling back to the Ollama defaults
-/// when unset. Used by Settings to populate the local-Llama config inputs.
+/// when unset. Used by Settings to populate the local-Llama config inputs. (The
+/// model shares the unified `ai_model:llama` key so the per-provider model field
+/// and this block agree.)
 #[tauri::command]
 pub fn get_llama_config(db: State<'_, Db>) -> AppResult<LlamaConfig> {
     let base_url = db
         .get_setting(LLAMA_BASE_URL_KEY)?
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| ai::LLAMA_DEFAULT_BASE_URL.to_string());
-    let model = db
-        .get_setting(LLAMA_MODEL_KEY)?
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| ai::LLAMA_DEFAULT_MODEL.to_string());
+    let model = resolve_model(&db, ai::Provider::LlamaLocal)?;
     Ok(LlamaConfig { base_url, model })
 }
 
@@ -135,7 +163,7 @@ pub fn get_llama_config(db: State<'_, Db>) -> AppResult<LlamaConfig> {
 #[tauri::command]
 pub fn set_llama_config(db: State<'_, Db>, base_url: String, model: String) -> AppResult<()> {
     db.set_setting(LLAMA_BASE_URL_KEY, base_url.trim())?;
-    db.set_setting(LLAMA_MODEL_KEY, model.trim())
+    db.set_setting(&ai_model_key(ai::Provider::LlamaLocal), model.trim())
 }
 
 /// Read the persisted AI-summary output language (a Deepgram language code or the

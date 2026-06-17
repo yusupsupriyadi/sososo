@@ -78,3 +78,18 @@ export const PROVIDER_OPTIONS: ProviderOption[] = [
   ...AI_PROVIDERS.map(({ id, label }) => ({ id, label })),
   LLAMA_LOCAL,
 ];
+
+/** Suggested model names per provider for the Settings model field. These are
+ *  hints only — the field is free-text, so any model the provider accepts works.
+ *  The first entry of each list mirrors the Rust `Provider::default_model`. Model
+ *  lineups change often; update freely. */
+export const MODEL_SUGGESTIONS: Record<AiProvider, string[]> = {
+  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1', 'o4-mini'],
+  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+  anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-8'],
+  glm: ['glm-4.6', 'glm-4.5', 'glm-4-flash'],
+  kimi: ['kimi-k2.5', 'kimi-k2.6', 'moonshot-v1-8k'],
+  grok: ['grok-4', 'grok-3', 'grok-3-fast'],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner', 'deepseek-v4-flash'],
+  llama: ['llama3.1', 'llama3.2', 'qwen2.5', 'mistral', 'phi3'],
+};

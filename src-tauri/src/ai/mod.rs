@@ -27,9 +27,7 @@ mod transcript;
 use std::time::Duration;
 
 pub use provider::Provider;
-pub(crate) use provider::{
-    llama_chat_url, LLAMA_DEFAULT_BASE_URL, LLAMA_DEFAULT_MODEL, LLAMA_PLACEHOLDER_KEY,
-};
+pub(crate) use provider::{llama_chat_url, LLAMA_DEFAULT_BASE_URL, LLAMA_PLACEHOLDER_KEY};
 pub use transcript::render_transcript;
 
 use crate::db::StoredSegment;
@@ -51,9 +49,9 @@ pub enum Backend {
         api_key: String,
     },
     /// Google Gemini `generateContent`.
-    Gemini { api_key: String },
+    Gemini { model: String, api_key: String },
     /// Anthropic Messages API.
-    Anthropic { api_key: String },
+    Anthropic { model: String, api_key: String },
 }
 
 const SYSTEM_PROMPT: &str = "You are an assistant that summarizes meeting or conversation transcripts into a clear, concise, well-structured Markdown summary — use headings, bullet or numbered lists, and **bold** to emphasize key terms. Follow the output-language instruction in the user message exactly. Use ONLY information present in the transcript — do not invent facts. In the transcript, \"You\" is the app user (microphone audio) and \"Other\" is the system/other participants' audio. If the transcript is too short or not meaningful, say so briefly instead of forcing a summary.";
@@ -88,14 +86,16 @@ async fn chat(
                 openai::openai_chat(&ob, api_key, system, user, temperature, timeout).await?;
             Ok((text, model.clone()))
         }
-        Backend::Gemini { api_key } => {
-            let text = gemini::gemini_chat(api_key, system, user, temperature, timeout).await?;
-            Ok((text, gemini::GEMINI_MODEL.to_string()))
-        }
-        Backend::Anthropic { api_key } => {
+        Backend::Gemini { model, api_key } => {
             let text =
-                anthropic::anthropic_chat(api_key, system, user, temperature, timeout).await?;
-            Ok((text, anthropic::ANTHROPIC_MODEL.to_string()))
+                gemini::gemini_chat(api_key, model, system, user, temperature, timeout).await?;
+            Ok((text, model.clone()))
+        }
+        Backend::Anthropic { model, api_key } => {
+            let text =
+                anthropic::anthropic_chat(api_key, model, system, user, temperature, timeout)
+                    .await?;
+            Ok((text, model.clone()))
         }
     }
 }
@@ -241,7 +241,7 @@ pub async fn chat_about_transcript(
             .await?;
             Ok((text, model.clone()))
         }
-        Backend::Anthropic { api_key } => {
+        Backend::Anthropic { model, api_key } => {
             // Anthropic uses the roles "user"/"assistant" (same as ChatTurn) and
             // takes the system instruction as a top-level field, not a message.
             let mut messages: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 1);
@@ -256,15 +256,16 @@ pub async fn chat_about_transcript(
             messages.push(serde_json::json!({ "role": "user", "content": question }));
             let text = anthropic::anthropic_chat_messages(
                 api_key,
+                model,
                 &system,
                 serde_json::Value::Array(messages),
                 temperature,
                 timeout,
             )
             .await?;
-            Ok((text, anthropic::ANTHROPIC_MODEL.to_string()))
+            Ok((text, model.clone()))
         }
-        Backend::Gemini { api_key } => {
+        Backend::Gemini { model, api_key } => {
             let mut contents: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 1);
             for turn in history {
                 // Gemini names the assistant role "model"; the user role matches.
@@ -280,13 +281,14 @@ pub async fn chat_about_transcript(
             contents.push(serde_json::json!({ "role": "user", "parts": [ { "text": question } ] }));
             let text = gemini::gemini_chat_messages(
                 api_key,
+                model,
                 &system,
                 serde_json::Value::Array(contents),
                 temperature,
                 timeout,
             )
             .await?;
-            Ok((text, gemini::GEMINI_MODEL.to_string()))
+            Ok((text, model.clone()))
         }
     }
 }

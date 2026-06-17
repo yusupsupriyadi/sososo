@@ -109,6 +109,24 @@ impl Provider {
         }
     }
 
+    /// The built-in default model for this provider — used when the user has not
+    /// chosen a model override in Settings. Cheap/fast tier (mirroring OpenAI's
+    /// `gpt-4o-mini`); intentionally easy to bump. For the OpenAI-compatible cloud
+    /// providers this is the model half of [`openai_compatible`], so there is a
+    /// single source of truth.
+    pub(crate) fn default_model(self) -> &'static str {
+        match self {
+            Provider::Gemini => "gemini-2.5-flash",
+            Provider::Anthropic => "claude-haiku-4-5",
+            Provider::LlamaLocal => LLAMA_DEFAULT_MODEL,
+            // OpenAI / GLM / Kimi / Grok / DeepSeek.
+            other => other
+                .openai_compatible()
+                .map(|(_endpoint, model)| model)
+                .expect("OpenAI-compatible provider has a default model"),
+        }
+    }
+
     /// For providers that speak the OpenAI Chat Completions wire format, the
     /// `(endpoint, model)` to hit — they all share the `openai` transport.
     /// Gemini and Anthropic have their own transports and return `None`.
@@ -263,6 +281,19 @@ mod tests {
             llama_chat_url(" http://localhost:1234/v1 "),
             "http://localhost:1234/v1/chat/completions"
         );
+    }
+
+    #[test]
+    fn default_model_is_non_empty_for_every_provider() {
+        for p in ALL {
+            assert!(!p.default_model().is_empty(), "{}", p.id());
+        }
+        // Spot-check the cheap/fast-tier defaults.
+        assert_eq!(Provider::OpenAi.default_model(), "gpt-4o-mini");
+        assert_eq!(Provider::Gemini.default_model(), "gemini-2.5-flash");
+        assert_eq!(Provider::Anthropic.default_model(), "claude-haiku-4-5");
+        assert_eq!(Provider::DeepSeek.default_model(), "deepseek-chat");
+        assert_eq!(Provider::LlamaLocal.default_model(), LLAMA_DEFAULT_MODEL);
     }
 
     #[test]

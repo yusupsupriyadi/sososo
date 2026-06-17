@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { AI_PROVIDERS, PROVIDER_OPTIONS } from './aiProviders';
+import { AI_PROVIDERS, MODEL_SUGGESTIONS, PROVIDER_OPTIONS } from './aiProviders';
 import type { AiProvider } from '../types/domain';
 
 // AI_PROVIDERS drives the Settings AI-key inputs (cloud providers with keys);
@@ -42,5 +42,16 @@ describe('PROVIDER_OPTIONS', () => {
     expect(AI_PROVIDERS.map((p) => p.id)).not.toContain('llama');
     const llama = PROVIDER_OPTIONS.find((p) => p.id === 'llama');
     expect(llama?.label.length ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe('MODEL_SUGGESTIONS', () => {
+  test('offers at least one model suggestion for every provider', () => {
+    for (const { id } of PROVIDER_OPTIONS) {
+      const models = MODEL_SUGGESTIONS[id];
+      expect(Array.isArray(models)).toBe(true);
+      expect(models.length).toBeGreaterThan(0);
+      expect(models.every((m) => m.trim().length > 0)).toBe(true);
+    }
   });
 });

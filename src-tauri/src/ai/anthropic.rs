@@ -11,9 +11,6 @@ use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
 
-/// Anthropic: fast & inexpensive Haiku tier — analogous to `gpt-4o-mini` /
-/// `gemini-2.5-flash`. Kept as a single constant so it is trivial to bump.
-pub(crate) const ANTHROPIC_MODEL: &str = "claude-haiku-4-5";
 const ANTHROPIC_ENDPOINT: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 /// Hard output cap (required by the Messages API). Plenty for a concise summary
@@ -49,13 +46,14 @@ struct AnthropicErrorBody {
 /// [`anthropic_chat_messages`].
 pub(crate) async fn anthropic_chat(
     api_key: &str,
+    model: &str,
     system: &str,
     user: &str,
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<String> {
     let messages = serde_json::json!([ { "role": "user", "content": user } ]);
-    anthropic_chat_messages(api_key, system, messages, temperature, timeout).await
+    anthropic_chat_messages(api_key, model, system, messages, temperature, timeout).await
 }
 
 /// Messages API transport given a fully-built `messages` array (for multi-turn
@@ -65,13 +63,14 @@ pub(crate) async fn anthropic_chat(
 /// `x-api-key` header (the key is never placed in the URL/query string).
 pub(crate) async fn anthropic_chat_messages(
     api_key: &str,
+    model: &str,
     system: &str,
     messages: serde_json::Value,
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<String> {
     let body = serde_json::json!({
-        "model": ANTHROPIC_MODEL,
+        "model": model,
         "max_tokens": ANTHROPIC_MAX_TOKENS,
         "temperature": temperature,
         "system": system,

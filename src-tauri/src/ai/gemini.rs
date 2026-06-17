@@ -6,9 +6,6 @@ use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
 
-/// Gemini: GA Flash tier — fast & cheap, analogous to `gpt-4o-mini`. Kept as a
-/// single constant so it is trivial to change.
-pub(crate) const GEMINI_MODEL: &str = "gemini-2.5-flash";
 const GEMINI_ENDPOINT_BASE: &str = "https://generativelanguage.googleapis.com/v1beta/models";
 
 #[derive(Deserialize)]
@@ -50,13 +47,14 @@ struct GeminiErrorBody {
 /// over [`gemini_chat_messages`].
 pub(crate) async fn gemini_chat(
     api_key: &str,
+    model: &str,
     system: &str,
     user: &str,
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<String> {
     let contents = serde_json::json!([ { "role": "user", "parts": [ { "text": user } ] } ]);
-    gemini_chat_messages(api_key, system, contents, temperature, timeout).await
+    gemini_chat_messages(api_key, model, system, contents, temperature, timeout).await
 }
 
 /// Gemini `generateContent` transport given a fully-built `contents` array (for
@@ -65,12 +63,13 @@ pub(crate) async fn gemini_chat(
 /// is the `x-goog-api-key` header (the key is never placed in the URL/query string).
 pub(crate) async fn gemini_chat_messages(
     api_key: &str,
+    model: &str,
     system: &str,
     contents: serde_json::Value,
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<String> {
-    let url = format!("{GEMINI_ENDPOINT_BASE}/{GEMINI_MODEL}:generateContent");
+    let url = format!("{GEMINI_ENDPOINT_BASE}/{model}:generateContent");
     let body = serde_json::json!({
         "systemInstruction": { "parts": [ { "text": system } ] },
         "contents": contents,

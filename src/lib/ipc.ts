@@ -116,6 +116,14 @@ export const getAiProvider = (): Promise<AiProvider> => invoke('get_ai_provider'
 export const setAiProvider = (provider: AiProvider): Promise<void> =>
   invoke('set_ai_provider', { provider });
 
+/** Read a provider's chosen model (stored override or its built-in default). */
+export const getAiModel = (provider: AiProvider): Promise<string> =>
+  invoke('get_ai_model', { provider });
+
+/** Persist a provider's chosen model. An empty value resets to the default. */
+export const setAiModel = (provider: AiProvider, model: string): Promise<void> =>
+  invoke('set_ai_model', { provider, model });
+
 /** Read the local-Llama backend config (base URL + model). Falls back to the
  *  Ollama defaults when unset. */
 export const getLlamaConfig = (): Promise<LlamaConfig> => invoke('get_llama_config');

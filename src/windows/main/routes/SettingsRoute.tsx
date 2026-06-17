@@ -3,11 +3,13 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getVersion } from '@tauri-apps/api/app';
 import {
+  getAiModel,
   getAiProvider,
   getLlamaConfig,
   getSummaryLanguage,
   hasApiKey,
   listDevices,
+  setAiModel,
   setAiProvider,
   setApiKey,
   setDevices,
@@ -15,7 +17,7 @@ import {
   setSummaryLanguage,
 } from '../../../lib/ipc';
 import { SUMMARY_LANGUAGES } from '../../../lib/languages';
-import { AI_PROVIDERS, PROVIDER_OPTIONS } from '../../../lib/aiProviders';
+import { AI_PROVIDERS, MODEL_SUGGESTIONS, PROVIDER_OPTIONS } from '../../../lib/aiProviders';
 import { isMacOS, isLinux } from '../../../lib/platform';
 import {
   IconAlert,
@@ -74,6 +76,8 @@ export default function SettingsRoute() {
   const [summaryLang, setSummaryLang] = useState('auto');
   // Active AI provider for summaries + live translation + chat, persisted in the DB.
   const [aiProvider, setAiProviderState] = useState<AiProvider>('openai');
+  // Chosen model for the active provider (non-llama; llama uses the block below).
+  const [model, setModel] = useState('');
   // Local-Llama backend config (only relevant when the active provider is "llama").
   const [llamaBaseUrl, setLlamaBaseUrl] = useState('');
   const [llamaModel, setLlamaModel] = useState('');
@@ -137,6 +141,15 @@ export default function SettingsRoute() {
       .catch(() => {});
   }, [setInputDevice, setOutputDevice]);
 
+  // Load the active provider's chosen model whenever it changes (llama uses its
+  // own config block, loaded above).
+  useEffect(() => {
+    if (aiProvider === 'llama') return;
+    getAiModel(aiProvider)
+      .then(setModel)
+      .catch(() => {});
+  }, [aiProvider]);
+
   async function saveSummaryLanguage(code: string) {
     setSummaryLang(code);
     try {
@@ -196,6 +209,15 @@ export default function SettingsRoute() {
     try {
       await setLlamaConfig(llamaBaseUrl, llamaModel);
       setStatus('Local Llama settings saved.');
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }
+
+  async function saveModel() {
+    try {
+      await setAiModel(aiProvider, model);
+      setStatus('Model saved.');
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -353,6 +375,36 @@ export default function SettingsRoute() {
             key above, or configure a local server below for <b className="text-fg-dim">Llama</b>.
           </span>
         </label>
+        {aiProvider !== 'llama' && (
+          <label className={FIELD}>
+            <span className={FIELD_LABEL}>Model</span>
+            <div className="flex gap-2">
+              <input
+                className={FIELD_CTRL}
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                list={`models-${aiProvider}`}
+                placeholder={MODEL_SUGGESTIONS[aiProvider]?.[0] ?? ''}
+                spellCheck={false}
+                autoCapitalize="off"
+              />
+              <button className={BTN} onClick={() => void saveModel()}>
+                Save
+              </button>
+            </div>
+            <datalist id={`models-${aiProvider}`}>
+              {(MODEL_SUGGESTIONS[aiProvider] ?? []).map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+            <span className="text-[11.5px] leading-[1.4] text-fg-faint">
+              Which model{' '}
+              {PROVIDER_OPTIONS.find((p) => p.id === aiProvider)?.label ?? 'this provider'} uses.
+              Pick a suggestion or type any model the provider supports.
+            </span>
+          </label>
+        )}
         {aiProvider === 'llama' && (
           <div className="mb-3.5 flex flex-col gap-2.5 rounded-sm border border-[rgba(110,168,254,0.28)] bg-[rgba(110,168,254,0.08)] px-3 py-3">
             <span className="text-[12px] leading-[1.5] text-fg-dim">
@@ -381,10 +433,16 @@ export default function SettingsRoute() {
                 type="text"
                 value={llamaModel}
                 onChange={(e) => setLlamaModel(e.target.value)}
+                list="models-llama"
                 placeholder="llama3.1"
                 spellCheck={false}
                 autoCapitalize="off"
               />
+              <datalist id="models-llama">
+                {MODEL_SUGGESTIONS.llama.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
             </label>
             <button className={`${BTN} w-fit`} onClick={() => void saveLlamaConfig()}>
               Save local Llama settings
