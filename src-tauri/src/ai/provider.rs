@@ -24,6 +24,31 @@ pub enum Provider {
     Grok,
     /// DeepSeek (OpenAI-compatible).
     DeepSeek,
+    /// A locally-hosted Llama-family model exposed over an OpenAI-compatible API
+    /// (Ollama, LM Studio, llama.cpp, …). No cloud key; the base URL + model are
+    /// user-configured (see [`LLAMA_DEFAULT_BASE_URL`] / [`LLAMA_DEFAULT_MODEL`]).
+    LlamaLocal,
+}
+
+/// Default OpenAI-compatible base URL for a local Llama runtime (Ollama's port).
+pub(crate) const LLAMA_DEFAULT_BASE_URL: &str = "http://localhost:11434/v1";
+/// Default local model name. Editable in Settings — must match a model the user
+/// has actually pulled/loaded (e.g. `ollama pull llama3.1`).
+pub(crate) const LLAMA_DEFAULT_MODEL: &str = "llama3.1";
+/// Placeholder bearer token for local servers (Ollama / LM Studio / llama.cpp
+/// ignore it; an empty one is rejected by some). The key is never a real secret.
+pub(crate) const LLAMA_PLACEHOLDER_KEY: &str = "local";
+
+/// Turn a user-configured local base URL into a full chat-completions endpoint:
+/// append `/chat/completions` unless it is already present. Tolerates surrounding
+/// whitespace and a trailing slash.
+pub(crate) fn llama_chat_url(base: &str) -> String {
+    let base = base.trim().trim_end_matches('/');
+    if base.ends_with("/chat/completions") {
+        base.to_string()
+    } else {
+        format!("{base}/chat/completions")
+    }
 }
 
 impl Provider {
@@ -45,6 +70,7 @@ impl Provider {
             "kimi" => Some(Provider::Kimi),
             "grok" => Some(Provider::Grok),
             "deepseek" => Some(Provider::DeepSeek),
+            "llama" => Some(Provider::LlamaLocal),
             _ => None,
         }
     }
@@ -60,6 +86,7 @@ impl Provider {
             Provider::Kimi => "kimi",
             Provider::Grok => "grok",
             Provider::DeepSeek => "deepseek",
+            Provider::LlamaLocal => "llama",
         }
     }
 
@@ -78,6 +105,7 @@ impl Provider {
             Provider::Kimi => "Kimi (Moonshot)",
             Provider::Grok => "Grok (xAI)",
             Provider::DeepSeek => "DeepSeek",
+            Provider::LlamaLocal => "Llama (local)",
         }
     }
 
@@ -99,7 +127,10 @@ impl Provider {
                 "https://api.deepseek.com/v1/chat/completions",
                 "deepseek-chat",
             )),
-            Provider::Gemini | Provider::Anthropic => None,
+            // Gemini/Anthropic have bespoke transports; LlamaLocal is
+            // OpenAI-shaped but its endpoint+model are resolved at runtime from
+            // user settings, not from this static table.
+            Provider::Gemini | Provider::Anthropic | Provider::LlamaLocal => None,
         }
     }
 }
@@ -109,7 +140,7 @@ mod tests {
     use super::*;
 
     /// Every variant, for exhaustive iteration in the tests below.
-    const ALL: [Provider; 7] = [
+    const ALL: [Provider; 8] = [
         Provider::OpenAi,
         Provider::Gemini,
         Provider::Anthropic,
@@ -117,6 +148,7 @@ mod tests {
         Provider::Kimi,
         Provider::Grok,
         Provider::DeepSeek,
+        Provider::LlamaLocal,
     ];
 
     #[test]
@@ -129,6 +161,7 @@ mod tests {
         assert_eq!(Provider::from_setting(" kimi "), Provider::Kimi);
         assert_eq!(Provider::from_setting("grok"), Provider::Grok);
         assert_eq!(Provider::from_setting("DeepSeek"), Provider::DeepSeek);
+        assert_eq!(Provider::from_setting("Llama"), Provider::LlamaLocal);
         // Unknown / empty fall back to OpenAI (lenient parse for reads).
         assert_eq!(Provider::from_setting(""), Provider::OpenAi);
         assert_eq!(Provider::from_setting("something-else"), Provider::OpenAi);
@@ -148,6 +181,10 @@ mod tests {
         assert_eq!(
             Provider::try_from_setting("deepseek"),
             Some(Provider::DeepSeek)
+        );
+        assert_eq!(
+            Provider::try_from_setting("llama"),
+            Some(Provider::LlamaLocal)
         );
         // Strict: unknown is None (so writes can be rejected), unlike from_setting.
         assert_eq!(Provider::try_from_setting(""), None);
@@ -169,11 +206,12 @@ mod tests {
         assert_eq!(Provider::Kimi.id(), "kimi");
         assert_eq!(Provider::Grok.id(), "grok");
         assert_eq!(Provider::DeepSeek.id(), "deepseek");
+        assert_eq!(Provider::LlamaLocal.id(), "llama");
     }
 
     #[test]
     fn every_variant_has_a_non_empty_label() {
-        assert_eq!(ALL.len(), 7);
+        assert_eq!(ALL.len(), 8);
         for p in ALL {
             assert!(!p.label().is_empty());
         }
@@ -181,7 +219,7 @@ mod tests {
 
     #[test]
     fn openai_compatible_providers_expose_endpoint_and_model() {
-        // OpenAI + the four OpenAI-compatible backends route through the OpenAI transport.
+        // OpenAI + the four OpenAI-compatible cloud backends route through the OpenAI transport.
         for p in [
             Provider::OpenAi,
             Provider::Glm,
@@ -198,5 +236,39 @@ mod tests {
         // Gemini and Anthropic have bespoke transports, not the OpenAI shape.
         assert_eq!(Provider::Gemini.openai_compatible(), None);
         assert_eq!(Provider::Anthropic.openai_compatible(), None);
+        // Local Llama is OpenAI-shaped but its endpoint/model are user-configured
+        // at runtime, so it is NOT in the static table.
+        assert_eq!(Provider::LlamaLocal.openai_compatible(), None);
+    }
+
+    #[test]
+    fn llama_chat_url_appends_chat_completions_unless_already_present() {
+        // Default base (Ollama) gets the OpenAI path appended.
+        assert_eq!(
+            llama_chat_url("http://localhost:11434/v1"),
+            "http://localhost:11434/v1/chat/completions"
+        );
+        // A trailing slash is tolerated.
+        assert_eq!(
+            llama_chat_url("http://localhost:11434/v1/"),
+            "http://localhost:11434/v1/chat/completions"
+        );
+        // A full URL is left untouched (idempotent).
+        assert_eq!(
+            llama_chat_url("http://localhost:11434/v1/chat/completions"),
+            "http://localhost:11434/v1/chat/completions"
+        );
+        // Other local runtimes (LM Studio :1234, llama.cpp :8080) work too.
+        assert_eq!(
+            llama_chat_url(" http://localhost:1234/v1 "),
+            "http://localhost:1234/v1/chat/completions"
+        );
+    }
+
+    #[test]
+    fn llama_defaults_point_at_ollama() {
+        assert!(LLAMA_DEFAULT_BASE_URL.starts_with("http://"));
+        assert!(llama_chat_url(LLAMA_DEFAULT_BASE_URL).ends_with("/chat/completions"));
+        assert!(!LLAMA_DEFAULT_MODEL.is_empty());
     }
 }

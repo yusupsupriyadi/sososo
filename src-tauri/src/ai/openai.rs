@@ -12,12 +12,14 @@ use crate::error::{AppError, AppResult};
 
 /// Which OpenAI-compatible backend to hit. Bundles the three values that vary
 /// per provider so the transport functions stay under clippy's arg-count limit.
+/// Borrows its strings so a runtime-configured local endpoint/model (Llama) can
+/// be passed as easily as the `&'static` cloud constants.
 #[derive(Clone, Copy)]
-pub(crate) struct OpenAiBackend {
-    pub endpoint: &'static str,
-    pub model: &'static str,
+pub(crate) struct OpenAiBackend<'a> {
+    pub endpoint: &'a str,
+    pub model: &'a str,
     /// Provider display name, used only in error messages (e.g. "DeepSeek").
-    pub label: &'static str,
+    pub label: &'a str,
 }
 
 #[derive(Deserialize)]
@@ -49,7 +51,7 @@ struct OpenAiErrorBody {
 /// OpenAI-compatible Chat Completions transport (system + single user turn).
 /// Thin wrapper over [`openai_chat_messages`].
 pub(crate) async fn openai_chat(
-    backend: &OpenAiBackend,
+    backend: &OpenAiBackend<'_>,
     api_key: &str,
     system: &str,
     user: &str,
@@ -68,7 +70,7 @@ pub(crate) async fn openai_chat(
 /// user message). `backend` selects the endpoint/model and names the provider in
 /// any error message.
 pub(crate) async fn openai_chat_messages(
-    backend: &OpenAiBackend,
+    backend: &OpenAiBackend<'_>,
     api_key: &str,
     messages: serde_json::Value,
     temperature: f32,

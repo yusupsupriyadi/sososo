@@ -49,6 +49,8 @@ pub fn run() {
             commands::set_summary_language,
             commands::get_ai_provider,
             commands::set_ai_provider,
+            commands::get_llama_config,
+            commands::set_llama_config,
             commands::summarize_session,
             commands::translate_segment,
             commands::get_chat_messages,

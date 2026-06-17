@@ -60,3 +60,21 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     keysUrl: 'https://platform.deepseek.com/api_keys',
   },
 ];
+
+/** One selectable provider in the active-provider dropdown. */
+export interface ProviderOption {
+  id: AiProvider;
+  label: string;
+}
+
+/** The local-Llama option — a local OpenAI-compatible server (Ollama / LM Studio
+ *  / llama.cpp). It has no cloud API key, so it is absent from `AI_PROVIDERS`;
+ *  it's configured by base URL + model instead (see `getLlamaConfig`). */
+export const LLAMA_LOCAL: ProviderOption = { id: 'llama', label: 'Llama (local)' };
+
+/** All selectable providers for the active-provider dropdown: the keyed cloud
+ *  providers plus local Llama. */
+export const PROVIDER_OPTIONS: ProviderOption[] = [
+  ...AI_PROVIDERS.map(({ id, label }) => ({ id, label })),
+  LLAMA_LOCAL,
+];

@@ -4,16 +4,18 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { getVersion } from '@tauri-apps/api/app';
 import {
   getAiProvider,
+  getLlamaConfig,
   getSummaryLanguage,
   hasApiKey,
   listDevices,
   setAiProvider,
   setApiKey,
   setDevices,
+  setLlamaConfig,
   setSummaryLanguage,
 } from '../../../lib/ipc';
 import { SUMMARY_LANGUAGES } from '../../../lib/languages';
-import { AI_PROVIDERS } from '../../../lib/aiProviders';
+import { AI_PROVIDERS, PROVIDER_OPTIONS } from '../../../lib/aiProviders';
 import { isMacOS, isLinux } from '../../../lib/platform';
 import {
   IconAlert,
@@ -72,6 +74,9 @@ export default function SettingsRoute() {
   const [summaryLang, setSummaryLang] = useState('auto');
   // Active AI provider for summaries + live translation + chat, persisted in the DB.
   const [aiProvider, setAiProviderState] = useState<AiProvider>('openai');
+  // Local-Llama backend config (only relevant when the active provider is "llama").
+  const [llamaBaseUrl, setLlamaBaseUrl] = useState('');
+  const [llamaModel, setLlamaModel] = useState('');
 
   // Device selection is shared with the Start-transcription screen via the config store.
   const inputDevice = useConfigStore((s) => s.inputDevice);
@@ -123,6 +128,12 @@ export default function SettingsRoute() {
       .catch(() => {});
     getAiProvider()
       .then(setAiProviderState)
+      .catch(() => {});
+    getLlamaConfig()
+      .then((c) => {
+        setLlamaBaseUrl(c.baseUrl);
+        setLlamaModel(c.model);
+      })
       .catch(() => {});
   }, [setInputDevice, setOutputDevice]);
 
@@ -176,6 +187,15 @@ export default function SettingsRoute() {
       setAiKeys((k) => ({ ...k, [id]: '' }));
       setAiSaved((s) => ({ ...s, [id]: true }));
       setStatus(`${id} API key saved.`);
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }
+
+  async function saveLlamaConfig() {
+    try {
+      await setLlamaConfig(llamaBaseUrl, llamaModel);
+      setStatus('Local Llama settings saved.');
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -322,7 +342,7 @@ export default function SettingsRoute() {
             value={aiProvider}
             onChange={(e) => void saveAiProvider(e.target.value as AiProvider)}
           >
-            {AI_PROVIDERS.map((p) => (
+            {PROVIDER_OPTIONS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>
@@ -330,9 +350,47 @@ export default function SettingsRoute() {
           </select>
           <span className="text-[11.5px] leading-[1.4] text-fg-faint">
             Powers AI session summaries, live translation, and transcript chat. Set the matching API
-            key above.
+            key above, or configure a local server below for <b className="text-fg-dim">Llama</b>.
           </span>
         </label>
+        {aiProvider === 'llama' && (
+          <div className="mb-3.5 flex flex-col gap-2.5 rounded-sm border border-[rgba(110,168,254,0.28)] bg-[rgba(110,168,254,0.08)] px-3 py-3">
+            <span className="text-[12px] leading-[1.5] text-fg-dim">
+              Runs against a <b className="text-fg">local, OpenAI-compatible</b> server — no cloud
+              key needed. Works with <b className="text-fg-dim">Ollama</b> (default),{' '}
+              <b className="text-fg-dim">LM Studio</b>, or <b className="text-fg-dim">llama.cpp</b>.
+              Make sure the model below is one you&apos;ve actually pulled (e.g.{' '}
+              <code className="text-fg-dim">ollama pull llama3.1</code>).
+            </span>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Local server base URL</span>
+              <input
+                className={FIELD_CTRL}
+                type="text"
+                value={llamaBaseUrl}
+                onChange={(e) => setLlamaBaseUrl(e.target.value)}
+                placeholder="http://localhost:11434/v1"
+                spellCheck={false}
+                autoCapitalize="off"
+              />
+            </label>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>Model</span>
+              <input
+                className={FIELD_CTRL}
+                type="text"
+                value={llamaModel}
+                onChange={(e) => setLlamaModel(e.target.value)}
+                placeholder="llama3.1"
+                spellCheck={false}
+                autoCapitalize="off"
+              />
+            </label>
+            <button className={`${BTN} w-fit`} onClick={() => void saveLlamaConfig()}>
+              Save local Llama settings
+            </button>
+          </div>
+        )}
         <label className="mb-3.5 flex cursor-pointer items-start gap-2.5">
           <input
             type="checkbox"

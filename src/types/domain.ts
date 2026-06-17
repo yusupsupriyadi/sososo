@@ -70,13 +70,28 @@ export interface StopResult {
 }
 
 /** Which AI backend powers session summaries + live translation + transcript
- *  chat. Each value is also its OS-keychain service name. Mirrors the Rust
- *  `ai::Provider` ids. */
-export type AiProvider = 'openai' | 'gemini' | 'anthropic' | 'glm' | 'kimi' | 'grok' | 'deepseek';
+ *  chat. Mirrors the Rust `ai::Provider` ids. The cloud providers' ids double as
+ *  their OS-keychain service name; `llama` is a local server (no cloud key). */
+export type AiProvider =
+  | 'openai'
+  | 'gemini'
+  | 'anthropic'
+  | 'glm'
+  | 'kimi'
+  | 'grok'
+  | 'deepseek'
+  | 'llama';
 
-/** Keychain service for an API key: Deepgram (speech-to-text) plus every AI
- *  provider (each stores its own key). */
+/** Keychain service for an API key: Deepgram (speech-to-text) plus every cloud
+ *  AI provider. (`llama` is local and keyless — it never reaches these calls.) */
 export type ApiService = 'deepgram' | AiProvider;
+
+/** Local-Llama backend config (OpenAI-compatible base URL + model name),
+ *  persisted in the DB. Only used when the active provider is `llama`. */
+export interface LlamaConfig {
+  baseUrl: string;
+  model: string;
+}
 
 // --- Session history (persisted) ---
 

@@ -5,6 +5,7 @@ import type {
   ChatMessage,
   DetectedMeeting,
   DeviceLists,
+  LlamaConfig,
   SearchHit,
   SessionDetail,
   SessionSummary,
@@ -114,6 +115,15 @@ export const getAiProvider = (): Promise<AiProvider> => invoke('get_ai_provider'
  *  summaries, live translation, and transcript chat. */
 export const setAiProvider = (provider: AiProvider): Promise<void> =>
   invoke('set_ai_provider', { provider });
+
+/** Read the local-Llama backend config (base URL + model). Falls back to the
+ *  Ollama defaults when unset. */
+export const getLlamaConfig = (): Promise<LlamaConfig> => invoke('get_llama_config');
+
+/** Persist the local-Llama backend config (base URL + model). Empty values reset
+ *  to the defaults. */
+export const setLlamaConfig = (baseUrl: string, model: string): Promise<void> =>
+  invoke('set_llama_config', { baseUrl, model });
 
 /** Generate + persist an AI summary for a session; resolves to the Markdown text.
  *  `summaryLanguage` is the literal "auto" (match the transcript) or a

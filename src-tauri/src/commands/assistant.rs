@@ -3,6 +3,7 @@
 //! command the DB mutex is held only for the synchronous read/write steps —
 //! never across the network `await` — so the command futures stay `Send`.
 
+use serde::Serialize;
 use tauri::State;
 
 use crate::db::{ChatMessage, Db};
@@ -13,8 +14,14 @@ use crate::{ai, keys};
 const SUMMARY_LANGUAGE_KEY: &str = "summary_language";
 
 /// `app_settings` key for the active AI provider (a [`ai::Provider`] id, e.g.
-/// "openai" | "gemini" | "anthropic" | "glm" | "kimi" | "grok" | "deepseek").
+/// "openai" | "gemini" | "anthropic" | "glm" | "kimi" | "grok" | "deepseek" |
+/// "llama").
 const AI_PROVIDER_KEY: &str = "ai_provider";
+
+/// `app_settings` keys for the local-Llama backend (OpenAI-compatible base URL +
+/// model name); only used when the active provider is `llama`.
+const LLAMA_BASE_URL_KEY: &str = "llama_base_url";
+const LLAMA_MODEL_KEY: &str = "llama_model";
 
 /// How many of the most recent chat turns to send to the model per request. The
 /// full transcript is always sent as context, so older turns are dropped first to
@@ -41,21 +48,94 @@ pub fn set_ai_provider(db: State<'_, Db>, provider: String) -> AppResult<()> {
     db.set_setting(AI_PROVIDER_KEY, normalized.id())
 }
 
-/// Resolve the active AI provider and its API key (from the keychain). Reads the
-/// persisted setting synchronously — the returned key is owned, so callers never
-/// hold the DB lock across a network `await`.
-fn resolve_ai_provider(db: &Db) -> AppResult<(ai::Provider, String)> {
+/// Resolve the active provider into a ready-to-call [`ai::Backend`]: reads the
+/// persisted provider setting, then either the matching keychain key (cloud
+/// providers) or the local base URL + model (Llama). Synchronous — the returned
+/// backend owns its strings, so callers never hold the DB lock across a network
+/// `await`.
+fn resolve_backend(db: &Db) -> AppResult<ai::Backend> {
     let setting = db
         .get_setting(AI_PROVIDER_KEY)?
         .unwrap_or_else(|| "openai".to_string());
     let provider = ai::Provider::from_setting(&setting);
-    let key = keys::get_api_key(provider.key_service())?.ok_or_else(|| {
-        AppError::Config(format!(
-            "{} API key is not set (open Settings)",
-            provider.label()
-        ))
-    })?;
-    Ok((provider, key))
+
+    // Require a cloud provider's key from the keychain, with a friendly error.
+    let require_key = |p: ai::Provider| -> AppResult<String> {
+        keys::get_api_key(p.key_service())?.ok_or_else(|| {
+            AppError::Config(format!("{} API key is not set (open Settings)", p.label()))
+        })
+    };
+
+    Ok(match provider {
+        ai::Provider::LlamaLocal => {
+            // Local server (Ollama / LM Studio / llama.cpp): no cloud key; the
+            // base URL + model come from settings (defaults point at Ollama).
+            let base = db
+                .get_setting(LLAMA_BASE_URL_KEY)?
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| ai::LLAMA_DEFAULT_BASE_URL.to_string());
+            let model = db
+                .get_setting(LLAMA_MODEL_KEY)?
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| ai::LLAMA_DEFAULT_MODEL.to_string());
+            ai::Backend::OpenAiCompatible {
+                endpoint: ai::llama_chat_url(&base),
+                model: model.trim().to_string(),
+                label: ai::Provider::LlamaLocal.label(),
+                api_key: ai::LLAMA_PLACEHOLDER_KEY.to_string(),
+            }
+        }
+        ai::Provider::Gemini => ai::Backend::Gemini {
+            api_key: require_key(ai::Provider::Gemini)?,
+        },
+        ai::Provider::Anthropic => ai::Backend::Anthropic {
+            api_key: require_key(ai::Provider::Anthropic)?,
+        },
+        cloud => {
+            // OpenAI / GLM / Kimi / Grok / DeepSeek — all OpenAI-compatible.
+            let (endpoint, model) = cloud
+                .openai_compatible()
+                .expect("non-local, non-Gemini/Anthropic provider is OpenAI-compatible");
+            ai::Backend::OpenAiCompatible {
+                endpoint: endpoint.to_string(),
+                model: model.to_string(),
+                label: cloud.label(),
+                api_key: require_key(cloud)?,
+            }
+        }
+    })
+}
+
+/// The persisted local-Llama backend config, returned to Settings.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LlamaConfig {
+    /// OpenAI-compatible base URL (e.g. `http://localhost:11434/v1`).
+    pub base_url: String,
+    /// Model name as known to the local server (e.g. `llama3.1`).
+    pub model: String,
+}
+
+/// Read the local-Llama base URL + model, falling back to the Ollama defaults
+/// when unset. Used by Settings to populate the local-Llama config inputs.
+#[tauri::command]
+pub fn get_llama_config(db: State<'_, Db>) -> AppResult<LlamaConfig> {
+    let base_url = db
+        .get_setting(LLAMA_BASE_URL_KEY)?
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| ai::LLAMA_DEFAULT_BASE_URL.to_string());
+    let model = db
+        .get_setting(LLAMA_MODEL_KEY)?
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| ai::LLAMA_DEFAULT_MODEL.to_string());
+    Ok(LlamaConfig { base_url, model })
+}
+
+/// Persist the local-Llama base URL + model. Empty values reset to the defaults.
+#[tauri::command]
+pub fn set_llama_config(db: State<'_, Db>, base_url: String, model: String) -> AppResult<()> {
+    db.set_setting(LLAMA_BASE_URL_KEY, base_url.trim())?;
+    db.set_setting(LLAMA_MODEL_KEY, model.trim())
 }
 
 /// Read the persisted AI-summary output language (a Deepgram language code or the
@@ -94,11 +174,10 @@ pub async fn summarize_session(
         return Err(AppError::Session("no transcript to summarize yet".into()));
     }
 
-    let (provider, key) = resolve_ai_provider(&db)?;
+    let backend = resolve_backend(&db)?;
 
     let (summary, model) = ai::summarize(
-        provider,
-        &key,
+        &backend,
         &detail.session.title,
         &detail.session.language,
         &summary_language,
@@ -133,9 +212,9 @@ pub async fn translate_segment(
         }
     }
 
-    let (provider, key) = resolve_ai_provider(&db)?;
+    let backend = resolve_backend(&db)?;
 
-    let translated = ai::translate(provider, &key, &text, &target_lang).await?;
+    let translated = ai::translate(&backend, &text, &target_lang).await?;
     db.save_translation(session_id, &segment_id, &translated, &target_lang)?;
     Ok(translated)
 }
@@ -175,7 +254,7 @@ pub async fn chat_session(
         return Err(AppError::Session("no transcript to chat about yet".into()));
     }
 
-    let (provider, key) = resolve_ai_provider(&db)?;
+    let backend = resolve_backend(&db)?;
 
     // Send only the most recent turns (older ones dropped first) to bound tokens.
     let stored = db.get_chat_messages(id)?;
@@ -189,8 +268,7 @@ pub async fn chat_session(
         .collect();
 
     let (reply, model) = ai::chat_about_transcript(
-        provider,
-        &key,
+        &backend,
         &detail.session.title,
         &detail.segments,
         &history,
