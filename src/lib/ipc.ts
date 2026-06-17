@@ -107,11 +107,11 @@ export const getSummaryLanguage = (): Promise<string> => invoke('get_summary_lan
 export const setSummaryLanguage = (language: string): Promise<void> =>
   invoke('set_summary_language', { language });
 
-/** Read the active AI provider ("openai" | "gemini"). Defaults to "openai". */
+/** Read the active AI provider (an `AiProvider` id). Defaults to "openai". */
 export const getAiProvider = (): Promise<AiProvider> => invoke('get_ai_provider');
 
-/** Persist the active AI provider ("openai" | "gemini"). Governs both session
- *  summaries and live translation. */
+/** Persist the active AI provider (an `AiProvider` id). Governs session
+ *  summaries, live translation, and transcript chat. */
 export const setAiProvider = (provider: AiProvider): Promise<void> =>
   invoke('set_ai_provider', { provider });
 

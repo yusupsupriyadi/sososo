@@ -13,6 +13,7 @@ import {
   setSummaryLanguage,
 } from '../../../lib/ipc';
 import { SUMMARY_LANGUAGES } from '../../../lib/languages';
+import { AI_PROVIDERS } from '../../../lib/aiProviders';
 import { isMacOS, isLinux } from '../../../lib/platform';
 import {
   IconAlert,
@@ -29,7 +30,7 @@ import {
 import { useConfigStore } from '../../../state/configStore';
 import { useUpdateStore } from '../../../state/updateStore';
 import { checkForUpdate, downloadAndInstall, restartApp } from '../../../lib/updater';
-import type { AiProvider, ApiService, DeviceLists } from '../../../types/domain';
+import type { AiProvider, DeviceLists } from '../../../types/domain';
 import { AppearanceSection } from './settings/AppearanceSection';
 import { BehaviorSection } from './settings/BehaviorSection';
 import { deriveUpdateStatus } from './settings/updateStatus';
@@ -58,15 +59,18 @@ async function openExternal(url: string) {
 export default function SettingsRoute() {
   const [devices, setDeviceLists] = useState<DeviceLists | null>(null);
   const [dgKey, setDgKey] = useState('');
-  const [oaKey, setOaKey] = useState('');
-  const [gmKey, setGmKey] = useState('');
   const [dgSaved, setDgSaved] = useState(false);
-  const [oaSaved, setOaSaved] = useState(false);
-  const [gmSaved, setGmSaved] = useState(false);
+  // Per-provider AI-key input values + "saved" flags, keyed by provider id.
+  const [aiKeys, setAiKeys] = useState<Record<AiProvider, string>>(
+    () => Object.fromEntries(AI_PROVIDERS.map((p) => [p.id, ''])) as Record<AiProvider, string>,
+  );
+  const [aiSaved, setAiSaved] = useState<Record<AiProvider, boolean>>(
+    () => Object.fromEntries(AI_PROVIDERS.map((p) => [p.id, false])) as Record<AiProvider, boolean>,
+  );
   const [status, setStatus] = useState('');
   // AI-summary output language ("auto" or a language code), persisted in the DB.
   const [summaryLang, setSummaryLang] = useState('auto');
-  // Active AI provider ("openai" | "gemini") for summaries + live translation, persisted in the DB.
+  // Active AI provider for summaries + live translation + chat, persisted in the DB.
   const [aiProvider, setAiProviderState] = useState<AiProvider>('openai');
 
   // Device selection is shared with the Start-transcription screen via the config store.
@@ -109,12 +113,11 @@ export default function SettingsRoute() {
     hasApiKey('deepgram')
       .then(setDgSaved)
       .catch(() => {});
-    hasApiKey('openai')
-      .then(setOaSaved)
-      .catch(() => {});
-    hasApiKey('gemini')
-      .then(setGmSaved)
-      .catch(() => {});
+    AI_PROVIDERS.forEach((p) => {
+      hasApiKey(p.id)
+        .then((has) => setAiSaved((s) => ({ ...s, [p.id]: has })))
+        .catch(() => {});
+    });
     getSummaryLanguage()
       .then(setSummaryLang)
       .catch(() => {});
@@ -152,22 +155,27 @@ export default function SettingsRoute() {
     }
   }
 
-  async function saveKey(service: ApiService) {
-    const value = (service === 'deepgram' ? dgKey : service === 'openai' ? oaKey : gmKey).trim();
+  async function saveDeepgramKey() {
+    const value = dgKey.trim();
     if (!value) return;
     try {
-      await setApiKey(service, value);
-      if (service === 'deepgram') {
-        setDgKey('');
-        setDgSaved(true);
-      } else if (service === 'openai') {
-        setOaKey('');
-        setOaSaved(true);
-      } else {
-        setGmKey('');
-        setGmSaved(true);
-      }
-      setStatus(`${service} API key saved.`);
+      await setApiKey('deepgram', value);
+      setDgKey('');
+      setDgSaved(true);
+      setStatus('deepgram API key saved.');
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }
+
+  async function saveAiKey(id: AiProvider) {
+    const value = (aiKeys[id] ?? '').trim();
+    if (!value) return;
+    try {
+      await setApiKey(id, value);
+      setAiKeys((k) => ({ ...k, [id]: '' }));
+      setAiSaved((s) => ({ ...s, [id]: true }));
+      setStatus(`${id} API key saved.`);
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -196,9 +204,10 @@ export default function SettingsRoute() {
             required transcription engine and the AI keys are a separate optional add-on. */}
         <div className="mb-4 flex flex-col gap-1.5 rounded-sm border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.04)] px-3 py-2.5 text-[12px] leading-[1.55] text-fg-dim">
           <span>
-            <b className="text-fg">Deepgram</b> and the <b className="text-fg">AI keys</b> (OpenAI /
-            Gemini) are <b className="text-fg">two different services, not alternatives</b> — you
-            don&apos;t choose one or the other.
+            <b className="text-fg">Deepgram</b> and the <b className="text-fg">AI keys</b> (OpenAI,
+            Gemini, Claude, …) are{' '}
+            <b className="text-fg">two different services, not alternatives</b> — you don&apos;t
+            choose one or the other.
           </span>
           <span>
             <b className="text-accent">Deepgram is required</b> — it powers live transcription, the
@@ -229,7 +238,7 @@ export default function SettingsRoute() {
               onChange={(e) => setDgKey(e.target.value)}
               placeholder={dgSaved ? '••••••••••••' : 'Deepgram token…'}
             />
-            <button className={BTN} onClick={() => void saveKey('deepgram')}>
+            <button className={BTN} onClick={() => void saveDeepgramKey()}>
               Save
             </button>
           </div>
@@ -268,70 +277,44 @@ export default function SettingsRoute() {
         </div>
         <p className="mb-3 text-[11.5px] leading-[1.5] text-fg-faint">
           These are separate from Deepgram. Skip them entirely if you only need transcription —
-          recording and live captions work with the Deepgram key alone.
+          recording and live captions work with the Deepgram key alone. You only need a key for the{' '}
+          <b className="text-fg-dim">active provider</b> selected below.
         </p>
-        <label className={FIELD}>
-          <span className={FIELD_LABEL}>
-            OpenAI API Key{' '}
-            {oaSaved && (
-              <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
-                <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
-                saved
-              </em>
-            )}
-          </span>
-          <div className="flex gap-2">
-            <input
-              className={FIELD_CTRL}
-              type="password"
-              value={oaKey}
-              onChange={(e) => setOaKey(e.target.value)}
-              placeholder={oaSaved ? '••••••••••••' : 'sk-…'}
-            />
-            <button className={BTN} onClick={() => void saveKey('openai')}>
-              Save
+        {AI_PROVIDERS.map((p) => (
+          <div key={p.id}>
+            <label className={FIELD}>
+              <span className={FIELD_LABEL}>
+                {p.label} API Key{' '}
+                {aiSaved[p.id] && (
+                  <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
+                    <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
+                    saved
+                  </em>
+                )}
+              </span>
+              <div className="flex gap-2">
+                <input
+                  className={FIELD_CTRL}
+                  type="password"
+                  value={aiKeys[p.id] ?? ''}
+                  onChange={(e) => setAiKeys((k) => ({ ...k, [p.id]: e.target.value }))}
+                  placeholder={aiSaved[p.id] ? '••••••••••••' : p.placeholder}
+                />
+                <button className={BTN} onClick={() => void saveAiKey(p.id)}>
+                  Save
+                </button>
+              </div>
+            </label>
+            <button
+              type="button"
+              className="mb-1 inline-flex w-fit cursor-pointer items-center gap-1.5 text-[12px] text-fg-dim hover:text-accent hover:underline"
+              onClick={() => void openExternal(p.keysUrl)}
+            >
+              Get a {p.label} API key (optional — for AI summaries)
+              <HugeiconsIcon icon={IconExternal} size={12} strokeWidth={1.8} aria-hidden={true} />
             </button>
           </div>
-        </label>
-        <button
-          type="button"
-          className="mb-1 inline-flex w-fit cursor-pointer items-center gap-1.5 text-[12px] text-fg-dim hover:text-accent hover:underline"
-          onClick={() => void openExternal('https://platform.openai.com/api-keys')}
-        >
-          Get an OpenAI API key (optional — for AI summaries)
-          <HugeiconsIcon icon={IconExternal} size={12} strokeWidth={1.8} aria-hidden={true} />
-        </button>
-        <label className={FIELD}>
-          <span className={FIELD_LABEL}>
-            Gemini API Key{' '}
-            {gmSaved && (
-              <em className="ml-1.5 inline-flex items-center gap-1 text-[11.5px] text-ok not-italic">
-                <HugeiconsIcon icon={IconCheck} size={13} strokeWidth={2} aria-hidden={true} />
-                saved
-              </em>
-            )}
-          </span>
-          <div className="flex gap-2">
-            <input
-              className={FIELD_CTRL}
-              type="password"
-              value={gmKey}
-              onChange={(e) => setGmKey(e.target.value)}
-              placeholder={gmSaved ? '••••••••••••' : 'AIza…'}
-            />
-            <button className={BTN} onClick={() => void saveKey('gemini')}>
-              Save
-            </button>
-          </div>
-        </label>
-        <button
-          type="button"
-          className="mb-1 inline-flex w-fit cursor-pointer items-center gap-1.5 text-[12px] text-fg-dim hover:text-accent hover:underline"
-          onClick={() => void openExternal('https://aistudio.google.com/app/apikey')}
-        >
-          Get a Gemini API key (optional — for AI summaries)
-          <HugeiconsIcon icon={IconExternal} size={12} strokeWidth={1.8} aria-hidden={true} />
-        </button>
+        ))}
         <label className={FIELD}>
           <span className={FIELD_LABEL}>Active AI provider</span>
           <select
@@ -339,11 +322,15 @@ export default function SettingsRoute() {
             value={aiProvider}
             onChange={(e) => void saveAiProvider(e.target.value as AiProvider)}
           >
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Gemini</option>
+            {AI_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
           </select>
           <span className="text-[11.5px] leading-[1.4] text-fg-faint">
-            Powers AI session summaries and live translation. Set the matching API key above.
+            Powers AI session summaries, live translation, and transcript chat. Set the matching API
+            key above.
           </span>
         </label>
         <label className="mb-3.5 flex cursor-pointer items-start gap-2.5">

@@ -69,10 +69,14 @@ export interface StopResult {
   endedAt: string;
 }
 
-export type ApiService = 'deepgram' | 'openai' | 'gemini';
+/** Which AI backend powers session summaries + live translation + transcript
+ *  chat. Each value is also its OS-keychain service name. Mirrors the Rust
+ *  `ai::Provider` ids. */
+export type AiProvider = 'openai' | 'gemini' | 'anthropic' | 'glm' | 'kimi' | 'grok' | 'deepseek';
 
-/** Which AI backend powers session summaries + live translation. */
-export type AiProvider = 'openai' | 'gemini';
+/** Keychain service for an API key: Deepgram (speech-to-text) plus every AI
+ *  provider (each stores its own key). */
+export type ApiService = 'deepgram' | AiProvider;
 
 // --- Session history (persisted) ---
 

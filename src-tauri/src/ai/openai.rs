@@ -1,4 +1,8 @@
 //! OpenAI Chat Completions transport.
+//!
+//! Shared by every OpenAI-compatible provider (OpenAI, GLM, Kimi, Grok,
+//! DeepSeek): they differ only by `endpoint`, `model`, and a display `label`
+//! for error messages — see [`crate::ai::Provider::openai_compatible`].
 
 use std::time::Duration;
 
@@ -6,9 +10,15 @@ use serde::Deserialize;
 
 use crate::error::{AppError, AppResult};
 
-/// OpenAI: broadly available, inexpensive, 128k context, strong at summarization.
-pub(crate) const OPENAI_MODEL: &str = "gpt-4o-mini";
-const OPENAI_ENDPOINT: &str = "https://api.openai.com/v1/chat/completions";
+/// Which OpenAI-compatible backend to hit. Bundles the three values that vary
+/// per provider so the transport functions stay under clippy's arg-count limit.
+#[derive(Clone, Copy)]
+pub(crate) struct OpenAiBackend {
+    pub endpoint: &'static str,
+    pub model: &'static str,
+    /// Provider display name, used only in error messages (e.g. "DeepSeek").
+    pub label: &'static str,
+}
 
 #[derive(Deserialize)]
 struct OpenAiChatResponse {
@@ -36,9 +46,10 @@ struct OpenAiErrorBody {
     message: String,
 }
 
-/// OpenAI Chat Completions transport (system + single user turn). Thin wrapper
-/// over [`openai_chat_messages`].
+/// OpenAI-compatible Chat Completions transport (system + single user turn).
+/// Thin wrapper over [`openai_chat_messages`].
 pub(crate) async fn openai_chat(
+    backend: &OpenAiBackend,
     api_key: &str,
     system: &str,
     user: &str,
@@ -49,26 +60,34 @@ pub(crate) async fn openai_chat(
         { "role": "system", "content": system },
         { "role": "user", "content": user },
     ]);
-    openai_chat_messages(api_key, messages, temperature, timeout).await
+    openai_chat_messages(backend, api_key, messages, temperature, timeout).await
 }
 
-/// OpenAI Chat Completions transport given a fully-built `messages` array (so
-/// multi-turn chats can include prior turns alongside the system + user message).
+/// OpenAI-compatible Chat Completions transport given a fully-built `messages`
+/// array (so multi-turn chats can include prior turns alongside the system +
+/// user message). `backend` selects the endpoint/model and names the provider in
+/// any error message.
 pub(crate) async fn openai_chat_messages(
+    backend: &OpenAiBackend,
     api_key: &str,
     messages: serde_json::Value,
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<String> {
+    let OpenAiBackend {
+        endpoint,
+        model,
+        label,
+    } = *backend;
     let body = serde_json::json!({
-        "model": OPENAI_MODEL,
+        "model": model,
         "temperature": temperature,
         "messages": messages,
     });
 
     let client = reqwest::Client::builder().timeout(timeout).build()?;
     let resp = client
-        .post(OPENAI_ENDPOINT)
+        .post(endpoint)
         .bearer_auth(api_key)
         .json(&body)
         .send()
@@ -82,20 +101,20 @@ pub(crate) async fn openai_chat_messages(
             .map(|e| e.error.message)
             .unwrap_or_else(|_| raw.clone());
         let hint = if status.as_u16() == 401 {
-            " (check the OpenAI API key in Settings)"
+            format!(" (check the {label} API key in Settings)")
         } else {
-            ""
+            String::new()
         };
-        return Err(AppError::Ai(format!("OpenAI {status}: {detail}{hint}")));
+        return Err(AppError::Ai(format!("{label} {status}: {detail}{hint}")));
     }
 
     let parsed: OpenAiChatResponse = serde_json::from_str(&raw)
-        .map_err(|e| AppError::Ai(format!("could not parse OpenAI response: {e}")))?;
+        .map_err(|e| AppError::Ai(format!("could not parse {label} response: {e}")))?;
     parsed
         .choices
         .into_iter()
         .next()
         .map(|c| c.message.content.trim().to_string())
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| AppError::Ai("OpenAI returned no content".into()))
+        .ok_or_else(|| AppError::Ai(format!("{label} returned no content")))
 }

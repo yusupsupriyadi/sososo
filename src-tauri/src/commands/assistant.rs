@@ -1,7 +1,7 @@
 //! AI commands (Milestone E + live translate + transcript chat) over the active
-//! provider (OpenAI or Gemini). For every command the DB mutex is held only for
-//! the synchronous read/write steps — never across the network `await` — so the
-//! command futures stay `Send`.
+//! provider (OpenAI, Gemini, Anthropic, GLM, Kimi, Grok, or DeepSeek). For every
+//! command the DB mutex is held only for the synchronous read/write steps —
+//! never across the network `await` — so the command futures stay `Send`.
 
 use tauri::State;
 
@@ -12,7 +12,8 @@ use crate::{ai, keys};
 /// `app_settings` key for the persisted AI-summary output-language preference.
 const SUMMARY_LANGUAGE_KEY: &str = "summary_language";
 
-/// `app_settings` key for the active AI provider ("openai" | "gemini").
+/// `app_settings` key for the active AI provider (a [`ai::Provider`] id, e.g.
+/// "openai" | "gemini" | "anthropic" | "glm" | "kimi" | "grok" | "deepseek").
 const AI_PROVIDER_KEY: &str = "ai_provider";
 
 /// How many of the most recent chat turns to send to the model per request. The
@@ -20,8 +21,9 @@ const AI_PROVIDER_KEY: &str = "ai_provider";
 /// keep the prompt bounded.
 const CHAT_HISTORY_LIMIT: usize = 20;
 
-/// Read the persisted AI provider ("openai" | "gemini"). Defaults to "openai"
-/// when never set. Used by Settings to populate the provider dropdown.
+/// Read the persisted AI provider id (e.g. "openai" | "gemini" | "anthropic" |
+/// "glm" | "kimi" | "grok" | "deepseek"). Defaults to "openai" when never set.
+/// Used by Settings to populate the provider dropdown.
 #[tauri::command]
 pub fn get_ai_provider(db: State<'_, Db>) -> AppResult<String> {
     Ok(db
@@ -29,15 +31,14 @@ pub fn get_ai_provider(db: State<'_, Db>) -> AppResult<String> {
         .unwrap_or_else(|| "openai".to_string()))
 }
 
-/// Persist the active AI provider. Only "openai" or "gemini" are accepted.
+/// Persist the active AI provider. Accepts any known [`ai::Provider`] id
+/// (case-insensitive); an unknown value is rejected so the persisted setting is
+/// always resolvable.
 #[tauri::command]
 pub fn set_ai_provider(db: State<'_, Db>, provider: String) -> AppResult<()> {
-    let normalized = match provider.trim().to_ascii_lowercase().as_str() {
-        "gemini" => "gemini",
-        "openai" => "openai",
-        other => return Err(AppError::Config(format!("unknown AI provider: {other}"))),
-    };
-    db.set_setting(AI_PROVIDER_KEY, normalized)
+    let normalized = ai::Provider::try_from_setting(&provider)
+        .ok_or_else(|| AppError::Config(format!("unknown AI provider: {provider}")))?;
+    db.set_setting(AI_PROVIDER_KEY, normalized.id())
 }
 
 /// Resolve the active AI provider and its API key (from the keychain). Reads the

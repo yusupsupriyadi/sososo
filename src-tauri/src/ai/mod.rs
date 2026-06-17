@@ -1,19 +1,24 @@
-//! AI meeting-summary generation + live translation via either the OpenAI Chat
-//! Completions API or the Google Gemini `generateContent` API (Milestone E).
+//! AI meeting-summary generation + live translation + transcript chat across
+//! several interchangeable providers (Milestone E).
 //!
-//! Invoked by the `summarize_session` / `translate_segment` commands. The active
-//! provider is a per-app setting (persisted in SQLite); the matching API key is
-//! read from the OS keychain (never the frontend) and the request is sent with
-//! the `reqwest` client already in the dependency tree (rustls).
+//! Invoked by the `summarize_session` / `translate_segment` / `chat_session`
+//! commands. The active provider is a per-app setting (persisted in SQLite); the
+//! matching API key is read from the OS keychain (never the frontend) and the
+//! request is sent with the `reqwest` client already in the dependency tree
+//! (rustls).
 //!
-//! Both providers share the same prompts and the same transcript rendering — only
-//! the HTTP transport (request/response shape, auth header, model name) differs
-//! (see [`openai`] / [`gemini`]). The stored transcript is rendered (see
-//! [`transcript`]) to a speaker-labelled plain-text block and the model is asked
-//! for a concise summary in a fixed Markdown shape (Summary / Key Points / Action
-//! Items). The output language is configurable (`"auto"` follows the transcript
-//! language, or a specific language name is requested).
+//! All providers share the same prompts and the same transcript rendering — only
+//! the HTTP transport differs. OpenAI, GLM, Kimi, Grok and DeepSeek all speak the
+//! OpenAI Chat Completions wire format (see [`openai`]) and differ only by base
+//! URL + model (see [`Provider::openai_compatible`]); Google Gemini
+//! (`generateContent`, see [`gemini`]) and Anthropic (the Messages API, see
+//! [`anthropic`]) have bespoke request/response shapes. The stored transcript is
+//! rendered (see [`transcript`]) to a speaker-labelled plain-text block and the
+//! model is asked for a concise summary in a fixed Markdown shape (Summary / Key
+//! Points / Action Items). The output language is configurable (`"auto"` follows
+//! the transcript language, or a specific language name is requested).
 
+mod anthropic;
 mod gemini;
 mod openai;
 mod provider;
@@ -44,15 +49,29 @@ async fn chat(
     temperature: f32,
     timeout: Duration,
 ) -> AppResult<(String, String)> {
+    // OpenAI, GLM, Kimi, Grok and DeepSeek all share the OpenAI transport.
+    if let Some((endpoint, model)) = provider.openai_compatible() {
+        let backend = openai::OpenAiBackend {
+            endpoint,
+            model,
+            label: provider.label(),
+        };
+        let text =
+            openai::openai_chat(&backend, api_key, system, user, temperature, timeout).await?;
+        return Ok((text, model.to_string()));
+    }
     match provider {
-        Provider::OpenAi => {
-            let text = openai::openai_chat(api_key, system, user, temperature, timeout).await?;
-            Ok((text, openai::OPENAI_MODEL.to_string()))
-        }
         Provider::Gemini => {
             let text = gemini::gemini_chat(api_key, system, user, temperature, timeout).await?;
             Ok((text, gemini::GEMINI_MODEL.to_string()))
         }
+        Provider::Anthropic => {
+            let text =
+                anthropic::anthropic_chat(api_key, system, user, temperature, timeout).await?;
+            Ok((text, anthropic::ANTHROPIC_MODEL.to_string()))
+        }
+        // Every OpenAI-compatible provider is handled by the early return above.
+        _ => unreachable!("OpenAI-compatible providers are handled above"),
     }
 }
 
@@ -182,22 +201,54 @@ pub async fn chat_about_transcript(
     let temperature = 0.4;
     let timeout = Duration::from_secs(60);
 
+    // OpenAI, GLM, Kimi, Grok and DeepSeek all share the OpenAI transport: the
+    // system instruction is the first message, prior turns follow, then the
+    // question.
+    if let Some((endpoint, model)) = provider.openai_compatible() {
+        let backend = openai::OpenAiBackend {
+            endpoint,
+            model,
+            label: provider.label(),
+        };
+        let mut messages: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 2);
+        messages.push(serde_json::json!({ "role": "system", "content": system }));
+        for turn in history {
+            messages.push(serde_json::json!({ "role": turn.role, "content": turn.content }));
+        }
+        messages.push(serde_json::json!({ "role": "user", "content": question }));
+        let text = openai::openai_chat_messages(
+            &backend,
+            api_key,
+            serde_json::Value::Array(messages),
+            temperature,
+            timeout,
+        )
+        .await?;
+        return Ok((text, model.to_string()));
+    }
     match provider {
-        Provider::OpenAi => {
-            let mut messages: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 2);
-            messages.push(serde_json::json!({ "role": "system", "content": system }));
+        Provider::Anthropic => {
+            // Anthropic uses the roles "user"/"assistant" (same as ChatTurn) and
+            // takes the system instruction as a top-level field, not a message.
+            let mut messages: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 1);
             for turn in history {
-                messages.push(serde_json::json!({ "role": turn.role, "content": turn.content }));
+                let role = if turn.role == "assistant" {
+                    "assistant"
+                } else {
+                    "user"
+                };
+                messages.push(serde_json::json!({ "role": role, "content": turn.content }));
             }
             messages.push(serde_json::json!({ "role": "user", "content": question }));
-            let text = openai::openai_chat_messages(
+            let text = anthropic::anthropic_chat_messages(
                 api_key,
+                &system,
                 serde_json::Value::Array(messages),
                 temperature,
                 timeout,
             )
             .await?;
-            Ok((text, openai::OPENAI_MODEL.to_string()))
+            Ok((text, anthropic::ANTHROPIC_MODEL.to_string()))
         }
         Provider::Gemini => {
             let mut contents: Vec<serde_json::Value> = Vec::with_capacity(history.len() + 1);
@@ -223,5 +274,7 @@ pub async fn chat_about_transcript(
             .await?;
             Ok((text, gemini::GEMINI_MODEL.to_string()))
         }
+        // Every OpenAI-compatible provider is handled by the early return above.
+        _ => unreachable!("OpenAI-compatible providers are handled above"),
     }
 }
