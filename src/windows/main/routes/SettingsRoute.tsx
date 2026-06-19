@@ -6,6 +6,7 @@ import {
   getAiModel,
   getAiProvider,
   getLlamaConfig,
+  getOpenAiCompatibleConfig,
   getSummaryLanguage,
   hasApiKey,
   listDevices,
@@ -14,6 +15,7 @@ import {
   setApiKey,
   setDevices,
   setLlamaConfig,
+  setOpenAiCompatibleConfig,
   setSummaryLanguage,
 } from '../../../lib/ipc';
 import { SUMMARY_LANGUAGES } from '../../../lib/languages';
@@ -81,6 +83,9 @@ export default function SettingsRoute() {
   // Local-Llama base URL (only relevant when the active provider is "llama"; the
   // model uses the shared `model` state above like every other provider).
   const [llamaBaseUrl, setLlamaBaseUrl] = useState('');
+  // Generic OpenAI-compatible base URL (only relevant when the active provider
+  // is "openai-compatible"; defaults to OpenRouter).
+  const [ocBaseUrl, setOcBaseUrl] = useState('');
 
   // Device selection is shared with the Start-transcription screen via the config store.
   const inputDevice = useConfigStore((s) => s.inputDevice);
@@ -135,6 +140,9 @@ export default function SettingsRoute() {
       .catch(() => {});
     getLlamaConfig()
       .then((c) => setLlamaBaseUrl(c.baseUrl))
+      .catch(() => {});
+    getOpenAiCompatibleConfig()
+      .then((c) => setOcBaseUrl(c.baseUrl))
       .catch(() => {});
   }, [setInputDevice, setOutputDevice]);
 
@@ -205,6 +213,15 @@ export default function SettingsRoute() {
     try {
       await setLlamaConfig(llamaBaseUrl, model);
       setStatus('Local Llama settings saved.');
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }
+
+  async function saveOpenAiCompatibleConfig() {
+    try {
+      await setOpenAiCompatibleConfig(ocBaseUrl, model);
+      setStatus('OpenAI Compatible settings saved.');
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
@@ -340,6 +357,25 @@ export default function SettingsRoute() {
         <div className="mb-3.5 flex flex-col gap-2.5 rounded-sm border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.04)] px-3 py-3">
           {activeProvider ? (
             <>
+              {/* OpenAI Compatible: show base URL before the API key */}
+              {aiProvider === 'openai-compatible' && (
+                <label className={FIELD}>
+                  <span className={FIELD_LABEL}>Base URL</span>
+                  <input
+                    className={FIELD_CTRL}
+                    type="text"
+                    value={ocBaseUrl}
+                    onChange={(e) => setOcBaseUrl(e.target.value)}
+                    placeholder="https://openrouter.ai/api/v1"
+                    spellCheck={false}
+                    autoCapitalize="off"
+                  />
+                  <span className="text-[11.5px] leading-[1.4] text-fg-faint">
+                    Any endpoint that speaks the OpenAI Chat Completions API — OpenRouter, Qwen, or
+                    a self-hosted model. Include the <code>/v1</code> path.
+                  </span>
+                </label>
+              )}
               <label className={FIELD}>
                 <span className={FIELD_LABEL}>
                   {activeProvider.label} API key{' '}
@@ -419,7 +455,13 @@ export default function SettingsRoute() {
               />
               <button
                 className={BTN}
-                onClick={() => void (aiProvider === 'llama' ? saveLlamaConfig() : saveModel())}
+                onClick={() =>
+                  void (aiProvider === 'llama'
+                    ? saveLlamaConfig()
+                    : aiProvider === 'openai-compatible'
+                      ? saveOpenAiCompatibleConfig()
+                      : saveModel())
+                }
               >
                 Save
               </button>

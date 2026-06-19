@@ -24,6 +24,12 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
     keysUrl: 'https://platform.openai.com/api-keys',
   },
   {
+    id: 'openai-compatible',
+    label: 'OpenAI Compatible (custom endpoint)',
+    placeholder: 'sk-…',
+    keysUrl: 'https://openrouter.ai/keys',
+  },
+  {
     id: 'gemini',
     label: 'Gemini',
     placeholder: 'AIza…',
@@ -85,6 +91,13 @@ export const PROVIDER_OPTIONS: ProviderOption[] = [
  *  lineups change often; update freely. */
 export const MODEL_SUGGESTIONS: Record<AiProvider, string[]> = {
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1', 'o4-mini'],
+  'openai-compatible': [
+    'openai/gpt-4o-mini',
+    'anthropic/claude-haiku-4-5',
+    'deepseek/deepseek-chat',
+    'qwen/qwen-2.5-72b-instruct',
+    'meta-llama/llama-3.1-70b-instruct',
+  ],
   gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
   anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-8'],
   glm: ['glm-4.6', 'glm-4.5', 'glm-4-flash'],

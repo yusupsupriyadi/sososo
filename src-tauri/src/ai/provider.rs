@@ -16,6 +16,12 @@ pub enum Provider {
     OpenAi,
     Gemini,
     Anthropic,
+    /// A generic OpenAI-compatible endpoint with a user-provided base URL and
+    /// API key — covers OpenRouter, Qwen, or any other third-party gateway that
+    /// speaks the OpenAI Chat Completions wire format. Unlike `LlamaLocal`, the
+    /// API key is a real secret (not a placeholder) and the endpoint is typically
+    /// a remote HTTPS URL.
+    OpenAiCompatible,
     /// Zhipu AI "GLM" (OpenAI-compatible).
     Glm,
     /// Moonshot AI "Kimi" (OpenAI-compatible).
@@ -64,6 +70,7 @@ impl Provider {
     pub fn try_from_setting(s: &str) -> Option<Self> {
         match s.trim().to_ascii_lowercase().as_str() {
             "openai" => Some(Provider::OpenAi),
+            "openai-compatible" => Some(Provider::OpenAiCompatible),
             "gemini" => Some(Provider::Gemini),
             "anthropic" => Some(Provider::Anthropic),
             "glm" => Some(Provider::Glm),
@@ -80,6 +87,7 @@ impl Provider {
     pub fn id(self) -> &'static str {
         match self {
             Provider::OpenAi => "openai",
+            Provider::OpenAiCompatible => "openai-compatible",
             Provider::Gemini => "gemini",
             Provider::Anthropic => "anthropic",
             Provider::Glm => "glm",
@@ -99,6 +107,7 @@ impl Provider {
     pub fn label(self) -> &'static str {
         match self {
             Provider::OpenAi => "OpenAI",
+            Provider::OpenAiCompatible => "OpenAI Compatible",
             Provider::Gemini => "Gemini",
             Provider::Anthropic => "Anthropic (Claude)",
             Provider::Glm => "GLM (Zhipu AI)",
@@ -119,6 +128,8 @@ impl Provider {
             Provider::Gemini => "gemini-2.5-flash",
             Provider::Anthropic => "claude-haiku-4-5",
             Provider::LlamaLocal => LLAMA_DEFAULT_MODEL,
+            // Generic OpenAI-compatible endpoint (OpenRouter, etc.).
+            Provider::OpenAiCompatible => "openai/gpt-4o-mini",
             // OpenAI / GLM / Kimi / Grok / DeepSeek.
             other => other
                 .openai_compatible()
@@ -145,10 +156,13 @@ impl Provider {
                 "https://api.deepseek.com/v1/chat/completions",
                 "deepseek-chat",
             )),
-            // Gemini/Anthropic have bespoke transports; LlamaLocal is
-            // OpenAI-shaped but its endpoint+model are resolved at runtime from
-            // user settings, not from this static table.
-            Provider::Gemini | Provider::Anthropic | Provider::LlamaLocal => None,
+            // Gemini/Anthropic have bespoke transports; OpenAiCompatible and
+            // LlamaLocal are OpenAI-shaped but their endpoint+model are resolved
+            // at runtime from user settings, not from this static table.
+            Provider::Gemini
+            | Provider::Anthropic
+            | Provider::OpenAiCompatible
+            | Provider::LlamaLocal => None,
         }
     }
 }
@@ -158,8 +172,9 @@ mod tests {
     use super::*;
 
     /// Every variant, for exhaustive iteration in the tests below.
-    const ALL: [Provider; 8] = [
+    const ALL: [Provider; 9] = [
         Provider::OpenAi,
+        Provider::OpenAiCompatible,
         Provider::Gemini,
         Provider::Anthropic,
         Provider::Glm,
@@ -174,6 +189,14 @@ mod tests {
         assert_eq!(Provider::from_setting("gemini"), Provider::Gemini);
         assert_eq!(Provider::from_setting("  GEMINI "), Provider::Gemini);
         assert_eq!(Provider::from_setting("openai"), Provider::OpenAi);
+        assert_eq!(
+            Provider::from_setting("openai-compatible"),
+            Provider::OpenAiCompatible
+        );
+        assert_eq!(
+            Provider::from_setting("  OpenAI-Compatible "),
+            Provider::OpenAiCompatible
+        );
         assert_eq!(Provider::from_setting("anthropic"), Provider::Anthropic);
         assert_eq!(Provider::from_setting("GLM"), Provider::Glm);
         assert_eq!(Provider::from_setting(" kimi "), Provider::Kimi);
@@ -188,6 +211,10 @@ mod tests {
     #[test]
     fn try_from_setting_is_strict_and_rejects_unknown() {
         assert_eq!(Provider::try_from_setting("openai"), Some(Provider::OpenAi));
+        assert_eq!(
+            Provider::try_from_setting("openai-compatible"),
+            Some(Provider::OpenAiCompatible)
+        );
         assert_eq!(Provider::try_from_setting("gemini"), Some(Provider::Gemini));
         assert_eq!(
             Provider::try_from_setting("ANTHROPIC"),
@@ -218,6 +245,7 @@ mod tests {
             assert_eq!(Provider::try_from_setting(p.id()), Some(p));
         }
         assert_eq!(Provider::OpenAi.id(), "openai");
+        assert_eq!(Provider::OpenAiCompatible.id(), "openai-compatible");
         assert_eq!(Provider::Gemini.id(), "gemini");
         assert_eq!(Provider::Anthropic.id(), "anthropic");
         assert_eq!(Provider::Glm.id(), "glm");
@@ -229,7 +257,7 @@ mod tests {
 
     #[test]
     fn every_variant_has_a_non_empty_label() {
-        assert_eq!(ALL.len(), 8);
+        assert_eq!(ALL.len(), 9);
         for p in ALL {
             assert!(!p.label().is_empty());
         }
@@ -254,8 +282,9 @@ mod tests {
         // Gemini and Anthropic have bespoke transports, not the OpenAI shape.
         assert_eq!(Provider::Gemini.openai_compatible(), None);
         assert_eq!(Provider::Anthropic.openai_compatible(), None);
-        // Local Llama is OpenAI-shaped but its endpoint/model are user-configured
-        // at runtime, so it is NOT in the static table.
+        // Generic OpenAI Compatible and local Llama are OpenAI-shaped but their
+        // endpoint/model are user-configured at runtime, so not in the static table.
+        assert_eq!(Provider::OpenAiCompatible.openai_compatible(), None);
         assert_eq!(Provider::LlamaLocal.openai_compatible(), None);
     }
 
@@ -292,6 +321,10 @@ mod tests {
         assert_eq!(Provider::OpenAi.default_model(), "gpt-4o-mini");
         assert_eq!(Provider::Gemini.default_model(), "gemini-2.5-flash");
         assert_eq!(Provider::Anthropic.default_model(), "claude-haiku-4-5");
+        assert_eq!(
+            Provider::OpenAiCompatible.default_model(),
+            "openai/gpt-4o-mini"
+        );
         assert_eq!(Provider::DeepSeek.default_model(), "deepseek-chat");
         assert_eq!(Provider::LlamaLocal.default_model(), LLAMA_DEFAULT_MODEL);
     }
