@@ -1,6 +1,6 @@
 [package]
 name = "sososo"
-version = "0.9.0"
+version = "0.9.1"
 description = "Real-time meeting & audio transcription (system audio + mic) with AI summaries."
 authors = ["Yusup Supriyadi"]
 edition = "2021"

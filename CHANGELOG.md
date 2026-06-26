@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-06-26
+
+### Added
+
+- **"OpenAI Compatible" AI provider for any custom endpoint.** A new provider
+  option that accepts an arbitrary **base URL + your own API key**, so any
+  third-party gateway speaking the OpenAI Chat Completions wire format —
+  **OpenRouter**, **Qwen**, and similar — can drive the AI session summary, live
+  translation, and transcript chat. Unlike the fixed cloud presets it takes a
+  configurable Base URL (defaults to OpenRouter at
+  `https://openrouter.ai/api/v1`); unlike the local-Llama option it requires a
+  real API key, stored in the OS keychain. Pick it in **Settings → API Keys**,
+  where a **Base URL** field appears alongside the key and model, with common
+  OpenRouter model suggestions. (Resolves [#10]; thanks @dinoudon.)
+
+### Security
+
+- **Bumped `quinn-proto` to 0.11.15** to resolve **RUSTSEC-2026-0185** (high,
+  CVSS 7.5 — remote memory exhaustion from unbounded out-of-order QUIC stream
+  reassembly) in a transitive dependency. Lockfile-only change; no application
+  code is affected.
+
+### Internal
+
+- **CI security audit hardened.** `bun audit` now ignores the low-severity,
+  dev-server-only esbuild advisory **GHSA-g7r4-m6w7-qqqr** (pulled in
+  transitively by vite, whose `^0.27.0` esbuild constraint cannot reach the
+  patched `>=0.28.1`, and the shipped Tauri app never runs the vite dev server);
+  `cargo audit` passes on the patched `quinn-proto`. Both gates still fail on any
+  other advisory.
+
 ## [0.9.0] - 2026-06-17
 
 ### Added
@@ -318,7 +349,8 @@ First public release. **Windows only** — macOS and Linux are not yet tested.
 - Formatting SOP — Prettier (with Tailwind class sorting) + rustfmt, enforced by
   a Husky pre-commit hook — plus CI and a Windows release workflow.
 
-[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.0...HEAD
+[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/yusupsupriyadi/sososo/compare/v0.7.0...v0.7.1
