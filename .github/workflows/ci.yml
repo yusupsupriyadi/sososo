@@ -110,9 +110,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # JS/TS dependency advisories (npm advisory DB).
+      # JS/TS dependency advisories (npm advisory DB). GHSA-g7r4-m6w7-qqqr
+      # (esbuild arbitrary file read via the dev server on Windows, LOW) is
+      # ignored: esbuild is pulled in transitively by vite, whose `^0.27.0`
+      # constraint cannot reach the patched esbuild >=0.28.1, and the shipped
+      # Tauri app never runs the vite dev server. Revisit on the next vite bump.
       - name: bun audit
-        run: bun audit
+        run: bun audit --ignore GHSA-g7r4-m6w7-qqqr
 
       - name: Install cargo-audit
         uses: taiki-e/install-action@v2
