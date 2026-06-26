@@ -74,6 +74,7 @@ export interface StopResult {
  *  their OS-keychain service name; `llama` is a local server (no cloud key). */
 export type AiProvider =
   | 'openai'
+  | 'openai-compatible'
   | 'gemini'
   | 'anthropic'
   | 'glm'
@@ -89,6 +90,13 @@ export type ApiService = 'deepgram' | AiProvider;
 /** Local-Llama backend config (OpenAI-compatible base URL + model name),
  *  persisted in the DB. Only used when the active provider is `llama`. */
 export interface LlamaConfig {
+  baseUrl: string;
+  model: string;
+}
+
+/** Generic OpenAI-compatible backend config (base URL + model name),
+ *  persisted in the DB. Only used when the active provider is `openai-compatible`. */
+export interface OpenAiCompatibleConfig {
   baseUrl: string;
   model: string;
 }

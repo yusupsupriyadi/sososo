@@ -23,6 +23,11 @@ const AI_PROVIDER_KEY: &str = "ai_provider";
 /// provider's, under `ai_model:llama` (see [`ai_model_key`]).
 const LLAMA_BASE_URL_KEY: &str = "llama_base_url";
 
+/// `app_settings` key for the generic OpenAI-compatible base URL; only used when
+/// the active provider is `openai-compatible`. The model is stored under
+/// `ai_model:openai-compatible` (see [`ai_model_key`]).
+const OPENAI_COMPATIBLE_BASE_URL_KEY: &str = "openai_compatible_base_url";
+
 /// `app_settings` key holding a provider's chosen model (`ai_model:<id>`).
 fn ai_model_key(provider: ai::Provider) -> String {
     format!("ai_model:{}", provider.id())
@@ -95,6 +100,20 @@ fn resolve_backend(db: &Db) -> AppResult<ai::Backend> {
                 api_key: ai::LLAMA_PLACEHOLDER_KEY.to_string(),
             }
         }
+        ai::Provider::OpenAiCompatible => {
+            // Generic OpenAI-compatible endpoint (OpenRouter, Qwen, etc.) with a
+            // user-provided API key and base URL.
+            let base = db
+                .get_setting(OPENAI_COMPATIBLE_BASE_URL_KEY)?
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string());
+            ai::Backend::OpenAiCompatible {
+                endpoint: ai::llama_chat_url(&base),
+                model: resolve_model(db, ai::Provider::OpenAiCompatible)?,
+                label: ai::Provider::OpenAiCompatible.label(),
+                api_key: require_key(ai::Provider::OpenAiCompatible)?,
+            }
+        }
         ai::Provider::Gemini => ai::Backend::Gemini {
             model: resolve_model(db, ai::Provider::Gemini)?,
             api_key: require_key(ai::Provider::Gemini)?,
@@ -164,6 +183,40 @@ pub fn get_llama_config(db: State<'_, Db>) -> AppResult<LlamaConfig> {
 pub fn set_llama_config(db: State<'_, Db>, base_url: String, model: String) -> AppResult<()> {
     db.set_setting(LLAMA_BASE_URL_KEY, base_url.trim())?;
     db.set_setting(&ai_model_key(ai::Provider::LlamaLocal), model.trim())
+}
+
+/// The persisted generic OpenAI-compatible backend config, returned to Settings.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenAiCompatibleConfig {
+    /// OpenAI-compatible base URL (e.g. `https://openrouter.ai/api/v1`).
+    pub base_url: String,
+    /// Model name (e.g. `openai/gpt-4o-mini`).
+    pub model: String,
+}
+
+/// Read the generic OpenAI-compatible base URL + model, falling back to
+/// OpenRouter defaults when unset. Used by Settings to populate the config inputs.
+#[tauri::command]
+pub fn get_openai_compatible_config(db: State<'_, Db>) -> AppResult<OpenAiCompatibleConfig> {
+    let base_url = db
+        .get_setting(OPENAI_COMPATIBLE_BASE_URL_KEY)?
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string());
+    let model = resolve_model(&db, ai::Provider::OpenAiCompatible)?;
+    Ok(OpenAiCompatibleConfig { base_url, model })
+}
+
+/// Persist the generic OpenAI-compatible base URL + model. Empty values reset
+/// to the defaults.
+#[tauri::command]
+pub fn set_openai_compatible_config(
+    db: State<'_, Db>,
+    base_url: String,
+    model: String,
+) -> AppResult<()> {
+    db.set_setting(OPENAI_COMPATIBLE_BASE_URL_KEY, base_url.trim())?;
+    db.set_setting(&ai_model_key(ai::Provider::OpenAiCompatible), model.trim())
 }
 
 /// Read the persisted AI-summary output language (a Deepgram language code or the

@@ -6,6 +6,7 @@ import type { AiProvider } from '../types/domain';
 // PROVIDER_OPTIONS drives the active-provider dropdown (cloud + local Llama).
 const EXPECTED_IDS: AiProvider[] = [
   'openai',
+  'openai-compatible',
   'gemini',
   'anthropic',
   'glm',

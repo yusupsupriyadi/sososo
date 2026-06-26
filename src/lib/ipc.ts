@@ -6,6 +6,7 @@ import type {
   DetectedMeeting,
   DeviceLists,
   LlamaConfig,
+  OpenAiCompatibleConfig,
   SearchHit,
   SessionDetail,
   SessionSummary,
@@ -132,6 +133,16 @@ export const getLlamaConfig = (): Promise<LlamaConfig> => invoke('get_llama_conf
  *  to the defaults. */
 export const setLlamaConfig = (baseUrl: string, model: string): Promise<void> =>
   invoke('set_llama_config', { baseUrl, model });
+
+/** Read the generic OpenAI-compatible backend config (base URL + model). Falls
+ *  back to OpenRouter defaults when unset. */
+export const getOpenAiCompatibleConfig = (): Promise<OpenAiCompatibleConfig> =>
+  invoke('get_openai_compatible_config');
+
+/** Persist the generic OpenAI-compatible backend config (base URL + model).
+ *  Empty values reset to the defaults. */
+export const setOpenAiCompatibleConfig = (baseUrl: string, model: string): Promise<void> =>
+  invoke('set_openai_compatible_config', { baseUrl, model });
 
 /** Generate + persist an AI summary for a session; resolves to the Markdown text.
  *  `summaryLanguage` is the literal "auto" (match the transcript) or a

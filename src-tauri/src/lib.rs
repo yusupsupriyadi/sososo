@@ -53,6 +53,8 @@ pub fn run() {
             commands::set_ai_model,
             commands::get_llama_config,
             commands::set_llama_config,
+            commands::get_openai_compatible_config,
+            commands::set_openai_compatible_config,
             commands::summarize_session,
             commands::translate_segment,
             commands::get_chat_messages,
