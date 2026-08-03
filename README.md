@@ -199,24 +199,9 @@ our [Code of Conduct](./CODE_OF_CONDUCT.md). To report a security issue, see
 
 ## Contributors
 
-Thanks to everyone who has contributed to sososo — every issue, fix, and
-feature helps. ✨
-
-<p align="center">
-  <a href="https://github.com/yusupsupriyadi/sososo/graphs/contributors">
-    <img alt="sososo contributors" src="https://contrib.rocks/image?repo=yusupsupriyadi/sososo" />
-  </a>
-</p>
-
-| Contributor                                          | Role                 |
-| ---------------------------------------------------- | -------------------- |
-| [@yusupsupriyadi](https://github.com/yusupsupriyadi) | Creator & maintainer |
-| [@dinoudon](https://github.com/dinoudon)             | Contributor          |
-
-Want your name here? Pick up a
-[good first issue](https://github.com/yusupsupriyadi/sososo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-or open a pull request — see [CONTRIBUTING.md](./CONTRIBUTING.md) to get
-started.
+<a href="https://github.com/yusupsupriyadi/sososo/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=yusupsupriyadi/sososo" />
+</a>
 
 ## Powered by
 
