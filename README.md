@@ -199,8 +199,11 @@ our [Code of Conduct](./CODE_OF_CONDUCT.md). To report a security issue, see
 
 ## Contributors
 
-<a href="https://github.com/yusupsupriyadi/sososo/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=yusupsupriyadi/sososo" />
+<a href="https://github.com/yusupsupriyadi">
+  <img src="https://avatars.githubusercontent.com/u/57658483?s=80" width="64" height="64" alt="yusupsupriyadi" />
+</a>
+<a href="https://github.com/dinoudon">
+  <img src="https://avatars.githubusercontent.com/u/8967055?s=80" width="64" height="64" alt="dinoudon" />
 </a>
 
 ## Powered by
