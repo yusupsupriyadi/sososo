@@ -206,23 +206,6 @@ our [Code of Conduct](./CODE_OF_CONDUCT.md). To report a security issue, see
   <img src="https://avatars.githubusercontent.com/u/8967055?s=80" width="64" height="64" alt="dinoudon" />
 </a>
 
-## Powered by
-
-sososo stands on the shoulders of best-in-class speech and AI APIs:
-
-- 🟢 **[Deepgram](https://deepgram.com)** — real-time speech-to-text (Nova-3 /
-  Nova-2) with diarization and smart formatting. It is the engine behind every
-  live caption in the app. Start with the
-  [console](https://console.deepgram.com) and the
-  [developer docs](https://developers.deepgram.com).
-- 🧠 **[OpenAI](https://openai.com)** or **[Google Gemini](https://ai.google.dev)**
-  — optional, user-selectable AI summaries and live translation. Bring a key
-  from the [OpenAI dashboard](https://platform.openai.com/api-keys) or
-  [Google AI Studio](https://aistudio.google.com/app/apikey).
-
-Huge thanks to the [Deepgram](https://deepgram.com) team — sososo simply would
-not exist without their speech API. 💚
-
 ## License
 
 `sososo` is **dual-licensed**:
