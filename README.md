@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/sososo_brand_logo_white.png" />
@@ -118,7 +120,7 @@ all most people need. To build it yourself:
   WebKitGTK + libpulse dev libraries
 - **Linux only** — install the build dependencies (Debian/Ubuntu):
   ```sh
-  sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libpulse-dev
+  sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libpulse-dev libsecret-1-dev
   ```
 
 ```sh
