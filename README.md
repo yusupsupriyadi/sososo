@@ -207,7 +207,7 @@ our [Code of Conduct](./CODE_OF_CONDUCT.md). To report a security issue, see
 <a href="https://github.com/dinoudon">
   <img src="https://avatars.githubusercontent.com/u/8967055?s=80" width="64" height="64" alt="dinoudon" />
 </a>
-<a href="https://github.com/dinoudon">
+<a href="https://github.com/webbrain-one">
   <img src="https://avatars.githubusercontent.com/u/295484252?s=80" width="64" height="64" alt="dinoudon" />
 </a>
 
