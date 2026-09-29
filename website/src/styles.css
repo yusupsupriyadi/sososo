@@ -376,6 +376,10 @@
   background: var(--color-rec);
   animation: rec-pulse 1.4s infinite;
 }
+/* static mockups: the recording state without the live pulse */
+.status-dot[data-state='rec'] {
+  background: var(--color-rec);
+}
 .status-dot[data-state='connecting'] {
   background: var(--color-you);
   animation: soft-pulse 1.2s ease-in-out infinite;
