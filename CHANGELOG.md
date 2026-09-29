@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Patched dependency advisories that were failing the CI audit.** Rust
+  (lockfile-only): `rustls` 0.23.45 (**RUSTSEC-2026-0285**, TLS 1.3 handshake
+  messages accepted across encryption levels), `quick-xml` 0.42 via `plist`
+  1.10 and `notify-rust` 4.18 (**RUSTSEC-2026-0194/0195**, quadratic-time and
+  memory-exhaustion DoS), `crossbeam-epoch` 0.9.21 (**RUSTSEC-2026-0204**).
+  JavaScript: `react-router-dom` 7.18.4 (React Router open-redirect, XSS and DoS
+  advisories) plus patch updates of the dev-only `postcss`, `nanoid`,
+  `browserslist`, `brace-expansion` and `baseline-browser-mapping`.
+
+### Internal
+
+- **Clippy 1.98 compatibility.** Fixed-size byte chunking now uses
+  `as_chunks::<N>()` instead of `chunks_exact(N)`, which the new
+  `chunks_exact_to_as_chunks` lint rejects under `-D warnings`.
+
 ## [0.9.2] - 2026-09-29
 
 ### Changed
