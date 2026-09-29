@@ -57,10 +57,10 @@ describe('DOWNLOADS', () => {
       'sososo_windows_x64.msi',
     ]);
     expect(DOWNLOADS.macos.primary.url.endsWith('/sososo_macos_universal.dmg')).toBe(true);
-    expect(DOWNLOADS.linux.primary.url.endsWith('/sososo_linux_amd64.deb')).toBe(true);
+    expect(DOWNLOADS.linux.primary.url.endsWith('/sososo_amd64.deb')).toBe(true);
     expect(DOWNLOADS.linux.alternatives.map((a) => a.url.split('/').pop())).toEqual([
-      'sososo_linux_amd64.AppImage',
-      'sososo_linux_x86_64.rpm',
+      'sososo_amd64.AppImage',
+      'sososo_x86_64.rpm',
     ]);
   });
 

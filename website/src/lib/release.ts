@@ -41,10 +41,10 @@ export const DOWNLOADS: Record<DesktopOS, OsDownloads> = {
   linux: {
     name: 'Linux',
     shortName: 'Linux',
-    primary: { label: '.deb', url: `${RELEASE_BASE}/sososo_linux_amd64.deb` },
+    primary: { label: '.deb', url: `${RELEASE_BASE}/sososo_amd64.deb` },
     alternatives: [
-      { label: '.AppImage', url: `${RELEASE_BASE}/sososo_linux_amd64.AppImage` },
-      { label: '.rpm', url: `${RELEASE_BASE}/sososo_linux_x86_64.rpm` },
+      { label: '.AppImage', url: `${RELEASE_BASE}/sososo_amd64.AppImage` },
+      { label: '.rpm', url: `${RELEASE_BASE}/sososo_x86_64.rpm` },
     ],
   },
 };
