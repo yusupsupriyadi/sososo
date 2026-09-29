@@ -10,6 +10,7 @@ import {
   formatClock,
   type DemoFrame,
   type DemoPhase,
+  type DemoSource,
 } from './lib/demo';
 
 const SPEAKER_COLOR: Record<string, string> = {
@@ -33,8 +34,8 @@ interface LineNode {
 interface HeroDemoOptions {
   /** Hold a finished, readable frame instead of looping. */
   still: boolean;
-  /** Fired each time a caption line settles into its final form. */
-  onLineFinal?: () => void;
+  /** Fired each time a caption line settles, with who said it. */
+  onLineFinal?: (source: DemoSource) => void;
 }
 
 function status(phase: DemoPhase, paused: boolean): { label: string; dot: string } {
@@ -164,6 +165,7 @@ export function mountHeroDemo({ still, onLineFinal }: HeroDemoOptions): void {
     }
 
     let finals = 0;
+    let lastFinal = -1;
     for (const line of frame.lines) {
       const node = lineNode(line.index);
       if (node.shown !== line.words) {
@@ -174,7 +176,10 @@ export function mountHeroDemo({ still, onLineFinal }: HeroDemoOptions): void {
         node.shown = line.words;
       }
       node.text.classList.toggle('is-interim', !line.final);
-      if (line.final) finals += 1;
+      if (line.final) {
+        finals += 1;
+        lastFinal = line.index;
+      }
 
       const tr = node.translation;
       tr.hidden = line.translation === 'none';
@@ -184,7 +189,7 @@ export function mountHeroDemo({ still, onLineFinal }: HeroDemoOptions): void {
       if (tr.textContent !== trText) tr.textContent = trText;
     }
 
-    if (finals > finalCount) onLineFinal?.();
+    if (finals > finalCount && lastFinal >= 0) onLineFinal?.(DEMO_LINES[lastFinal].source);
     finalCount = finals;
   }
 

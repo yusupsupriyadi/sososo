@@ -211,50 +211,53 @@
   will-change: transform, opacity;
 }
 
-.btn {
-  display: inline-flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border-radius: var(--radius-ui);
-  padding: 12px 20px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.2;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-.btn:active {
-  transform: translateY(1px);
-}
-.btn-ink {
-  background: var(--fg);
-  color: var(--bg);
-}
-.btn-ink:hover {
-  background: var(--fg-2);
-}
-.btn-line {
-  border: 1.5px solid var(--line-strong);
-  color: var(--fg);
-}
-.btn-line:hover {
-  border-color: var(--fg);
-  background: var(--bg-2);
-}
-.link {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  text-decoration-color: var(--line-strong);
-  transition: text-decoration-color 0.2s ease;
-}
-.link:hover {
-  text-decoration-color: currentColor;
+/* components layer: Tailwind utilities (hidden, px-4, bg-*) must be able to override these */
+@layer components {
+  .btn {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: var(--radius-ui);
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-ink {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .btn-ink:hover {
+    background: var(--fg-2);
+  }
+  .btn-line {
+    border: 1.5px solid var(--line-strong);
+    color: var(--fg);
+  }
+  .btn-line:hover {
+    border-color: var(--fg);
+    background: var(--bg-2);
+  }
+  .link {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    text-decoration-color: var(--line-strong);
+    transition: text-decoration-color 0.2s ease;
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
 }
 
 /* The dark "screen" the app recreations float on; the logo's rings are its only decoration. */
@@ -293,6 +296,13 @@
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.6),
     inset 0 0 18px rgb(255 255 255 / 0.05);
+}
+/* the hero widget floats on the ring field: the one blurred surface on the page,
+   there so its text stays readable over the stripes */
+.app-float {
+  background: rgb(20 20 25 / 0.8);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  backdrop-filter: blur(12px) saturate(1.1);
 }
 .app-btn {
   display: inline-flex;
@@ -416,17 +426,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: clamp(64px, 11vw, 132px);
-  height: clamp(64px, 11vw, 132px);
-  padding: 0 clamp(12px, 2vw, 24px);
-  border-radius: clamp(12px, 1.6vw, 20px);
+  min-width: clamp(54px, 7.4vw, 100px);
+  height: clamp(54px, 7.4vw, 100px);
+  padding: 0 clamp(10px, 1.6vw, 20px);
+  border-radius: clamp(10px, 1.3vw, 18px);
   border: 1.5px solid var(--fg);
   background: var(--bg);
   --depth: 8px;
   box-shadow: 0 var(--depth) 0 var(--fg);
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: clamp(18px, 2.6vw, 34px);
+  font-size: clamp(16px, 2vw, 28px);
   letter-spacing: -0.02em;
 }
 
@@ -460,10 +470,36 @@
   border-radius: 6px;
   overflow: hidden;
 }
-.track-bar i {
+/* seeded waveform bars; the lit copy is clipped to the playhead */
+.wave {
   position: absolute;
   inset: 0;
-  transform-origin: 0 50%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.wave i {
+  flex: 0 0 3px;
+  border-radius: 2px;
+}
+.wave-dim {
+  opacity: 0.28;
+}
+
+/* the page's call clock in the nav, lit once the recording scene hands it the dot */
+.call-clock {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+}
+.call-clock.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+.call-clock.is-finished .js-clock-dot {
+  background: var(--fg-3);
 }
 
 /* The head script adds .motion only when motion will run, so no-JS and reduced-motion
@@ -474,6 +510,12 @@
 }
 :root:not(.motion) .js-playhead {
   transform: translateX(100%);
+}
+:root:not(.motion) .js-beat-transcript {
+  display: none;
+}
+:root:not(.motion) .js-o-dot {
+  fill: var(--color-rec);
 }
 
 @media (prefers-reduced-motion: reduce) {

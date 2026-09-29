@@ -62,7 +62,11 @@
         class="mx-auto flex h-[68px] max-w-[1240px] items-center justify-between gap-4 px-5 sm:px-8"
         aria-label="Main"
       >
-        <a href="#hero" class="flex min-h-11 items-center" aria-label="sososo, back to top">
+        <a
+          href="#hero"
+          class="flex min-h-11 shrink-0 items-center"
+          aria-label="sososo, back to top"
+        >
           <img
             src="./sososo_brand_logo_white-bg-transparent.png"
             alt=""
@@ -100,6 +104,18 @@
         </ul>
 
         <div class="flex items-center gap-2">
+          <!-- the page's own call clock: runs with the story, not with anything on your machine -->
+          <span
+            id="call-clock"
+            class="call-clock border-line inline-flex h-11 items-center gap-2 rounded-[12px] border px-2.5 font-mono text-[13px] tabular-nums max-[359px]:hidden sm:px-3 sm:text-[14px]"
+            aria-hidden="true"
+          >
+            <span class="js-clock-dot h-2.5 w-2.5 shrink-0 rounded-full bg-rec"></span>
+            <span class="js-clock-time"
+              ><span class="js-clock-h max-sm:hidden">00:</span
+              ><span class="js-clock-ms">00:00</span></span
+            >
+          </span>
           <button
             id="btn-theme"
             type="button"
@@ -123,13 +139,14 @@
             target="_blank"
             rel="noreferrer"
             class="border-line hover:border-line-strong hidden h-11 items-center gap-2 rounded-[12px] border px-3.5 text-[15px] font-semibold sm:flex"
+            aria-label="sososo on GitHub"
           >
             <svg viewBox="0 0 24 24" class="h-[18px] w-[18px] fill-current" aria-hidden="true">
               <path
                 d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.06.78 2.14 0 1.54-.02 2.79-.02 3.17 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"
               />
             </svg>
-            <span>GitHub</span>
+            <span class="hidden xl:inline">GitHub</span>
             <span class="js-star-count text-fg-3 hidden font-mono text-[14px] xl:inline"></span>
           </a>
           <a href="#download" class="btn btn-ink hidden min-h-11! px-4! text-[15px]! sm:inline-flex"
@@ -177,12 +194,23 @@
       </div>
     </header>
 
-    <main id="main">
-      <section id="hero" class="px-5 pt-10 pb-16 sm:px-8 sm:pb-24 lg:pt-20 lg:pb-32">
+    <span
+      id="rec-dot-fly"
+      class="pointer-events-none fixed top-0 left-0 z-[70] rounded-full bg-rec opacity-0"
+      aria-hidden="true"
+    ></span>
+
+    <main id="main" tabindex="-1" class="outline-none">
+      <section id="hero" class="relative isolate overflow-hidden">
+        <canvas
+          id="hero-field"
+          class="absolute inset-0 -z-10 h-full w-full"
+          aria-hidden="true"
+        ></canvas>
         <div
-          class="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12"
+          class="mx-auto grid max-w-[1240px] items-center gap-10 px-5 pt-10 pb-16 sm:px-8 sm:pb-20 lg:min-h-[calc(100svh-68px)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12 lg:py-14"
         >
-          <div>
+          <div id="hero-copy">
             <h1 id="hero-title" class="display-xl" data-caption="load">
               <span class="sm:block">Live captions</span>
               <span class="sm:block">for what you hear</span>
@@ -234,43 +262,15 @@
           </div>
 
           <!-- the recording widget, recreated from RecordingView.tsx -->
-          <figure
-            id="hero-widget"
-            class="stage on-stage flex min-h-[520px] flex-col items-center justify-center px-4 py-10 sm:px-10"
-            data-reveal
-          >
-            <svg
-              class="stage-rings"
-              viewBox="0 0 600 600"
-              preserveAspectRatio="xMidYMid slice"
-              aria-hidden="true"
-            >
-              <g class="js-rings">
-                <circle cx="300" cy="300" r="70" stroke-width="1.5" />
-                <circle cx="300" cy="300" r="140" stroke-width="1.5" />
-                <circle cx="300" cy="300" r="210" stroke-width="1.5" />
-                <circle cx="300" cy="300" r="280" stroke-width="1.5" />
-                <circle cx="300" cy="300" r="350" stroke-width="1.5" />
-              </g>
-              <circle
-                class="js-ring-pulse"
-                cx="300"
-                cy="300"
-                r="70"
-                stroke-width="2"
-                style="stroke: rgb(255 93 93 / 0.5); opacity: 0"
-              />
-            </svg>
-
+          <figure id="hero-widget" class="flex flex-col items-center py-4 lg:py-10" data-reveal>
             <p class="sr-only">
               A scripted demo of the sososo recording widget. Three people talk and their words
               appear as live captions, labeled You, Speaker 1 and Speaker 2. When the call ends, the
               session shows an AI summary. The buttons below control the demo.
             </p>
-
-            <div class="app flex w-full max-w-[372px] flex-col items-center gap-2">
+            <div class="app js-widget flex w-full max-w-[372px] flex-col items-center gap-2">
               <div
-                class="app-glass inline-flex items-center gap-2.5 rounded-full px-3 py-[7px]"
+                class="app-glass app-float inline-flex items-center gap-2.5 rounded-full px-3 py-[7px]"
                 role="group"
                 aria-label="Demo controls"
               >
@@ -346,7 +346,9 @@
                 </span>
               </div>
 
-              <div class="app-glass w-full overflow-hidden rounded-[16px]">
+              <div
+                class="app-glass app-float js-widget-panel w-full overflow-hidden rounded-[16px]"
+              >
                 <div class="border-app-border flex items-center gap-2 border-b px-3.5 py-[9px]">
                   <span id="demo-dot" class="status-dot" data-state="connecting"></span>
                   <span id="demo-status" class="text-app-dim text-[12px] font-semibold"
@@ -379,30 +381,91 @@
             </div>
 
             <figcaption
-              class="text-app-faint mt-6 max-w-[40ch] text-center text-[13px] leading-snug"
+              class="bg-bg text-fg-2 mt-5 max-w-[42ch] rounded-[10px] px-3 py-2 text-center text-[13px] leading-snug"
             >
               Scripted demo of the recording widget. Try pause, finish and translate.
             </figcaption>
+            <div id="listen" class="mt-3 hidden flex-col items-center gap-2">
+              <button
+                id="btn-listen"
+                type="button"
+                class="btn btn-line bg-bg min-h-11 px-4 text-[15px]"
+                aria-pressed="false"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="h-[18px] w-[18px]"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="3" width="6" height="11" rx="3" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                </svg>
+                <span class="js-listen-label">Let the rings hear you</span>
+                <span class="js-meter hidden h-3.5 items-end gap-[2px]" aria-hidden="true">
+                  <i class="h-full w-[3px] origin-bottom rounded-full bg-rec"></i>
+                  <i class="h-full w-[3px] origin-bottom rounded-full bg-rec"></i>
+                  <i class="h-full w-[3px] origin-bottom rounded-full bg-rec"></i>
+                  <i class="h-full w-[3px] origin-bottom rounded-full bg-rec"></i>
+                </span>
+              </button>
+              <p
+                id="listen-status"
+                class="bg-bg text-fg-3 max-w-[40ch] rounded-[8px] px-2.5 py-1 text-center text-[13px]"
+                aria-live="polite"
+              >
+                Your voice only moves the rings. Nothing is recorded or sent.
+              </p>
+            </div>
           </figure>
         </div>
       </section>
 
-      <section id="start" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
-        <div class="mx-auto max-w-[1240px]">
-          <p class="cue" data-reveal>00:00:00</p>
-          <div class="mt-4 grid items-end gap-8 lg:grid-cols-12 lg:gap-12">
-            <h2 class="display-lg lg:col-span-7" data-caption>
-              Start recording from whatever app you're in
-            </h2>
+      <section id="start" class="relative">
+        <div
+          class="js-start-pin relative flex min-h-[calc(100svh-68px)] flex-col overflow-hidden px-5 pt-8 pb-8 sm:px-8 lg:pt-12"
+        >
+          <div
+            class="js-start-copy mx-auto grid w-full max-w-[1240px] items-end gap-5 lg:grid-cols-12 lg:gap-12"
+          >
+            <div class="lg:col-span-7">
+              <p class="cue" data-reveal>00:00:00</p>
+              <h2 class="display-lg mt-4" data-caption>
+                Start recording from whatever app you're in
+              </h2>
+            </div>
             <p class="lede lg:col-span-5" data-reveal>
               Ctrl+Alt+R starts a session and stops it again, even while sososo sits in the tray.
               Closing the window keeps a recording running in the background.
             </p>
           </div>
 
+          <div class="relative flex min-h-0 flex-1 items-center justify-center py-6">
+            <svg
+              class="js-o h-[min(50vmin,320px)] w-[min(50vmin,320px)] overflow-visible text-fg lg:h-[min(36vmin,320px)] lg:w-[min(36vmin,320px)]"
+              viewBox="-200 -200 400 400"
+              aria-hidden="true"
+            >
+              <circle r="180" fill="none" stroke="currentColor" stroke-width="34" />
+              <circle r="106" fill="none" stroke="currentColor" stroke-width="34" />
+              <circle
+                class="js-o-pulse"
+                r="52"
+                fill="none"
+                stroke="#ff5d5d"
+                stroke-width="5"
+                opacity="0"
+              />
+              <circle class="js-o-dot" r="52" fill="currentColor" />
+            </svg>
+          </div>
+
           <div
             id="shortcut-keys"
-            class="mt-14 flex flex-wrap items-center gap-x-3 gap-y-8 sm:gap-x-5 lg:mt-20"
+            class="js-start-keys mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-center gap-x-6 gap-y-4"
           >
             <div class="flex items-center gap-3 sm:gap-5" aria-hidden="true">
               <span class="keycap js-key">Ctrl</span>
@@ -412,7 +475,7 @@
               <span class="keycap js-key">R</span>
             </div>
             <p class="sr-only">Shortcut: Ctrl+Alt+R, or Ctrl+Cmd+R on macOS.</p>
-            <div class="js-key-status flex flex-col gap-1 sm:ml-6">
+            <div class="js-key-status flex flex-col gap-1">
               <span class="flex items-center gap-2.5 text-[18px] font-semibold">
                 <span class="h-3 w-3 rounded-full bg-rec" aria-hidden="true"></span>
                 Recording
@@ -420,8 +483,10 @@
               <span class="text-fg-3 text-[15px]">Ctrl+Cmd+R on macOS</span>
             </div>
           </div>
+        </div>
 
-          <div class="mt-16 grid items-center gap-8 lg:mt-24 lg:grid-cols-12 lg:gap-12">
+        <div class="px-5 pb-16 sm:px-8 sm:pb-24 lg:pb-32">
+          <div class="mx-auto grid max-w-[1240px] items-center gap-8 lg:grid-cols-12 lg:gap-12">
             <div class="stage on-stage px-4 py-8 sm:px-8 sm:py-12 lg:col-span-7" data-reveal>
               <!-- MeetingBanner.tsx -->
               <div
@@ -477,7 +542,7 @@
 
       <section id="captions" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-0">
         <div
-          class="js-captions-pin mx-auto flex max-w-[1240px] items-center lg:min-h-screen lg:py-16"
+          class="js-captions-pin mx-auto flex max-w-[1240px] items-center lg:min-h-[calc(100vh-68px)] lg:py-16"
         >
           <div class="grid w-full items-center gap-12 lg:grid-cols-12">
             <div class="lg:col-span-5">
@@ -531,24 +596,29 @@
                     </p>
                   </div>
                   <div class="js-tracks relative flex flex-1 flex-col gap-3">
-                    <div class="relative h-11 rounded-[8px] bg-white/5">
-                      <span class="track-bar bg-speaker-1/25" style="left: 2%; width: 18%"
-                        ><i class="bg-speaker-1"></i
+                    <div
+                      class="js-track relative h-11 rounded-[8px] bg-white/5"
+                      data-track="system"
+                    >
+                      <span
+                        class="track-bar"
+                        data-tone="speaker-1"
+                        style="left: 2%; width: 18%"
                       ></span>
-                      <span class="track-bar bg-speaker-2/25" style="left: 40%; width: 17%"
-                        ><i class="bg-speaker-2"></i
+                      <span
+                        class="track-bar"
+                        data-tone="speaker-2"
+                        style="left: 40%; width: 17%"
                       ></span>
-                      <span class="track-bar bg-speaker-1/25" style="left: 82%; width: 15%"
-                        ><i class="bg-speaker-1"></i
+                      <span
+                        class="track-bar"
+                        data-tone="speaker-1"
+                        style="left: 82%; width: 15%"
                       ></span>
                     </div>
-                    <div class="relative h-11 rounded-[8px] bg-white/5">
-                      <span class="track-bar bg-you/25" style="left: 22%; width: 15%"
-                        ><i class="bg-you"></i
-                      ></span>
-                      <span class="track-bar bg-you/25" style="left: 60%; width: 19%"
-                        ><i class="bg-you"></i
-                      ></span>
+                    <div class="js-track relative h-11 rounded-[8px] bg-white/5" data-track="mic">
+                      <span class="track-bar" data-tone="you" style="left: 22%; width: 15%"></span>
+                      <span class="track-bar" data-tone="you" style="left: 60%; width: 19%"></span>
                     </div>
                     <span class="js-playhead pointer-events-none absolute -inset-y-2 left-0 w-full">
                       <i class="absolute inset-y-0 left-0 w-[2px] rounded-full bg-[#f3f1ea]"></i>
@@ -557,27 +627,52 @@
                 </div>
 
                 <ol class="js-merged border-app-border mt-7 flex flex-col gap-3 border-t pt-6">
-                  <li class="js-line flex flex-col gap-0.5" data-from="0.02" data-to="0.2">
+                  <li
+                    class="js-line flex flex-col gap-0.5"
+                    data-track="system"
+                    data-from="0.02"
+                    data-to="0.2"
+                  >
                     <span class="speaker text-speaker-1">Speaker 1</span>
                     <span class="caption-text">Can you share the new onboarding flow?</span>
                   </li>
-                  <li class="js-line flex flex-col gap-0.5" data-from="0.22" data-to="0.37">
+                  <li
+                    class="js-line flex flex-col gap-0.5"
+                    data-track="mic"
+                    data-from="0.22"
+                    data-to="0.37"
+                  >
                     <span class="speaker text-you">You</span>
                     <span class="caption-text"
                       >Sharing now. It's three screens instead of five.</span
                     >
                   </li>
-                  <li class="js-line flex flex-col gap-0.5" data-from="0.4" data-to="0.57">
+                  <li
+                    class="js-line flex flex-col gap-0.5"
+                    data-track="system"
+                    data-from="0.4"
+                    data-to="0.57"
+                  >
                     <span class="speaker text-speaker-2">Speaker 2</span>
                     <span class="caption-text">What happens if someone skips the key step?</span>
                   </li>
-                  <li class="js-line flex flex-col gap-0.5" data-from="0.6" data-to="0.79">
+                  <li
+                    class="js-line flex flex-col gap-0.5"
+                    data-track="mic"
+                    data-from="0.6"
+                    data-to="0.79"
+                  >
                     <span class="speaker text-you">You</span>
                     <span class="caption-text"
                       >They land in Settings with the key field ready.</span
                     >
                   </li>
-                  <li class="js-line flex flex-col gap-0.5" data-from="0.82" data-to="0.97">
+                  <li
+                    class="js-line flex flex-col gap-0.5"
+                    data-track="system"
+                    data-from="0.82"
+                    data-to="0.97"
+                  >
                     <span class="speaker text-speaker-1">Speaker 1</span>
                     <span class="caption-text">Good. Let's try it with support on Monday.</span>
                   </li>
@@ -593,7 +688,7 @@
 
       <section id="live-captions" class="on-stage bg-stage text-[#f3f1ea]">
         <div
-          class="js-live-pin flex flex-col justify-center px-5 py-16 sm:px-8 sm:py-24 lg:min-h-screen"
+          class="js-live-pin flex flex-col justify-center px-5 py-16 sm:px-8 sm:py-24 lg:min-h-[calc(100vh-68px)]"
         >
           <div class="mx-auto w-full max-w-[1240px]">
             <p class="cue text-[#a19e96]!" data-reveal>00:01:05</p>
@@ -896,22 +991,69 @@
         </div>
       </section>
 
-      <section id="after-the-call" class="bg-bg-2 px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
-        <div class="mx-auto max-w-[1240px]">
-          <p class="cue" data-reveal>00:47:10</p>
-          <h2 class="display-xl mt-4 max-w-[17ch]" data-caption>
-            Press finish, then ask what you missed
-          </h2>
+      <section id="after-the-call" class="bg-bg-2">
+        <div
+          class="js-after-pin px-5 py-16 sm:px-8 sm:py-24 lg:flex lg:min-h-[calc(100vh-68px)] lg:flex-col lg:justify-center lg:py-10"
+        >
+          <div class="mx-auto w-full max-w-[1240px]">
+            <p class="cue" data-reveal>00:47:10</p>
+            <h2 class="display-lg mt-4 max-w-[20ch]" data-caption>
+              Press finish, then ask what you missed
+            </h2>
 
-          <div class="mt-14 grid items-start gap-12 lg:mt-20 lg:grid-cols-12">
             <figure
               id="transcript-chat"
-              class="stage on-stage flex justify-center px-4 py-8 sm:px-8 sm:py-10 lg:col-span-7"
+              class="stage on-stage mt-8 grid gap-4 p-4 sm:p-6 lg:mt-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6 lg:p-8"
               data-reveal
             >
+              <!-- SessionDetailRoute.tsx: the transcript folds into the AI Summary -->
+              <div class="app relative" aria-hidden="true">
+                <section
+                  class="js-beat-summary border-app-border h-full rounded-[12px] border bg-[rgba(110,168,254,0.07)] px-[18px] py-4 text-[13px] leading-[1.5]"
+                >
+                  <p class="text-you text-[12px] tracking-[0.06em] uppercase">AI Summary</p>
+                  <p class="js-sum text-app-fg mt-2.5 font-semibold">Overview</p>
+                  <p class="js-sum text-app-dim mt-1">
+                    A release check-in. The build passed and the team picked a ship date.
+                  </p>
+                  <p class="js-sum text-app-fg mt-3 font-semibold">Key points</p>
+                  <ul class="js-sum text-app-dim mt-1 list-disc space-y-0.5 pl-4">
+                    <li>The build is green and the installer checks out.</li>
+                    <li>The release ships on Friday.</li>
+                  </ul>
+                  <p class="js-sum text-app-fg mt-3 font-semibold">Action items</p>
+                  <p class="js-sum text-app-dim mt-1">You write the changelog after the call.</p>
+                </section>
+                <div
+                  class="js-beat-transcript border-app-border absolute inset-0 flex flex-col gap-3 overflow-hidden rounded-[12px] border bg-[#16161a] p-4"
+                >
+                  <p class="text-app-faint text-[12px] tracking-[0.06em] uppercase">Transcript</p>
+                  <div class="js-fold-line flex flex-col gap-0.5">
+                    <span class="speaker text-speaker-1">Speaker 1</span>
+                    <span class="caption-text">Morning! Can everyone see the release board?</span>
+                  </div>
+                  <div class="js-fold-line flex flex-col gap-0.5">
+                    <span class="speaker text-you">You</span>
+                    <span class="caption-text"
+                      >Yes. The build is green and the installer looks good.</span
+                    >
+                  </div>
+                  <div class="js-fold-line flex flex-col gap-0.5">
+                    <span class="speaker text-speaker-2">Speaker 2</span>
+                    <span class="caption-text">Great. Can we ship it on Friday?</span>
+                  </div>
+                  <div class="js-fold-line flex flex-col gap-0.5">
+                    <span class="speaker text-you">You</span>
+                    <span class="caption-text"
+                      >Let's do it. I'll write the changelog after this call.</span
+                    >
+                  </div>
+                </div>
+              </div>
+
               <!-- ChatPanel.tsx -->
               <div
-                class="app app-glass flex w-full max-w-[400px] flex-col overflow-hidden rounded-[16px]"
+                class="app app-glass flex w-full flex-col overflow-hidden rounded-[16px]"
                 aria-hidden="true"
               >
                 <div
@@ -952,7 +1094,7 @@
                     Clear
                   </span>
                 </div>
-                <div class="flex min-h-[300px] flex-col gap-2.5 px-4 py-3.5">
+                <div class="flex min-h-[276px] flex-col gap-2.5 px-4 py-3.5">
                   <p
                     class="js-chat border-you/35 bg-you/18 max-w-[85%] self-end rounded-[16px] rounded-br-[6px] border px-3 py-2 text-[13px] leading-[1.5]"
                   >
@@ -1006,16 +1148,19 @@
                 </div>
               </div>
             </figure>
+          </div>
+        </div>
 
-            <div class="lg:col-span-5 lg:pt-4">
-              <p class="lede" data-reveal>
-                Every session ends with an AI summary: an overview, the key points and the action
-                items. Next to the transcript sits a chat that answers from what was actually said,
-                and it keeps its history with the session.
-              </p>
-
+        <div class="px-5 pb-16 sm:px-8 sm:pb-24 lg:pt-6 lg:pb-32">
+          <div class="mx-auto grid max-w-[1240px] gap-12 lg:grid-cols-12">
+            <p class="lede lg:col-span-5" data-reveal>
+              Every session ends with an AI summary: an overview, the key points and the action
+              items. Next to the transcript sits a chat that answers from what was actually said,
+              and it keeps its history with the session.
+            </p>
+            <div class="lg:col-span-6 lg:col-start-7">
               <h3
-                class="font-display mt-12 text-[22px] leading-tight font-medium tracking-[-0.02em]"
+                class="font-display text-[22px] leading-tight font-medium tracking-[-0.02em]"
                 data-reveal
               >
                 Runs on the model you pick
@@ -1439,9 +1584,9 @@
           </div>
         </div>
 
-        <div class="relative mt-20 lg:mt-28" aria-hidden="true">
+        <div class="js-finale relative mt-16 overflow-hidden lg:mt-24" aria-hidden="true">
           <svg
-            class="js-footer-rings pointer-events-none absolute top-1/2 left-1/2 -z-0 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2"
+            class="js-footer-rings pointer-events-none absolute top-1/2 left-1/2 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2"
             viewBox="0 0 900 900"
           >
             <g fill="none" stroke="rgb(243 241 234 / 0.07)" stroke-width="1.5">
@@ -1451,14 +1596,19 @@
               <circle cx="450" cy="450" r="420" />
             </g>
           </svg>
-          <img
-            src="./sososo_brand_logo_white-bg-transparent.png"
-            alt=""
-            class="js-big-wordmark relative mx-auto w-[min(92vw,1180px)] max-w-none px-5 pb-10 sm:px-8"
-            width="1180"
-            height="333"
-            loading="lazy"
-          />
+          <canvas id="footer-field" class="absolute inset-0 h-full w-full"></canvas>
+          <div
+            class="relative mx-auto w-[min(92vw,1180px)] px-5 pt-12 pb-14 sm:px-8 lg:pt-20 lg:pb-24"
+          >
+            <img
+              src="./sososo_brand_logo_white-bg-transparent.png"
+              alt=""
+              class="js-big-wordmark block h-auto w-full"
+              width="1180"
+              height="333"
+              loading="lazy"
+            />
+          </div>
         </div>
       </section>
     </main>

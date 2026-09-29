@@ -1,17 +1,22 @@
-// Scroll choreography. Every scrubbed piece is a pure function of scroll
+// Scroll choreography. Every scrubbed scene is a pure function of scroll
 // progress, so scrolling back up plays it backwards exactly.
 //
 // Motion purposes, one line each:
 // - caption settle (headings): the product's own interim → final behavior is the page's voice
-// - hero rings: the logo's O "hears" each finished caption line
-// - two-input timeline (pinned): shows the core idea, two inputs merging into one transcript
-// - live sentence (pinned): shows an interim word being corrected before the line settles
-// - keycaps: the shortcut is pressed, then recording starts
-// - chat, picker, privacy lines: play the real app flow once, in order, as it comes into view
+// - record scene (pinned): the O is the record button; its dot becomes the nav's call clock
+// - call clock: the whole page reads as one call, timed by the section timecodes
+// - two inputs (pinned): words travel from each waveform into one transcript
+// - live sentence (pinned): an interim word gets corrected before the line settles
+// - after the call (pinned): the transcript folds into the summary, then the chat answers
+// - picker, translations, privacy lines: play the real app flow once, as it comes into view
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
+
+import { callSeconds, formatTimecode, type ClockStop } from './lib/timeline';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -21,6 +26,17 @@ const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = doc
   Array.from(root.querySelectorAll<T>(sel));
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const span = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
+const easeOut = (k: number) => 1 - (1 - k) ** 3;
+const easeInOut = (k: number) => (k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2);
+const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+/** Pinned scenes sit just under the sticky nav, not behind it. */
+const navHeight = () => document.getElementById('site-nav')?.offsetHeight ?? 68;
+
+interface Scene {
+  render(p: number): void;
+  measure?(): void;
+}
 
 /** A heading arrives the way sososo writes a caption: word by word, dim and
  *  slanted like an interim line, then it settles upright once the sentence is done. */
@@ -32,14 +48,7 @@ function captionSettle(el: HTMLElement): gsap.core.Timeline {
   tl.fromTo(
     split.words,
     { opacity: 0, y: '0.22em', skewX: -10, filter: 'blur(6px)' },
-    {
-      opacity: 0.5,
-      y: 0,
-      filter: 'blur(0px)',
-      duration: 0.34,
-      ease: 'power3.out',
-      stagger: 0.075,
-    },
+    { opacity: 0.5, y: 0, filter: 'blur(0px)', duration: 0.34, ease: 'power3.out', stagger: 0.075 },
   ).to(
     split.words,
     {
@@ -77,52 +86,95 @@ function wireReveals(): void {
   });
 }
 
-export function ringPulse(): void {
-  const pulse = $<SVGCircleElement>('.js-ring-pulse');
-  if (!pulse) return;
-  gsap.fromTo(
-    pulse,
-    { attr: { r: 70 }, opacity: 1 },
-    { attr: { r: 330 }, opacity: 0, duration: 1.8, ease: 'power2.out', overwrite: true },
-  );
-}
+/* Record scene: Ctrl+Alt+R, the dot turns red, flies to the nav, the camera goes through the O */
 
-function wireHeroRings(): void {
-  const rings = $('.js-rings');
-  if (!rings) return;
-  gsap.to(rings, {
-    scale: 1.18,
-    transformOrigin: '50% 50%',
-    ease: 'none',
-    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true },
-  });
-}
+export const FLY = { start: 0.46, end: 0.6 };
 
-function wireShortcut(): void {
+function recordScene(): Scene | null {
+  const pin = $('.js-start-pin');
+  const o = $<SVGSVGElement>('.js-o');
+  const dot = $<SVGCircleElement>('.js-o-dot');
+  const pulse = $<SVGCircleElement>('.js-o-pulse');
+  const copy = $('.js-start-copy');
+  const keysRow = $('.js-start-keys');
+  const status = $('.js-key-status');
+  const fly = $('#rec-dot-fly');
+  const clockDot = $('#call-clock .js-clock-dot');
   const keys = $$('.js-key');
-  const statusEl = $('.js-key-status');
-  if (!keys.length || !statusEl) return;
-  const tl = gsap.timeline({
-    scrollTrigger: { trigger: '#shortcut-keys', start: 'top 82%', end: 'top 38%', scrub: 0.6 },
-  });
+  if (!pin || !o || !dot || !pulse || !copy || !keysRow || !status || !fly || !clockDot)
+    return null;
+
   const depth = parseFloat(getComputedStyle(keys[0]).getPropertyValue('--depth')) || 8;
-  tl.set(statusEl, { opacity: 0, x: -12 });
-  keys.forEach((key, i) => {
-    tl.to(key, { y: depth - 2, '--depth': '2px', duration: 0.2, ease: 'power2.in' }, i * 0.18);
-  });
-  tl.to(keys, { y: 0, '--depth': `${depth}px`, duration: 0.2, ease: 'power2.out' }, 0.72);
-  tl.to(statusEl, { opacity: 1, x: 0, duration: 0.25, ease: 'power3.out' }, 0.78);
+  let from = { x: 0, y: 0, size: 0 };
+  let to: { x: number; y: number; size: number } | null = null;
+  let last = 0;
+
+  const render = (p: number) => {
+    last = p;
+    keys.forEach((key, i) => {
+      const press = easeOut(span(p, 0.1 + i * 0.07, 0.14 + i * 0.07)) * (1 - span(p, 0.4, 0.44));
+      gsap.set(key, { y: press * (depth - 2), '--depth': `${depth - press * (depth - 2)}px` });
+    });
+
+    const s = easeOut(span(p, 0.32, 0.38));
+    gsap.set(status, { opacity: s, x: (1 - s) * -12 });
+
+    const recording = p >= 0.3;
+    dot.style.fill = recording ? '#ff5d5d' : '';
+    dot.style.opacity = p < FLY.start ? '1' : '0';
+    const pk = span(p, 0.3, 0.46);
+    pulse.setAttribute('r', String(52 + pk * 170));
+    pulse.style.opacity = pk > 0 && pk < 1 ? String(1 - pk) : '0';
+
+    const flying = p >= FLY.start && p < FLY.end;
+    fly.style.opacity = flying ? '1' : '0';
+    if (flying) {
+      const k = easeInOut(span(p, FLY.start, FLY.end));
+      const end = to ?? { ...from, size: 0 };
+      const size = lerp(from.size, end.size, k);
+      const x = lerp(from.x, end.x, k);
+      const y = lerp(from.y, end.y, k) - Math.sin(k * Math.PI) * 90;
+      fly.style.width = fly.style.height = `${size}px`;
+      fly.style.transform = `translate(${x - size / 2}px, ${y - size / 2}px)`;
+    }
+
+    const push = span(p, 0.64, 1);
+    gsap.set(o, { scale: 1 + push * push * 15, transformOrigin: '50% 50%' });
+    const fade = 1 - span(p, 0.62, 0.72);
+    gsap.set([copy, keysRow], { opacity: fade, y: (1 - fade) * -24 });
+  };
+
+  const measure = () => {
+    const keep = last;
+    render(0);
+    const pr = pin.getBoundingClientRect();
+    const dr = dot.getBoundingClientRect();
+    // viewport position while pinned: the pin sits right under the nav
+    from = {
+      x: dr.left + dr.width / 2,
+      y: dr.top - pr.top + navHeight() + dr.height / 2,
+      size: dr.width,
+    };
+    const cr = clockDot.getBoundingClientRect();
+    to = cr.width ? { x: cr.left + cr.width / 2, y: cr.top + cr.height / 2, size: cr.width } : null;
+    render(keep);
+  };
+
+  return { render, measure };
 }
 
-/** Two inputs → one transcript. Returns the progress renderer so the mobile
- *  (unpinned) and desktop (pinned) triggers share it. */
-function twoInputsRenderer(): ((p: number) => void) | null {
+/* Two inputs: waveforms fill under the playhead, words fly from the sound into the transcript */
+
+function twoInputsScene(): Scene | null {
   const figure = $('#two-inputs');
-  const playhead = $('.js-playhead', figure ?? document);
+  const playhead = figure && $('.js-playhead', figure);
   if (!figure || !playhead) return null;
 
+  const tracks = new Map(
+    $$('.js-track', figure).map((t) => [t.dataset.track ?? '', t] as [string, HTMLElement]),
+  );
   const bars = $$<HTMLElement>('.track-bar', figure).map((bar) => ({
-    fill: $('i', bar)!,
+    bar,
     from: parseFloat(bar.style.left) / 100,
     width: parseFloat(bar.style.width) / 100,
   }));
@@ -132,36 +184,73 @@ function twoInputsRenderer(): ((p: number) => void) | null {
     const words = text.textContent!.trim().split(/\s+/);
     text.replaceChildren(
       ...words.flatMap((w, i) => {
-        const span = document.createElement('span');
-        span.textContent = w;
-        return i === words.length - 1 ? [span] : [span, document.createTextNode(' ')];
+        const s = document.createElement('span');
+        s.className = 'inline-block';
+        s.textContent = w;
+        return i === words.length - 1 ? [s] : [s, document.createTextNode(' ')];
       }),
     );
+    const from = Number(li.dataset.from);
+    const to = Number(li.dataset.to);
     return {
       li,
       text,
-      words: $$('span', text),
-      from: Number(li.dataset.from),
-      to: Number(li.dataset.to),
+      track: li.dataset.track ?? 'system',
+      from,
+      to,
+      words: $$('span', text).map((el, i, all) => ({
+        el,
+        at: from + ((to - from) * (i + 0.5)) / all.length,
+        dx: 0,
+        dy: 0,
+      })),
     };
   });
+  let last = 0;
 
-  return (p: number) => {
+  const render = (p: number) => {
+    last = p;
     gsap.set(playhead, { xPercent: p * 100 });
-    for (const bar of bars) {
-      gsap.set(bar.fill, { scaleX: clamp01((p - bar.from) / bar.width) });
+    for (const b of bars) {
+      const clip = `inset(0 ${(1 - clamp01((p - b.from) / b.width)) * 100}% 0 0)`;
+      b.bar.dataset.fill = clip;
+      const lit = $('.wave-lit', b.bar);
+      if (lit) lit.style.clipPath = clip;
     }
     for (const line of lines) {
       const started = p >= line.from;
       const final = p >= line.to;
-      const shown = final
-        ? line.words.length
-        : Math.ceil(clamp01((p - line.from) / (line.to - line.from)) * line.words.length);
       line.li.style.opacity = started ? '1' : '0';
       line.text.classList.toggle('is-interim', started && !final);
-      line.words.forEach((w, i) => (w.style.opacity = i < shown ? '1' : '0'));
+      for (const w of line.words) {
+        const e = easeOut(span(p, w.at, w.at + 0.05));
+        w.el.style.opacity = String(e);
+        w.el.style.transform =
+          e >= 1
+            ? ''
+            : `translate(${w.dx * (1 - e)}px, ${w.dy * (1 - e)}px) scale(${0.55 + 0.45 * e})`;
+      }
     }
   };
+
+  const measure = () => {
+    const f = figure.getBoundingClientRect();
+    for (const line of lines) {
+      const t = (tracks.get(line.track) ?? tracks.values().next().value)!.getBoundingClientRect();
+      for (const w of line.words) {
+        w.el.style.transform = '';
+        const r = w.el.getBoundingClientRect();
+        // where the playhead is on this word's track at the moment it is spoken
+        const sx = t.left + t.width * w.at - f.left;
+        const sy = t.top + t.height / 2 - f.top;
+        w.dx = sx - (r.left + r.width / 2 - f.left);
+        w.dy = sy - (r.top + r.height / 2 - f.top);
+      }
+    }
+    render(last);
+  };
+
+  return { render, measure };
 }
 
 /** "Let's move the lunch" → "launch to Friday", then the line settles. */
@@ -202,6 +291,58 @@ function liveSentenceTimeline(): gsap.core.Timeline | null {
   return tl;
 }
 
+/* After the call: transcript folds into the summary, then the chat answers */
+
+export const FINISH_AT = 0.14;
+
+function afterScene(): Scene | null {
+  const chat = $('#transcript-chat');
+  const transcript = chat && $('.js-beat-transcript', chat);
+  const summary = chat && $('.js-beat-summary', chat);
+  const thinking = chat && $('.js-chat-thinking', chat);
+  if (!chat || !transcript || !summary || !thinking) return null;
+  const folds = $$('.js-fold-line', transcript);
+  const sums = $$('.js-sum', summary);
+  const [q1, a1, q2, , a2] = $$('.js-chat', chat);
+
+  return {
+    render(p) {
+      folds.forEach((line, i) => {
+        const k = easeInOut(span(p, 0.04 + i * 0.03, 0.16 + i * 0.03));
+        gsap.set(line, {
+          y: -k * (16 + i * 10),
+          scaleY: 1 - k * 0.7,
+          opacity: 1 - k,
+          transformOrigin: '50% 0%',
+        });
+      });
+      const gone = span(p, 0.16, 0.22);
+      transcript.style.opacity = String(1 - gone);
+      transcript.style.visibility = gone >= 1 ? 'hidden' : 'visible';
+
+      const reveal = easeOut(span(p, 0.22, 0.38));
+      summary.style.clipPath = `inset(0 0 ${(1 - reveal) * 100}% 0 round 12px)`;
+      sums.forEach((s, j) => {
+        const e = easeOut(span(p, 0.26 + j * 0.022, 0.32 + j * 0.022));
+        gsap.set(s, { opacity: e, y: (1 - e) * 6 });
+      });
+
+      const bubble = (el: HTMLElement | undefined, at: number) => {
+        if (!el) return;
+        const e = easeOut(span(p, at, at + 0.05));
+        gsap.set(el, { opacity: e, y: (1 - e) * 10 });
+      };
+      bubble(q1, 0.42);
+      bubble(a1, 0.52);
+      bubble(q2, 0.62);
+      thinking.classList.toggle('hidden', !(p >= 0.7 && p < 0.8));
+      bubble(a2, 0.8);
+    },
+  };
+}
+
+/* Supporting scenes that play once */
+
 function wirePicker(): void {
   const picker = $('#window-picker');
   if (!picker) return;
@@ -223,27 +364,6 @@ function wirePicker(): void {
     )
     .to(rec, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 1.55);
   ScrollTrigger.create({ trigger: picker, start: 'top 70%', once: true, onEnter: () => tl.play() });
-}
-
-function wireChat(): void {
-  const chat = $('#transcript-chat');
-  if (!chat) return;
-  const bubbles = $$('.js-chat', chat);
-  const thinking = $('.js-chat-thinking', chat);
-  const last = $('.js-chat-last', chat);
-  if (!thinking || !last) return;
-
-  const firstThree = bubbles.filter((b) => b !== thinking && b !== last);
-  gsap.set([...firstThree, last], { opacity: 0, y: 8 });
-  const tl = gsap.timeline({ paused: true });
-  firstThree.forEach((b, i) => {
-    tl.to(b, { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }, 0.3 + i * 0.8);
-  });
-  tl.call(() => thinking.classList.remove('hidden'), [], 2.3)
-    .fromTo(thinking, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 2.3)
-    .call(() => thinking.classList.add('hidden'), [], 3.6)
-    .to(last, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out' }, 3.6);
-  ScrollTrigger.create({ trigger: chat, start: 'top 70%', once: true, onEnter: () => tl.play() });
 }
 
 function wireTranslations(): void {
@@ -274,92 +394,185 @@ function wirePrivacyFlow(): void {
       {
         scaleX: 1,
         ease: 'none',
-        scrollTrigger: { trigger: line, start: 'top 85%', end: 'top 55%', scrub: 0.5 },
+        scrollTrigger: { trigger: line, start: 'top 85%', end: 'top 55%', scrub: true },
       },
     );
   }
 }
 
-function wireFooter(): void {
-  const rings = $('.js-footer-rings');
+function wireFinale(): void {
   const mark = $('.js-big-wordmark');
-  if (!rings || !mark) return;
-  const st = { trigger: '#open-source', start: 'top bottom', end: 'bottom bottom', scrub: true };
-  gsap.fromTo(rings, { scale: 0.8 }, { scale: 1.1, ease: 'none', scrollTrigger: st });
-  gsap.fromTo(mark, { yPercent: 18 }, { yPercent: 0, ease: 'none', scrollTrigger: st });
+  if (!mark) return;
+  gsap.fromTo(
+    mark,
+    { yPercent: 18, scale: 0.94 },
+    {
+      yPercent: 0,
+      scale: 1,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.js-finale',
+        start: 'top bottom',
+        end: 'bottom bottom',
+        scrub: true,
+      },
+    },
+  );
+}
+
+/** A scene scrubbed by scroll; pinned scenes hold the screen while they play. */
+function scrub(
+  scene: Scene,
+  trigger: string,
+  opts: { pin: boolean; end: string; start?: string },
+): ScrollTrigger {
+  const state = { p: 0 };
+  const tween = gsap.to(state, {
+    p: 1,
+    ease: 'none',
+    onUpdate: () => scene.render(state.p),
+    scrollTrigger: {
+      trigger,
+      start: opts.start ?? (() => `top ${navHeight()}px`),
+      end: opts.end,
+      pin: opts.pin,
+      scrub: 0.3,
+      // pins refresh first so every trigger below them sees the added spacing
+      refreshPriority: opts.pin ? 1 : 0,
+    },
+  });
+  scene.render(0);
+  return tween.scrollTrigger!;
+}
+
+function wireCallClock(marks: () => { show: number; finish: number; stops: ClockStop[] }): void {
+  const clock = $('#call-clock');
+  const hours = clock && $('.js-clock-h', clock);
+  const rest = clock && $('.js-clock-ms', clock);
+  if (!clock || !hours || !rest) return;
+  let m = { show: Infinity, finish: Infinity, stops: [] as ClockStop[] };
+  const update = () => {
+    const y = window.scrollY;
+    clock.classList.toggle('is-on', y >= m.show);
+    clock.classList.toggle('is-finished', y >= m.finish);
+    // phones show mm:ss only, so the nav keeps room for the menu
+    const [h, ...ms] = formatTimecode(callSeconds(y, m.stops)).split(':');
+    hours.textContent = `${h}:`;
+    rest.textContent = ms.join(':');
+  };
+  ScrollTrigger.addEventListener('refresh', () => {
+    m = marks();
+    update();
+  });
+  ScrollTrigger.create({ start: 0, end: 'max', onUpdate: update });
 }
 
 export function initMotion(onHeroSettled: () => void): void {
-  // `?debug` exposes the engine so a review can scrub time frame by frame
-  // (background tabs throttle requestAnimationFrame to ~1 fps).
+  const lenis = new Lenis({ autoRaf: false, anchors: { offset: -76 } });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+
+  // `?debug` exposes the engine so a review can step time frame by frame
+  // (background tabs throttle requestAnimationFrame to about 1 fps).
   if (/[?&]debug\b/.test(window.location.search)) {
-    Object.assign(window, { gsap, ScrollTrigger });
+    Object.assign(window, { gsap, ScrollTrigger, lenis });
   }
 
   wireHeadings(onHeroSettled);
   wireReveals();
-  wireHeroRings();
-  wireShortcut();
   wirePicker();
-  wireChat();
   wireTranslations();
   wirePrivacyFlow();
-  wireFooter();
+  wireFinale();
 
-  const renderInputs = twoInputsRenderer();
+  const record = recordScene();
+  const inputs = twoInputsScene();
+  const after = afterScene();
+  let recordST: ScrollTrigger | null = null;
+  let afterST: ScrollTrigger | null = null;
+
   const mm = gsap.matchMedia();
+  mm.add(
+    { wide: '(min-width: 1024px)', tall: '(min-height: 700px)', taller: '(min-height: 780px)' },
+    (ctx) => {
+      const { wide, tall, taller } = ctx.conditions as Record<string, boolean>;
+      // created in page order: record, two inputs, live sentence, after the call
+      if (record)
+        recordST = scrub(record, '.js-start-pin', { pin: true, end: wide ? '+=240%' : '+=200%' });
 
-  mm.add('(min-width: 1024px)', () => {
-    // pinned: the section holds still while the call plays out under the scroll
-    if (renderInputs) {
-      const state = { p: 0 };
-      gsap.to(state, {
-        p: 1,
-        ease: 'none',
-        onUpdate: () => renderInputs(state.p),
-        scrollTrigger: {
-          trigger: '.js-captions-pin',
-          start: 'top top',
-          end: '+=150%',
-          pin: true,
-          scrub: 0.5,
-        },
-      });
-      renderInputs(0);
-    }
-    const live = liveSentenceTimeline();
-    if (live) {
-      ScrollTrigger.create({
-        animation: live,
-        trigger: '.js-live-pin',
-        start: 'top top',
-        end: '+=130%',
-        pin: true,
-        scrub: 0.5,
-      });
-    }
+      if (inputs) {
+        if (wide && tall) scrub(inputs, '.js-captions-pin', { pin: true, end: '+=160%' });
+        else scrub(inputs, '#two-inputs', { pin: false, start: 'top 75%', end: 'bottom 40%' });
+      }
+
+      const live = liveSentenceTimeline();
+      if (live) {
+        ScrollTrigger.create(
+          wide && tall
+            ? {
+                animation: live,
+                trigger: '.js-live-pin',
+                start: () => `top ${navHeight()}px`,
+                end: '+=130%',
+                pin: true,
+                scrub: 0.3,
+                refreshPriority: 1,
+              }
+            : {
+                animation: live,
+                trigger: '.live-sentence',
+                start: 'top 80%',
+                end: 'bottom 35%',
+                scrub: 0.3,
+              },
+        );
+      }
+
+      if (after) {
+        afterST =
+          wide && taller
+            ? scrub(after, '.js-after-pin', { pin: true, end: '+=200%' })
+            : scrub(after, '#transcript-chat', { pin: false, start: 'top 70%', end: 'bottom 30%' });
+      }
+
+      return () => {
+        recordST = null;
+        afterST = null;
+      };
+    },
+  );
+
+  const cue = (sel: string) => ScrollTrigger.create({ trigger: sel, start: 'top 50%' });
+  const cues = {
+    captions: cue('#captions .cue'),
+    live: cue('#live-captions .cue'),
+    video: cue('#video-recording .cue'),
+    after: cue('#after-the-call .cue'),
+  };
+
+  wireCallClock(() => {
+    const at = (st: ScrollTrigger | null, k: number, fallback: number) =>
+      st ? st.start + (st.end - st.start) * k : fallback;
+    const show = at(recordST, FLY.end, cues.captions.start);
+    const finish = at(afterST, FINISH_AT, cues.after.start);
+    return {
+      show,
+      finish,
+      stops: [
+        { at: show, seconds: 0 },
+        { at: cues.captions.start, seconds: 42 },
+        { at: cues.live.start, seconds: 65 },
+        { at: cues.video.start, seconds: 750 },
+        { at: finish, seconds: 2830 },
+      ],
+    };
   });
 
-  mm.add('(max-width: 1023.98px)', () => {
-    if (renderInputs) {
-      const state = { p: 0 };
-      gsap.to(state, {
-        p: 1,
-        ease: 'none',
-        onUpdate: () => renderInputs(state.p),
-        scrollTrigger: { trigger: '#two-inputs', start: 'top 75%', end: 'bottom 45%', scrub: 0.5 },
-      });
-      renderInputs(0);
-    }
-    const live = liveSentenceTimeline();
-    if (live) {
-      ScrollTrigger.create({
-        animation: live,
-        trigger: '.live-sentence',
-        start: 'top 80%',
-        end: 'bottom 35%',
-        scrub: 0.5,
-      });
-    }
-  });
+  const measureAll = () => {
+    record?.measure?.();
+    inputs?.measure?.();
+  };
+  ScrollTrigger.addEventListener('refresh', measureAll);
+  ScrollTrigger.refresh();
 }

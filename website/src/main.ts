@@ -9,6 +9,8 @@ import {
   primaryDownload,
 } from './lib/release';
 import { THEME_STORAGE_KEY, nextTheme, resolveTheme, type Theme } from './lib/theme';
+import { mountFinaleField, mountHeroField } from './scene';
+import { buildWaves } from './tracks';
 
 // The inline head script decides this before first paint (reduced motion,
 // `?motion` override); everything below follows its call.
@@ -60,6 +62,11 @@ function wireNav(): void {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+
+  // smooth scroll takes over anchor jumps, so move keyboard focus by hand
+  document.querySelector('.skip-link')?.addEventListener('click', () => {
+    document.getElementById('main')?.focus({ preventScroll: true });
+  });
 
   const setOpen = (open: boolean) => {
     menu.classList.toggle('hidden', !open);
@@ -163,16 +170,23 @@ wireVideo();
 const year = document.getElementById('year');
 if (year) year.textContent = String(new Date().getFullYear());
 
+const inputs = document.getElementById('two-inputs');
+if (inputs) buildWaves(inputs);
+
+const heroScene = mountHeroField(!motionOn);
+mountFinaleField(!motionOn);
+const onLineFinal = heroScene?.pulse;
+
 if (motionOn) {
   // Split headings only once the webfonts are in, or word boxes measure wrong.
   void document.fonts.ready.then(async () => {
     try {
-      const { initMotion, ringPulse } = await import('./motion');
-      initMotion(() => mountHeroDemo({ still: false, onLineFinal: ringPulse }));
+      const { initMotion } = await import('./motion');
+      initMotion(() => mountHeroDemo({ still: false, onLineFinal }));
     } catch (err) {
       // never leave content hidden because an animation failed
       document.documentElement.classList.remove('motion');
-      mountHeroDemo({ still: false });
+      mountHeroDemo({ still: false, onLineFinal });
       console.error(err);
     }
   });
