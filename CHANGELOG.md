@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Linux AppImage now starts on Ubuntu 22.04 / Debian 12 and passes the
+  AppImage catalog lint.** The AppImage was built on Ubuntu 24.04 and needed
+  glibc 2.38+, so on older distributions it exited immediately with
+  `GLIBC_2.38 not found`. Its `.DirIcon` was also an absolute symlink to the CI
+  build directory, which the AppImage catalog reports as a missing icon. Linux
+  release builds now run on `ubuntu-22.04` (glibc 2.35), and the Tauri CLI is
+  bumped to 2.12.0, whose bundler writes relative `.DirIcon`/`.desktop` symlinks.
+  Found through [AppImage/appimage.github.io#7092].
+
 ## [0.9.1] - 2026-06-26
 
 ### Added
@@ -363,3 +374,4 @@ First public release. **Windows only** — macOS and Linux are not yet tested.
 [0.2.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yusupsupriyadi/sososo/releases/tag/v0.1.0
 [#10]: https://github.com/yusupsupriyadi/sososo/issues/10
+[AppImage/appimage.github.io#7092]: https://github.com/AppImage/appimage.github.io/pull/7092

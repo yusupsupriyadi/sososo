@@ -59,8 +59,13 @@ build and attach artifacts to a **draft GitHub Release** — review it and click
 - macOS builds a **universal** binary (`--target universal-apple-darwin`; the
   workflow adds the `aarch64`/`x86_64` rustup targets) so the `.dmg` runs on both
   Apple Silicon and Intel.
-- Linux builds `.deb` / `.AppImage` / `.rpm` on `ubuntu-latest` after installing
-  the WebKitGTK + libpulse dev packages.
+- Linux builds `.deb` / `.AppImage` / `.rpm` on `ubuntu-22.04` (not
+  `ubuntu-latest`) after installing the WebKitGTK + libpulse dev packages. The
+  AppImage links against the host's glibc, so it only runs on systems at least
+  as new as the build machine; 22.04 (glibc 2.35) keeps Ubuntu 22.04 and Debian 12
+  supported. Tauri CLI ≥ 2.12 is required so the AppImage's `.DirIcon` is a
+  relative symlink (older CLIs point it at the CI build path, which breaks the
+  AppImage catalog's lint).
 - `workflow_dispatch` (no tag) builds the artifacts **without** creating a
   release.
 

@@ -39,7 +39,8 @@ jobs:
             args: '--target universal-apple-darwin'
             # e.g. sososo_macos_universal.dmg
             assetNamePattern: 'sososo_macos_[arch][ext]'
-          - os: ubuntu-latest
+          # Oldest supported Ubuntu: the AppImage uses the host glibc, so a 24.04 build won't start on 22.04.
+          - os: ubuntu-22.04
             args: ''
             # e.g. sososo_linux_amd64.deb / .AppImage / .rpm
             assetNamePattern: 'sososo_linux_[arch][ext]'
@@ -73,7 +74,7 @@ jobs:
 
       # Tauri (WebKitGTK) + libpulse system libraries needed to build the Linux bundle.
       - name: Install Linux build dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libpulse-dev
