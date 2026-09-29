@@ -3,126 +3,208 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>sososo — live captions for every meeting</title>
+    <title>sososo · live captions for every meeting</title>
     <meta
       name="description"
-      content="Free, open-source desktop app for live meeting captions: system audio + mic, speaker-separated, with window video recording, AI summaries, and chat over your transcripts. Windows, macOS & Linux."
+      content="Free, open-source desktop app that captions call audio and your microphone as separate speakers, records the meeting window, and turns each call into a summary you can ask questions about. Windows, macOS and Linux."
     />
     <link rel="icon" type="image/png" href="./sososo_icon.png" />
     <link rel="apple-touch-icon" href="./sososo_icon.png" />
     <link rel="canonical" href="https://yusupsupriyadi.github.io/sososo/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="sososo — live captions for every meeting" />
+    <meta property="og:title" content="sososo · live captions for every meeting" />
     <meta
       property="og:description"
-      content="Open-source, real-time meeting transcription for Windows, macOS & Linux. Live captions, window video recording, AI summaries, and chat over your transcripts — bring your own keys, no account, no telemetry."
+      content="Open-source, real-time meeting transcription for Windows, macOS and Linux. Two-speaker live captions, window video recording, AI summaries and chat over your transcripts. Bring your own keys, no account, no telemetry."
     />
     <meta property="og:url" content="https://yusupsupriyadi.github.io/sososo/" />
     <meta property="og:image" content="https://yusupsupriyadi.github.io/sososo/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="theme-color" content="#f3f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e10" media="(prefers-color-scheme: dark)" />
+    <script>
+      // Mirrors resolveTheme() in src/lib/theme.ts; runs before paint so there is no flash.
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem('sososo-theme');
+        } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+        // Hide what motion.ts will animate in, before first paint. `?motion` forces
+        // the full experience on reduced-motion machines (QA and demos).
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!reduce || /[?&]motion\b/.test(location.search)) {
+          document.documentElement.classList.add('motion');
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Schibsted+Grotesk:wght@400..900&family=Spline+Sans+Mono:wght@400..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..600&family=Atkinson+Hyperlegible+Next:ital,wght@0,400..700;1,400..700&family=Atkinson+Hyperlegible+Mono:wght@400..600&display=swap"
       rel="stylesheet"
     />
     <script type="module" src="/src/main.ts"></script>
   </head>
 
-  <!-- overflow-x-hidden = fallback for Safari < 16 (no overflow:clip support) -->
-  <body class="overflow-x-hidden">
-    <!-- atmosphere: the "desktop" the glass floats over -->
-    <div class="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
-      <div
-        class="absolute -top-40 right-[-15%] h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle,rgba(110,168,254,0.16),transparent_62%)]"
-      ></div>
-      <div
-        class="absolute bottom-[-25%] left-[-12%] h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(183,148,246,0.11),transparent_62%)]"
-      ></div>
-      <div class="noise-bg absolute inset-0 opacity-[0.05]"></div>
-    </div>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="grain" aria-hidden="true"></div>
 
-    <!-- ============================ NAV ============================ -->
-    <header class="fixed inset-x-0 top-0 z-50 px-4">
+    <header
+      id="site-nav"
+      class="bg-bg sticky top-0 z-50 border-b border-transparent transition-colors duration-300"
+    >
       <nav
-        class="liquid-glass mx-auto mt-4 flex max-w-[1120px] items-center justify-between rounded-full py-2.5 pr-2.5 pl-5"
+        class="mx-auto flex h-[68px] max-w-[1240px] items-center justify-between gap-4 px-5 sm:px-8"
         aria-label="Main"
       >
-        <a href="#top" class="flex items-center gap-2.5" aria-label="sososo home">
-          <img src="./sososo_icon.png" alt="" class="h-6 w-6 rounded-full" />
+        <a href="#hero" class="flex min-h-11 items-center" aria-label="sososo, back to top">
           <img
             src="./sososo_brand_logo_white-bg-transparent.png"
-            alt="sososo"
-            class="h-[13px] w-auto"
+            alt=""
+            class="wordmark h-5 w-auto"
+            width="120"
+            height="34"
           />
         </a>
 
-        <div class="hidden items-center gap-7 text-[13.5px] font-medium text-fg-dim md:flex">
-          <a href="#features" class="transition-colors hover:text-fg">Features</a>
-          <a href="#how" class="transition-colors hover:text-fg">How it works</a>
-          <a href="#privacy" class="transition-colors hover:text-fg">Privacy</a>
-          <a href="#opensource" class="transition-colors hover:text-fg">Open source</a>
-        </div>
+        <ul class="hidden items-center gap-1 text-[15px] font-semibold lg:flex">
+          <li>
+            <a href="#captions" class="hover:bg-bg-2 inline-flex h-11 items-center rounded-lg px-3"
+              >Captions</a
+            >
+          </li>
+          <li>
+            <a
+              href="#after-the-call"
+              class="hover:bg-bg-2 inline-flex h-11 items-center rounded-lg px-3"
+              >After the call</a
+            >
+          </li>
+          <li>
+            <a href="#privacy" class="hover:bg-bg-2 inline-flex h-11 items-center rounded-lg px-3"
+              >Privacy</a
+            >
+          </li>
+          <li>
+            <a
+              href="#open-source"
+              class="hover:bg-bg-2 inline-flex h-11 items-center rounded-lg px-3"
+              >Open source</a
+            >
+          </li>
+        </ul>
 
         <div class="flex items-center gap-2">
+          <button
+            id="btn-theme"
+            type="button"
+            class="border-line hover:border-line-strong flex h-11 w-11 items-center justify-center rounded-[12px] border"
+            aria-label="Switch to dark theme"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+              <circle
+                cx="12"
+                cy="12"
+                r="8.25"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path d="M12 3.75a8.25 8.25 0 0 1 0 16.5z" fill="currentColor" />
+            </svg>
+          </button>
           <a
             href="https://github.com/yusupsupriyadi/sososo"
             target="_blank"
             rel="noreferrer"
-            class="hidden items-center gap-2 rounded-full border border-glass-border px-3.5 py-2 text-[13px] font-medium transition-colors hover:bg-hover sm:flex"
+            class="border-line hover:border-line-strong hidden h-11 items-center gap-2 rounded-[12px] border px-3.5 text-[15px] font-semibold sm:flex"
           >
-            <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-[18px] w-[18px] fill-current" aria-hidden="true">
               <path
                 d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.06.78 2.14 0 1.54-.02 2.79-.02 3.17 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"
               />
             </svg>
-            <span class="js-star-count">Star</span>
+            <span>GitHub</span>
+            <span class="js-star-count text-fg-3 hidden font-mono text-[14px] xl:inline"></span>
           </a>
-          <a
-            href="#download"
-            class="rounded-full bg-accent px-4 py-2 text-[13px] font-semibold text-[#0b0e14] shadow-liquid transition hover:brightness-110"
+          <a href="#download" class="btn btn-ink hidden min-h-11! px-4! text-[15px]! sm:inline-flex"
+            >Download</a
           >
-            Download
-          </a>
+          <button
+            id="btn-menu"
+            type="button"
+            class="border-line hover:border-line-strong flex h-11 items-center gap-2 rounded-[12px] border px-3.5 text-[15px] font-semibold lg:hidden"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+          >
+            <svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true">
+              <path
+                d="M3 8h18M3 16h18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            Menu
+          </button>
         </div>
       </nav>
+
+      <div id="mobile-menu" class="border-line bg-bg hidden border-t lg:hidden">
+        <ul
+          class="mx-auto flex max-w-[1240px] flex-col px-5 py-3 text-[17px] font-semibold sm:px-8"
+        >
+          <li><a href="#captions" class="flex min-h-12 items-center">Captions</a></li>
+          <li><a href="#after-the-call" class="flex min-h-12 items-center">After the call</a></li>
+          <li><a href="#privacy" class="flex min-h-12 items-center">Privacy</a></li>
+          <li><a href="#open-source" class="flex min-h-12 items-center">Open source</a></li>
+          <li><a href="#download" class="flex min-h-12 items-center">Download</a></li>
+          <li>
+            <a
+              href="https://github.com/yusupsupriyadi/sososo"
+              target="_blank"
+              rel="noreferrer"
+              class="flex min-h-12 items-center"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
     </header>
 
-    <main id="top">
-      <!-- ============================ HERO ============================ -->
-      <section class="relative px-6 pt-36 pb-20 md:pt-44">
+    <main id="main">
+      <section id="hero" class="px-5 pt-10 pb-16 sm:px-8 sm:pb-24 lg:pt-20 lg:pb-32">
         <div
-          class="mx-auto grid max-w-[1120px] items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10"
+          class="mx-auto grid max-w-[1240px] items-center gap-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12"
         >
           <div>
-            <p
-              class="flex items-center gap-2.5 font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase"
-            >
-              <span class="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden="true"></span>
-              Open source · Real-time transcription
-            </p>
-            <h1
-              class="font-display font-expanded mt-5 text-[clamp(38px,5.6vw,68px)] leading-[1.02] font-extrabold tracking-[-0.01em]"
-            >
-              Live captions for everything you
-              <span class="text-accent-2">hear</span> — and <span class="text-accent">say</span>.
+            <h1 id="hero-title" class="display-xl" data-caption="load">
+              <span class="sm:block">Live captions</span>
+              <span class="sm:block">for what you hear</span>
+              <span class="sm:block">and what you say</span>
             </h1>
-            <p class="mt-6 max-w-[54ch] text-[16.5px] leading-relaxed text-fg-dim">
-              sososo is a free, open-source desktop app that turns system audio + microphone into
-              live, speaker-separated captions — and can record the meeting window to video. Every
-              session ends with an AI summary and a transcript you can chat with. No account. No
-              backend. Your keys stay on your machine.
+            <p class="lede mt-8 max-w-[52ch]" data-reveal>
+              sososo is a free, open-source desktop app for your calls. It captions the call audio
+              and your microphone as separate speakers, can save the meeting window as a video, and
+              turns each session into a summary you can ask questions about.
             </p>
-            <div class="mt-9 flex flex-wrap items-center gap-3.5">
+            <p class="text-fg-3 mt-3 max-w-[52ch] text-[16px]" data-reveal>
+              No account and no sososo server. Your API keys stay in the OS keychain.
+            </p>
+            <div class="mt-9 flex flex-wrap items-center gap-3" data-reveal>
               <a
                 id="cta-primary"
                 href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_windows_x64-setup.exe"
-                class="inline-flex items-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-[15px] font-semibold text-[#0b0e14] shadow-liquid transition hover:brightness-110"
+                class="btn btn-ink"
               >
                 <svg
                   viewBox="0 0 24 24"
-                  class="h-4.5 w-4.5"
+                  class="h-[18px] w-[18px]"
                   fill="none"
                   stroke="currentColor"
                   stroke-width="2.2"
@@ -138,413 +220,508 @@
                 href="https://github.com/yusupsupriyadi/sososo"
                 target="_blank"
                 rel="noreferrer"
-                class="liquid-glass inline-flex items-center gap-2.5 rounded-full px-6 py-3.5 text-[15px] font-medium transition-colors hover:bg-hover"
+                class="btn btn-line"
               >
-                <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
-                  <path
-                    d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.06.78 2.14 0 1.54-.02 2.79-.02 3.17 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"
-                  />
-                </svg>
-                View on GitHub
+                View source on GitHub
+                <span class="js-star-count text-fg-3 font-mono text-[14px] empty:hidden"></span>
               </a>
             </div>
-            <p class="mt-5 font-mono text-[12px] text-fg-faint">
-              Free · AGPL-3.0 · <span id="hero-version">latest release</span> · Windows / macOS /
-              Linux —
-              <a href="#download" class="underline underline-offset-4 hover:text-fg-dim"
-                >all downloads</a
-              >
+            <p class="text-fg-3 mt-6 font-mono text-[14px]" data-reveal>
+              Free · AGPL-3.0 · <span class="js-version">latest release</span> · Windows, macOS,
+              Linux ·
+              <a href="#download" class="link text-fg-2">All downloads</a>
             </p>
           </div>
 
-          <!-- the recording widget, recreated live -->
-          <figure class="relative flex flex-col items-center" aria-hidden="false">
-            <div
-              class="rings-bg animate-ring-drift absolute top-1/2 left-1/2 -z-10 h-[760px] w-[760px] -translate-x-1/2 -translate-y-1/2"
+          <!-- the recording widget, recreated from RecordingView.tsx -->
+          <figure
+            id="hero-widget"
+            class="stage on-stage flex min-h-[520px] flex-col items-center justify-center px-4 py-10 sm:px-10"
+            data-reveal
+          >
+            <svg
+              class="stage-rings"
+              viewBox="0 0 600 600"
+              preserveAspectRatio="xMidYMid slice"
               aria-hidden="true"
-            ></div>
+            >
+              <g class="js-rings">
+                <circle cx="300" cy="300" r="70" stroke-width="1.5" />
+                <circle cx="300" cy="300" r="140" stroke-width="1.5" />
+                <circle cx="300" cy="300" r="210" stroke-width="1.5" />
+                <circle cx="300" cy="300" r="280" stroke-width="1.5" />
+                <circle cx="300" cy="300" r="350" stroke-width="1.5" />
+              </g>
+              <circle
+                class="js-ring-pulse"
+                cx="300"
+                cy="300"
+                r="70"
+                stroke-width="2"
+                style="stroke: rgb(255 93 93 / 0.5); opacity: 0"
+              />
+            </svg>
 
-            <div class="flex w-full max-w-[420px] flex-col items-center gap-3.5">
-              <!-- floating pill -->
+            <p class="sr-only">
+              A scripted demo of the sososo recording widget. Three people talk and their words
+              appear as live captions, labeled You, Speaker 1 and Speaker 2. When the call ends, the
+              session shows an AI summary. The buttons below control the demo.
+            </p>
+
+            <div class="app flex w-full max-w-[372px] flex-col items-center gap-2">
               <div
-                class="liquid-glass flex items-center gap-4 rounded-full py-2.5 pr-2.5 pl-5"
-                aria-hidden="true"
+                class="app-glass inline-flex items-center gap-2.5 rounded-full px-3 py-[7px]"
+                role="group"
+                aria-label="Demo controls"
               >
-                <span class="flex items-center gap-2.5">
-                  <span class="h-2.5 w-2.5 animate-rec-pulse rounded-full bg-rec"></span>
-                  <span id="demo-timer" class="font-mono text-[13px] tabular-nums">00:00</span>
-                </span>
-                <span class="h-5 w-px bg-glass-border"></span>
                 <button
                   id="demo-pause"
                   type="button"
+                  class="app-btn hit bg-pause h-[30px] w-10 rounded-[9px] text-[#1b1b1b]"
                   aria-label="Pause the demo"
                   aria-pressed="false"
-                  class="text-pause flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,212,121,0.4)] bg-[rgba(255,212,121,0.16)] shadow-liquid transition hover:bg-[rgba(255,212,121,0.28)]"
                 >
                   <svg
-                    class="js-icon-pause h-3.5 w-3.5 fill-current"
-                    viewBox="0 0 12 12"
+                    class="js-icon-pause h-4 w-4 fill-current"
+                    viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    <rect x="2" y="1.5" width="2.6" height="9" rx="1" />
-                    <rect x="7.4" y="1.5" width="2.6" height="9" rx="1" />
+                    <rect x="3.5" y="2.5" width="3" height="11" rx="1.2" />
+                    <rect x="9.5" y="2.5" width="3" height="11" rx="1.2" />
                   </svg>
                   <svg
-                    class="js-icon-play hidden h-3.5 w-3.5 fill-current"
-                    viewBox="0 0 12 12"
+                    class="js-icon-play hidden h-4 w-4 fill-current"
+                    viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
                     <path
-                      d="M3 1.6a1 1 0 0 1 1.52-.86l6.3 4.4a1 1 0 0 1 0 1.7l-6.3 4.4A1 1 0 0 1 3 10.4z"
+                      d="M4.5 2.6a1 1 0 0 1 1.5-.86l7.3 5.4a1 1 0 0 1 0 1.72L6 14.26a1 1 0 0 1-1.5-.86z"
                     />
                   </svg>
                 </button>
                 <button
-                  id="demo-stop"
+                  id="demo-finish"
                   type="button"
-                  aria-label="Restart the demo"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,93,93,0.4)] bg-[rgba(255,93,93,0.16)] text-rec shadow-liquid transition hover:bg-[rgba(255,93,93,0.28)]"
+                  class="app-btn hit h-8 w-8 rounded-full bg-rec text-white"
+                  aria-label="Finish the call and show the summary"
                 >
-                  <svg class="h-3 w-3 fill-current" viewBox="0 0 12 12" aria-hidden="true">
+                  <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 12 12" aria-hidden="true">
                     <rect x="1.5" y="1.5" width="9" height="9" rx="2" />
                   </svg>
                 </button>
+                <button
+                  id="demo-translate"
+                  type="button"
+                  class="app-btn hit text-app-faint h-[30px] w-9 rounded-[9px] bg-white/8"
+                  aria-label="Live translate to Indonesian"
+                  aria-pressed="false"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="h-[15px] w-[15px]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 5h9M8.5 3v2M6 9c1.4 2.6 3.6 4.4 6.5 5.4M11 5c-1 4-3.4 7.2-7 9M13 21l4-9 4 9M14.3 18h5.4"
+                    />
+                  </svg>
+                </button>
+                <span
+                  class="text-app-faint ml-0.5 inline-flex h-[30px] w-[22px] items-center justify-center"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 16 16" class="h-4 w-4 fill-current">
+                    <circle cx="6" cy="4" r="1.1" />
+                    <circle cx="10" cy="4" r="1.1" />
+                    <circle cx="6" cy="8" r="1.1" />
+                    <circle cx="10" cy="8" r="1.1" />
+                    <circle cx="6" cy="12" r="1.1" />
+                    <circle cx="10" cy="12" r="1.1" />
+                  </svg>
+                </span>
               </div>
 
-              <!-- live transcript panel -->
-              <div class="liquid-glass w-full rounded-lg p-5">
-                <div class="mb-3.5 flex items-center justify-between">
-                  <span class="font-mono text-[10.5px] tracking-[0.2em] text-fg-faint uppercase"
-                    >Live transcript</span
+              <div class="app-glass w-full overflow-hidden rounded-[16px]">
+                <div class="border-app-border flex items-center gap-2 border-b px-3.5 py-[9px]">
+                  <span id="demo-dot" class="status-dot" data-state="connecting"></span>
+                  <span id="demo-status" class="text-app-dim text-[12px] font-semibold"
+                    >Connecting…</span
                   >
-                  <span class="flex h-3.5 items-end gap-[3px]" aria-hidden="true">
-                    <span
-                      class="h-full w-[3px] origin-bottom animate-eq-bar rounded-full bg-accent"
-                    ></span>
-                    <span
-                      class="h-full w-[3px] origin-bottom animate-eq-bar rounded-full bg-accent [animation-delay:-0.6s]"
-                    ></span>
-                    <span
-                      class="h-full w-[3px] origin-bottom animate-eq-bar rounded-full bg-accent [animation-delay:-0.3s]"
-                    ></span>
-                    <span
-                      class="h-full w-[3px] origin-bottom animate-eq-bar rounded-full bg-accent [animation-delay:-0.85s]"
-                    ></span>
-                    <span
-                      class="h-full w-[3px] origin-bottom animate-eq-bar rounded-full bg-accent [animation-delay:-0.15s]"
-                    ></span>
-                  </span>
+                  <span
+                    id="demo-clock"
+                    class="text-app-dim ml-auto text-[12px] tabular-nums"
+                    aria-hidden="true"
+                    >00:00</span
+                  >
                 </div>
-                <ul
-                  id="demo-captions"
-                  class="flex min-h-[148px] flex-col gap-2.5"
-                  aria-hidden="true"
-                >
-                  <li class="cap-line flex items-start gap-2.5">
-                    <span
-                      class="mt-0.5 rounded-md border border-[rgba(183,148,246,0.4)] bg-[rgba(183,148,246,0.12)] px-1.5 py-0.5 font-mono text-[10px] text-accent-2"
-                      >Remote</span
-                    >
-                    <p class="cap-text flex-1 text-[13.5px] leading-snug">
-                      Morning! Can everyone see the release dashboard?
-                    </p>
-                  </li>
-                  <li class="cap-line cap-interim flex items-start gap-2.5">
-                    <span
-                      class="mt-0.5 rounded-md border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.12)] px-1.5 py-0.5 font-mono text-[10px] text-accent"
-                      >You</span
-                    >
-                    <p class="cap-text flex-1 text-[13.5px] leading-snug">
-                      Yep — build's green and the installer
-                    </p>
-                  </li>
-                </ul>
                 <div
-                  id="demo-summary"
-                  class="mt-3 hidden rounded-md border border-ok/35 bg-ok/8 p-3.5"
+                  id="demo-translate-row"
+                  class="border-app-border hidden items-center gap-2 border-b px-3.5 py-2"
                   aria-hidden="true"
                 >
-                  <p class="font-mono text-[10.5px] tracking-[0.2em] text-ok uppercase">
-                    ✦ AI summary
-                  </p>
-                  <p class="mt-1.5 text-[12.5px] leading-snug text-fg-dim">
-                    Build is green; v0.9 ships Friday. You own the changelog after the call.
-                  </p>
+                  <span class="text-app-faint shrink-0 text-[12px]">Translate to</span>
+                  <span
+                    class="border-app-border flex-1 truncate rounded-[8px] border bg-white/6 px-2.5 py-[6px] text-[13px]"
+                    >Indonesian</span
+                  >
                 </div>
+                <div
+                  id="demo-body"
+                  class="demo-body flex h-[264px] flex-col justify-end gap-3 overflow-hidden p-[14px]"
+                  aria-hidden="true"
+                ></div>
               </div>
             </div>
-            <figcaption class="mt-4 text-center font-mono text-[10.5px] text-fg-faint">
-              The recording widget, recreated in CSS — it floats above every app while you record.
+
+            <figcaption
+              class="text-app-faint mt-6 max-w-[40ch] text-center text-[13px] leading-snug"
+            >
+              Scripted demo of the recording widget. Try pause, finish and translate.
             </figcaption>
           </figure>
         </div>
       </section>
 
-      <!-- ============================ BADGES ============================ -->
-      <section class="px-6" aria-label="Stack">
-        <div class="mx-auto flex max-w-[1120px] flex-wrap justify-center gap-2.5">
-          <span
-            class="liquid-glass rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-fg-dim uppercase"
-            >Built with Tauri 2</span
-          >
-          <span
-            class="liquid-glass rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-fg-dim uppercase"
-            >STT · Deepgram Nova-3</span
-          >
-          <span
-            class="liquid-glass rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-fg-dim uppercase"
-            >Summaries · OpenAI / Gemini</span
-          >
-          <span
-            class="liquid-glass rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-fg-dim uppercase"
-            >AGPL-3.0</span
-          >
-          <span
-            class="liquid-glass rounded-full px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-fg-dim uppercase"
-            >No telemetry</span
-          >
-        </div>
-      </section>
+      <section id="start" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
+        <div class="mx-auto max-w-[1240px]">
+          <p class="cue" data-reveal>00:00:00</p>
+          <div class="mt-4 grid items-end gap-8 lg:grid-cols-12 lg:gap-12">
+            <h2 class="display-lg lg:col-span-7" data-caption>
+              Start recording from whatever app you're in
+            </h2>
+            <p class="lede lg:col-span-5" data-reveal>
+              Ctrl+Alt+R starts a session and stops it again, even while sososo sits in the tray.
+              Closing the window keeps a recording running in the background.
+            </p>
+          </div>
 
-      <!-- ============================ FEATURES ============================ -->
-      <section id="features" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto max-w-[1120px]">
-          <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase" data-reveal>
-            Features
-          </p>
-          <h2
-            class="font-display font-expanded mt-4 max-w-[22ch] text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-            data-reveal
+          <div
+            id="shortcut-keys"
+            class="mt-14 flex flex-wrap items-center gap-x-3 gap-y-8 sm:gap-x-5 lg:mt-20"
           >
-            Built to catch every word in the room.
-          </h2>
+            <div class="flex items-center gap-3 sm:gap-5" aria-hidden="true">
+              <span class="keycap js-key">Ctrl</span>
+              <span class="font-display text-fg-3 text-[clamp(20px,2.6vw,34px)]">+</span>
+              <span class="keycap js-key">Alt</span>
+              <span class="font-display text-fg-3 text-[clamp(20px,2.6vw,34px)]">+</span>
+              <span class="keycap js-key">R</span>
+            </div>
+            <p class="sr-only">Shortcut: Ctrl+Alt+R, or Ctrl+Cmd+R on macOS.</p>
+            <div class="js-key-status flex flex-col gap-1 sm:ml-6">
+              <span class="flex items-center gap-2.5 text-[18px] font-semibold">
+                <span class="h-3 w-3 rounded-full bg-rec" aria-hidden="true"></span>
+                Recording
+              </span>
+              <span class="text-fg-3 text-[15px]">Ctrl+Cmd+R on macOS</span>
+            </div>
+          </div>
 
-          <div class="mt-12 grid gap-4 md:grid-cols-12">
-            <!-- dual capture -->
-            <article class="liquid-glass rounded-lg p-7 md:col-span-7" data-reveal>
-              <h3 class="text-[19px] font-semibold">Two sources, two speakers</h3>
-              <p class="mt-2 max-w-[52ch] text-[14px] leading-relaxed text-fg-dim">
-                System audio (what you hear) and your microphone (what you say) are captured in
-                parallel and diarized into two clean channels — so the transcript always knows who
-                was talking.
-              </p>
+          <div class="mt-16 grid items-center gap-8 lg:mt-24 lg:grid-cols-12 lg:gap-12">
+            <div class="stage on-stage px-4 py-8 sm:px-8 sm:py-12 lg:col-span-7" data-reveal>
+              <!-- MeetingBanner.tsx -->
               <div
-                class="mt-6 rounded-md border border-glass-border p-4 font-mono text-[11px]"
+                class="app flex flex-wrap items-center gap-3 rounded-[12px] border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.13)] px-3.5 py-2.5 text-[13px] sm:flex-nowrap"
                 aria-hidden="true"
               >
-                <div class="flex items-center gap-3">
-                  <span class="w-24 shrink-0 text-fg-dim">SYSTEM&nbsp;AUDIO</span>
-                  <span class="grow border-t border-dashed border-[rgba(183,148,246,0.5)]"></span>
-                  <span
-                    class="rounded-md border border-[rgba(183,148,246,0.4)] bg-[rgba(183,148,246,0.12)] px-2 py-1 text-accent-2"
-                    >CH 2 · REMOTE</span
-                  >
-                </div>
-                <div class="mt-3 flex items-center gap-3">
-                  <span class="w-24 shrink-0 text-fg-dim">MICROPHONE</span>
-                  <span class="grow border-t border-dashed border-[rgba(110,168,254,0.5)]"></span>
-                  <span
-                    class="rounded-md border border-[rgba(110,168,254,0.4)] bg-[rgba(110,168,254,0.12)] px-2 py-1 text-accent"
-                    >CH 1 · YOU</span
-                  >
-                </div>
-              </div>
-              <p class="mt-4 font-mono text-[11px] text-fg-faint">
-                WASAPI loopback · CoreAudio · PulseAudio/PipeWire
-              </p>
-            </article>
-
-            <!-- live captions -->
-            <article class="liquid-glass rounded-lg p-7 md:col-span-5" data-reveal>
-              <h3 class="text-[19px] font-semibold">Interim words, finalized in place</h3>
-              <p class="mt-2 text-[14px] leading-relaxed text-fg-dim">
-                Captions stream in as you speak and settle into their final form — no flicker, no
-                lost lines.
-              </p>
-              <div
-                class="mt-6 space-y-2.5 rounded-md border border-glass-border p-4"
-                aria-hidden="true"
-              >
-                <p class="text-[13px] text-fg-dim italic">
-                  let's lock the agenda before<span class="text-accent">▍</span>
+                <svg viewBox="0 0 24 24" class="text-you h-[17px] w-[17px] shrink-0" fill="none">
+                  <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="12" cy="12" r="3.6" fill="currentColor" />
+                </svg>
+                <p class="text-app-dim min-w-[11rem] flex-1 leading-[1.4]">
+                  <b class="text-app-fg">Zoom meeting detected</b>, start recording and transcribing
+                  it?
                 </p>
-                <p class="text-[13px]">Let's lock the agenda before Thursday.</p>
-              </div>
-              <p class="mt-4 font-mono text-[11px] text-fg-faint">
-                Interim → final · smart formatting
-              </p>
-            </article>
-
-            <!-- four small cards -->
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M3.5 12h17M12 3a14.5 14.5 0 0 1 0 18M12 3a14.5 14.5 0 0 0 0 18" />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Many languages</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                Nova-3 for multilingual & English, Nova-2 for the rest — with diarization and smart
-                formatting.
-              </p>
-            </article>
-
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="3" y="9" width="18" height="6" rx="3" />
-                <circle cx="8" cy="12" r="1" fill="currentColor" stroke="none" />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Stays out of the way</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                A compact always-on-top pill while recording. Start or stop from any app with
-                <span class="font-mono text-[12px]">Ctrl+Alt+R</span>.
-              </p>
-            </article>
-
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 3l1.7 4.6L18 9.2l-4.3 1.6L12 15.5l-1.7-4.7L6 9.2l4.3-1.6z" />
-                <path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Summaries & translation</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                End-of-session AI summary and live per-line translation — OpenAI or Gemini, your
-                pick.
-              </p>
-            </article>
-
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="2" y="6" width="13" height="12" rx="2.5" />
-                <path d="m15 10.5 6-3.5v10l-6-3.5" />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Window video recording</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                Save the meeting as an MP4 — your picked window plus mixed mic + system audio
-                (Windows & macOS).
-                <a href="#video" class="underline underline-offset-4 hover:text-fg">See how ↓</a>
-              </p>
-            </article>
-
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.4 0-2.7-.33-3.86-.92L3 21l1.92-5.64A8.5 8.5 0 1 1 21 11.5z"
-                />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Chat with the transcript</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                A per-session notetaker that answers from what was actually said.
-                <a href="#chat" class="underline underline-offset-4 hover:text-fg"
-                  >Try the idea ↓</a
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-[8px] border border-white/30 bg-[rgba(110,168,254,0.24)] px-3 py-[7px] text-[13px] font-semibold whitespace-nowrap text-[#dbe8ff]"
                 >
+                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none">
+                    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9" />
+                    <circle cx="12" cy="12" r="3.6" fill="currentColor" />
+                  </svg>
+                  Start recording
+                </span>
+                <svg
+                  viewBox="0 0 24 24"
+                  class="text-app-dim h-[15px] w-[15px] shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </div>
+              <p class="text-app-faint mt-5 text-center text-[13px]">
+                The meeting banner, as it appears in the app on Windows.
               </p>
-            </article>
-
-            <article class="liquid-glass rounded-lg p-6 md:col-span-4" data-reveal>
-              <svg
-                viewBox="0 0 24 24"
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="4" y="10" width="16" height="10" rx="2" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-              </svg>
-              <h3 class="mt-4 text-[15.5px] font-semibold">Private by design</h3>
-              <p class="mt-1.5 text-[13px] leading-relaxed text-fg-dim">
-                Keys live in the OS keychain. No server, no account, no telemetry — sessions stay in
-                a local SQLite file.
+            </div>
+            <div class="lg:col-span-5" data-reveal>
+              <h3 class="font-display text-[22px] leading-tight font-medium tracking-[-0.02em]">
+                Or let it notice the meeting
+              </h3>
+              <p class="text-fg-2 mt-4">
+                On Windows, sososo spots a Zoom, Teams, Google Meet or Webex meeting and offers to
+                record it, in the app and as a system notification when the window is hidden. It
+                only reads window titles, on your machine, and it won't ask twice about the same
+                meeting.
               </p>
-            </article>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- ============================ VIDEO RECORDING ============================ -->
-      <section id="video" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto grid max-w-[1120px] items-center gap-12 lg:grid-cols-2">
-          <div>
-            <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase" data-reveal>
-              Video recording
-            </p>
-            <h2
-              class="font-display font-expanded mt-4 max-w-[18ch] text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
+      <section id="captions" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-0">
+        <div
+          class="js-captions-pin mx-auto flex max-w-[1240px] items-center lg:min-h-screen lg:py-16"
+        >
+          <div class="grid w-full items-center gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-5">
+              <p class="cue" data-reveal>00:00:42</p>
+              <h2 class="display-lg mt-4" data-caption>The transcript knows who said what</h2>
+              <p class="lede mt-6" data-reveal>
+                sososo records the call audio and your microphone side by side, as two separate
+                inputs. Your voice is always You. Everyone on the other end is told apart as Speaker
+                1, Speaker 2 and so on.
+              </p>
+              <dl class="mt-8 text-[16px]" data-reveal>
+                <div class="border-line flex gap-4 border-t py-3">
+                  <dt class="w-24 shrink-0 font-semibold">Windows</dt>
+                  <dd class="text-fg-2">WASAPI loopback, no setup</dd>
+                </div>
+                <div class="border-line flex gap-4 border-t py-3">
+                  <dt class="w-24 shrink-0 font-semibold">Linux</dt>
+                  <dd class="text-fg-2">Your output's monitor source, no setup</dd>
+                </div>
+                <div class="border-line flex gap-4 border-t border-b py-3">
+                  <dt class="w-24 shrink-0 font-semibold">macOS</dt>
+                  <dd class="text-fg-2">
+                    Route system audio through the free
+                    <a
+                      href="https://github.com/yusupsupriyadi/sososo#macos-system-audio-setup"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="link"
+                      >BlackHole driver</a
+                    >
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <figure
+              id="two-inputs"
+              class="stage on-stage px-4 py-6 sm:px-7 sm:py-8 lg:col-span-7"
               data-reveal
             >
-              Capture the window, not just the words.
+              <div class="app">
+                <div class="flex gap-3" aria-hidden="true">
+                  <div class="flex w-[86px] shrink-0 flex-col justify-around gap-3 sm:w-[104px]">
+                    <p class="text-app-fg text-[12.5px] leading-tight font-semibold">
+                      System audio
+                      <span class="text-app-faint block font-normal">the call</span>
+                    </p>
+                    <p class="text-app-fg text-[12.5px] leading-tight font-semibold">
+                      Microphone
+                      <span class="text-app-faint block font-normal">you</span>
+                    </p>
+                  </div>
+                  <div class="js-tracks relative flex flex-1 flex-col gap-3">
+                    <div class="relative h-11 rounded-[8px] bg-white/5">
+                      <span class="track-bar bg-speaker-1/25" style="left: 2%; width: 18%"
+                        ><i class="bg-speaker-1"></i
+                      ></span>
+                      <span class="track-bar bg-speaker-2/25" style="left: 40%; width: 17%"
+                        ><i class="bg-speaker-2"></i
+                      ></span>
+                      <span class="track-bar bg-speaker-1/25" style="left: 82%; width: 15%"
+                        ><i class="bg-speaker-1"></i
+                      ></span>
+                    </div>
+                    <div class="relative h-11 rounded-[8px] bg-white/5">
+                      <span class="track-bar bg-you/25" style="left: 22%; width: 15%"
+                        ><i class="bg-you"></i
+                      ></span>
+                      <span class="track-bar bg-you/25" style="left: 60%; width: 19%"
+                        ><i class="bg-you"></i
+                      ></span>
+                    </div>
+                    <span class="js-playhead pointer-events-none absolute -inset-y-2 left-0 w-full">
+                      <i class="absolute inset-y-0 left-0 w-[2px] rounded-full bg-[#f3f1ea]"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <ol class="js-merged border-app-border mt-7 flex flex-col gap-3 border-t pt-6">
+                  <li class="js-line flex flex-col gap-0.5" data-from="0.02" data-to="0.2">
+                    <span class="speaker text-speaker-1">Speaker 1</span>
+                    <span class="caption-text">Can you share the new onboarding flow?</span>
+                  </li>
+                  <li class="js-line flex flex-col gap-0.5" data-from="0.22" data-to="0.37">
+                    <span class="speaker text-you">You</span>
+                    <span class="caption-text"
+                      >Sharing now. It's three screens instead of five.</span
+                    >
+                  </li>
+                  <li class="js-line flex flex-col gap-0.5" data-from="0.4" data-to="0.57">
+                    <span class="speaker text-speaker-2">Speaker 2</span>
+                    <span class="caption-text">What happens if someone skips the key step?</span>
+                  </li>
+                  <li class="js-line flex flex-col gap-0.5" data-from="0.6" data-to="0.79">
+                    <span class="speaker text-you">You</span>
+                    <span class="caption-text"
+                      >They land in Settings with the key field ready.</span
+                    >
+                  </li>
+                  <li class="js-line flex flex-col gap-0.5" data-from="0.82" data-to="0.97">
+                    <span class="speaker text-speaker-1">Speaker 1</span>
+                    <span class="caption-text">Good. Let's try it with support on Monday.</span>
+                  </li>
+                </ol>
+              </div>
+              <figcaption class="text-app-faint mt-6 text-[13px]">
+                Two inputs, one transcript, in the order people spoke.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="live-captions" class="on-stage bg-stage text-[#f3f1ea]">
+        <div
+          class="js-live-pin flex flex-col justify-center px-5 py-16 sm:px-8 sm:py-24 lg:min-h-screen"
+        >
+          <div class="mx-auto w-full max-w-[1240px]">
+            <p class="cue text-[#a19e96]!" data-reveal>00:01:05</p>
+            <h2
+              class="font-display mt-4 max-w-[24ch] text-[clamp(22px,2.3vw,32px)] leading-[1.15] font-medium tracking-[-0.02em]"
+              data-caption
+            >
+              Words appear while people are still talking
             </h2>
-            <p class="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-fg-dim" data-reveal>
-              Flip on <span class="font-medium text-fg">Record video</span>, pick the meeting window
-              from a Zoom-style thumbnail grid, and sososo saves an MP4 alongside the transcript —
-              the window's video with mic + system audio mixed in. When you finish, it plays back
-              right on the session page.
+
+            <p class="sr-only">
+              Example: the caption first reads "Let's move the lunch", then corrects itself to
+              "Let's move the launch to Friday" as the final line.
             </p>
-            <p class="mt-6 font-mono text-[12px] leading-relaxed text-fg-faint" data-reveal>
-              Windows & macOS · best-effort by design — a video hiccup never breaks the
-              transcription
+            <p class="live-sentence mt-10 lg:mt-14" aria-hidden="true">
+              <span class="lw">Let's</span> <span class="lw">move</span>
+              <span class="lw">the</span>
+              <span class="live-swap"
+                ><span class="lw js-wrong" style="opacity: 0">lunch</span
+                ><span class="lw js-right">launch</span></span
+              >
+              <span class="lw">to</span> <span class="lw">Friday</span>
+            </p>
+
+            <div class="mt-10 flex flex-wrap items-start gap-x-12 gap-y-6 lg:mt-14">
+              <p
+                class="js-live-state inline-flex min-w-[9ch] items-center gap-2.5 font-mono text-[15px] text-[#cbc8bf]"
+                aria-hidden="true"
+              >
+                <span class="js-live-dot h-2.5 w-2.5 rounded-full bg-[#f3f1ea]"></span>
+                <span class="js-live-label">Final</span>
+              </p>
+              <p class="max-w-[58ch] text-[17px] leading-relaxed text-[#cbc8bf]" data-reveal>
+                Interim words stream in while the sentence is still being spoken, and they can
+                change as more audio arrives. When the speaker finishes, the line settles into its
+                final form and stays put.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="languages" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-32">
+        <div class="mx-auto grid max-w-[1240px] gap-14 lg:grid-cols-12 lg:gap-12">
+          <div class="lg:col-span-5">
+            <h2 class="display-md" data-caption>Any language Deepgram streams</h2>
+            <p class="text-fg-2 mt-5" data-reveal>
+              Pick from 79 languages and regional variants on Deepgram Nova-3, or choose Auto-detect
+              for calls that switch languages mid-sentence.
+            </p>
+            <ul
+              class="text-fg-2 mt-8 flex flex-wrap gap-2 text-[15px]"
+              aria-label="Some of the options"
+              data-reveal
+            >
+              <li class="text-bg rounded-[8px] bg-fg px-3 py-1.5 font-semibold">
+                Auto-detect (multilingual)
+              </li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">Indonesian</li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">English (UK)</li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">Hindi</li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">Japanese</li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">Arabic (Egypt)</li>
+              <li class="bg-bg-2 rounded-[8px] px-3 py-1.5">Dutch</li>
+            </ul>
+          </div>
+
+          <div class="lg:col-span-6 lg:col-start-7">
+            <h2 class="display-md" data-caption>A second line in your language</h2>
+            <p class="text-fg-2 mt-5" data-reveal>
+              Switch on translate in the widget and every final line gets a translation underneath,
+              in the language you pick. The original stays where it is.
+            </p>
+            <div class="stage on-stage mt-8 px-5 py-6 sm:px-7" data-reveal>
+              <div class="app flex flex-col gap-3" aria-hidden="true">
+                <div class="flex flex-col gap-0.5">
+                  <span class="speaker text-speaker-1">Speaker 1</span>
+                  <span class="caption-text">Kita pindahkan demonya ke hari Kamis, ya?</span>
+                  <span class="translation-line js-tr">Let's move the demo to Thursday, okay?</span>
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="speaker text-you">You</span>
+                  <span class="caption-text">Kamis bisa. Saya siapkan build-nya.</span>
+                  <span class="translation-line js-tr"
+                    >Thursday works. I'll get the build ready.</span
+                  >
+                </div>
+              </div>
+              <p class="text-app-faint mt-5 text-[13px]">
+                Indonesian call, translated to English. Translation runs on your AI provider.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="video-recording" class="px-5 pb-16 sm:px-8 sm:pb-24 lg:pb-36">
+        <div
+          class="border-line mx-auto grid max-w-[1240px] items-center gap-12 border-t pt-16 sm:pt-24 lg:grid-cols-12 lg:pt-32"
+        >
+          <div class="lg:col-span-6">
+            <p class="cue" data-reveal>00:12:30</p>
+            <h2 class="display-lg mt-4" data-caption>Keep the meeting window as a video</h2>
+            <p class="lede mt-6" data-reveal>
+              Turn on Record video, pick the window from a thumbnail grid, and sososo saves an MP4
+              next to the transcript, with your mic and the call audio mixed in. It plays back on
+              the session page.
+            </p>
+            <p class="text-fg-3 mt-5 text-[16px]" data-reveal>
+              Windows and macOS. If video capture hits a problem, the transcript keeps going.
             </p>
           </div>
 
-          <figure class="flex flex-col items-center" data-reveal>
-            <!-- window picker, as in the app -->
+          <figure
+            id="window-picker"
+            class="stage on-stage flex flex-col items-center px-4 py-8 sm:px-8 sm:py-12 lg:col-span-6"
+            data-reveal
+          >
+            <!-- WindowPickerModal.tsx -->
             <div
-              class="liquid-glass w-full max-w-[460px] overflow-hidden rounded-lg"
+              class="app app-glass w-full max-w-[480px] overflow-hidden rounded-[16px]"
               aria-hidden="true"
             >
-              <div class="flex items-center justify-between border-b border-glass-border px-4 py-3">
+              <div class="border-app-border flex items-center justify-between border-b px-4 py-3">
                 <span class="text-[13px] font-semibold">Choose a window to record</span>
                 <svg
                   viewBox="0 0 24 24"
-                  class="h-3.5 w-3.5 text-fg-faint"
+                  class="text-app-faint h-3.5 w-3.5"
                   fill="none"
                   stroke="currentColor"
                   stroke-width="2"
@@ -556,7 +733,7 @@
               </div>
               <div class="px-4 pt-3">
                 <div
-                  class="flex items-center gap-2 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-3 py-2 text-[12.5px] text-fg-faint"
+                  class="border-app-border text-app-faint flex items-center gap-2 rounded-[8px] border bg-white/6 px-3 py-2 text-[12.5px]"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -573,31 +750,20 @@
                 </div>
               </div>
               <div class="grid grid-cols-3 gap-2.5 px-4 py-3.5">
-                <!-- Zoom — selected -->
                 <span
-                  class="flex flex-col gap-1.5 rounded-[8px] border border-[rgba(110,168,254,0.55)] bg-[rgba(110,168,254,0.16)] p-1.5 shadow-liquid"
+                  class="js-pick border-app-border is-picked flex flex-col gap-1.5 rounded-[8px] border bg-white/4 p-1.5"
                 >
                   <span
-                    class="relative block aspect-video w-full overflow-hidden rounded-[5px] border border-glass-border bg-[rgba(0,0,0,0.45)]"
+                    class="border-app-border relative block aspect-video w-full overflow-hidden rounded-[5px] border bg-black/45"
                   >
                     <span class="grid h-full grid-cols-2 gap-1 p-1.5">
-                      <span
-                        class="flex items-center justify-center rounded-[3px] bg-[rgba(110,168,254,0.16)]"
-                        ><span class="h-2 w-2 rounded-full bg-white/25"></span
-                      ></span>
-                      <span
-                        class="flex items-center justify-center rounded-[3px] bg-[rgba(183,148,246,0.14)]"
-                        ><span class="h-2 w-2 rounded-full bg-white/25"></span
-                      ></span>
-                      <span class="flex items-center justify-center rounded-[3px] bg-white/8"
-                        ><span class="h-2 w-2 rounded-full bg-white/25"></span
-                      ></span>
-                      <span class="flex items-center justify-center rounded-[3px] bg-white/5"
-                        ><span class="h-2 w-2 rounded-full bg-white/25"></span
-                      ></span>
+                      <span class="bg-you/20 rounded-[3px]"></span>
+                      <span class="bg-speaker-1/20 rounded-[3px]"></span>
+                      <span class="bg-speaker-2/15 rounded-[3px]"></span>
+                      <span class="rounded-[3px] bg-white/8"></span>
                     </span>
                     <span
-                      class="absolute top-1 right-1 inline-flex items-center justify-center rounded-full bg-accent p-[3px]"
+                      class="js-pick-check bg-you absolute top-1 right-1 items-center justify-center rounded-full p-[3px]"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -614,71 +780,98 @@
                   </span>
                   <span class="flex min-w-0 flex-col gap-px px-0.5 pb-0.5">
                     <span class="truncate text-[12px] leading-tight font-semibold">Zoom</span>
-                    <span class="truncate text-[10.5px] leading-tight text-fg-faint"
-                      >Weekly sync — Zoom Meeting</span
+                    <span class="text-app-faint truncate text-[10.5px] leading-tight"
+                      >Weekly sync, Zoom Meeting</span
                     >
                   </span>
                 </span>
-                <!-- Chrome / Meet -->
                 <span
-                  class="flex flex-col gap-1.5 rounded-[8px] border border-glass-border bg-[rgba(255,255,255,0.04)] p-1.5"
+                  class="js-pick border-app-border flex flex-col gap-1.5 rounded-[8px] border bg-white/4 p-1.5"
                 >
                   <span
-                    class="block aspect-video w-full overflow-hidden rounded-[5px] border border-glass-border bg-[rgba(0,0,0,0.45)]"
+                    class="border-app-border relative block aspect-video w-full overflow-hidden rounded-[5px] border bg-black/45"
                   >
                     <span class="flex h-full flex-col gap-1 p-1.5">
                       <span class="h-1 w-2/3 rounded-full bg-white/12"></span>
                       <span class="grid flex-1 grid-cols-2 gap-1">
-                        <span class="rounded-[3px] bg-[rgba(88,214,141,0.13)]"></span>
+                        <span class="bg-speaker-2/15 rounded-[3px]"></span>
                         <span class="rounded-[3px] bg-white/8"></span>
                       </span>
+                    </span>
+                    <span
+                      class="js-pick-check bg-you absolute top-1 right-1 items-center justify-center rounded-full p-[3px]"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="h-2 w-2 text-[#0b1626]"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="m4.5 12.5 5 5 10-11" />
+                      </svg>
                     </span>
                   </span>
                   <span class="flex min-w-0 flex-col gap-px px-0.5 pb-0.5">
                     <span class="truncate text-[12px] leading-tight font-semibold">Chrome</span>
-                    <span class="truncate text-[10.5px] leading-tight text-fg-faint"
-                      >Meet — abc-defg-hij</span
+                    <span class="text-app-faint truncate text-[10.5px] leading-tight"
+                      >Meet, abc-defg-hij</span
                     >
                   </span>
                 </span>
-                <!-- Slack -->
                 <span
-                  class="flex flex-col gap-1.5 rounded-[8px] border border-glass-border bg-[rgba(255,255,255,0.04)] p-1.5"
+                  class="js-pick border-app-border flex flex-col gap-1.5 rounded-[8px] border bg-white/4 p-1.5"
                 >
                   <span
-                    class="block aspect-video w-full overflow-hidden rounded-[5px] border border-glass-border bg-[rgba(0,0,0,0.45)]"
+                    class="border-app-border relative block aspect-video w-full overflow-hidden rounded-[5px] border bg-black/45"
                   >
                     <span class="flex h-full gap-1 p-1.5">
-                      <span class="h-full w-1/4 rounded-[3px] bg-[rgba(183,148,246,0.15)]"></span>
+                      <span class="bg-speaker-1/15 h-full w-1/4 rounded-[3px]"></span>
                       <span class="flex flex-1 flex-col justify-center gap-1">
                         <span class="h-1 w-full rounded-full bg-white/12"></span>
                         <span class="h-1 w-3/4 rounded-full bg-white/9"></span>
                         <span class="h-1 w-5/6 rounded-full bg-white/6"></span>
                       </span>
                     </span>
+                    <span
+                      class="js-pick-check bg-you absolute top-1 right-1 items-center justify-center rounded-full p-[3px]"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="h-2 w-2 text-[#0b1626]"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="m4.5 12.5 5 5 10-11" />
+                      </svg>
+                    </span>
                   </span>
                   <span class="flex min-w-0 flex-col gap-px px-0.5 pb-0.5">
                     <span class="truncate text-[12px] leading-tight font-semibold">Slack</span>
-                    <span class="truncate text-[10.5px] leading-tight text-fg-faint"
-                      >#launch — Slack</span
+                    <span class="text-app-faint truncate text-[10.5px] leading-tight"
+                      >#launch, Slack</span
                     >
                   </span>
                 </span>
               </div>
-              <div
-                class="border-t border-glass-border px-4 py-2.5 text-[10.5px] leading-snug text-fg-faint"
+              <p
+                class="border-app-border text-app-faint border-t px-4 py-2.5 text-[11px] leading-snug"
               >
                 Recording a single browser tab? Drag it out into its own window, then pick it here.
-              </div>
+              </p>
             </div>
 
-            <!-- recording status row, as in the app -->
             <div
-              class="liquid-glass mt-3.5 flex w-full max-w-[460px] items-center gap-2 rounded-md px-3.5 py-[9px]"
+              class="js-rec-row app app-glass mt-3.5 flex w-full max-w-[480px] items-center gap-2 rounded-[12px] px-3.5 py-[9px]"
               aria-hidden="true"
             >
-              <span class="h-[9px] w-[9px] shrink-0 animate-rec-pulse rounded-full bg-rec"></span>
-              <span class="text-[12px] font-semibold text-fg-dim">Recording</span>
+              <span class="status-dot" data-state="live"></span>
+              <span class="text-app-dim text-[12px] font-semibold">Recording</span>
               <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rec">
                 <svg
                   viewBox="0 0 24 24"
@@ -694,780 +887,658 @@
                 </svg>
                 REC
               </span>
-              <span class="ml-auto font-mono text-[12px] text-fg-dim tabular-nums">12:31</span>
+              <span class="text-app-dim ml-auto text-[12px] tabular-nums">12:30</span>
             </div>
-            <figcaption class="mt-4 text-center font-mono text-[10.5px] text-fg-faint">
-              The window picker and REC status — as they look in the app.
+            <figcaption class="text-app-faint mt-5 text-center text-[13px]">
+              The window picker and the recording status, as they look in the app.
             </figcaption>
           </figure>
         </div>
       </section>
 
-      <!-- ============================ TRANSCRIPT CHAT ============================ -->
-      <section id="chat" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto grid max-w-[1120px] items-center gap-12 lg:grid-cols-2">
-          <figure class="order-2 flex flex-col items-center lg:order-1" data-reveal>
-            <!-- the session chat panel, as in the app -->
-            <aside
-              class="liquid-glass flex w-full max-w-[380px] flex-col overflow-hidden rounded-lg"
-              aria-hidden="true"
+      <section id="after-the-call" class="bg-bg-2 px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
+        <div class="mx-auto max-w-[1240px]">
+          <p class="cue" data-reveal>00:47:10</p>
+          <h2 class="display-xl mt-4 max-w-[17ch]" data-caption>
+            Press finish, then ask what you missed
+          </h2>
+
+          <div class="mt-14 grid items-start gap-12 lg:mt-20 lg:grid-cols-12">
+            <figure
+              id="transcript-chat"
+              class="stage on-stage flex justify-center px-4 py-8 sm:px-8 sm:py-10 lg:col-span-7"
+              data-reveal
             >
+              <!-- ChatPanel.tsx -->
               <div
-                class="flex items-center justify-between gap-2 border-b border-glass-border px-3 py-3"
+                class="app app-glass flex w-full max-w-[400px] flex-col overflow-hidden rounded-[16px]"
+                aria-hidden="true"
               >
-                <span
-                  class="inline-flex min-w-0 items-center gap-1.5 text-[12px] tracking-[0.06em] text-accent-2 uppercase"
+                <div
+                  class="border-app-border flex items-center justify-between gap-2 border-b px-3 py-3"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    class="h-3.5 w-3.5 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.4 0-2.7-.33-3.86-.92L3 21l1.92-5.64A8.5 8.5 0 1 1 21 11.5z"
-                    />
-                  </svg>
-                  <span class="truncate">Ask about this transcript</span>
-                </span>
-                <span
-                  class="inline-flex shrink-0 items-center gap-1.5 rounded-sm border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] px-2 py-1 text-[11.5px] text-fg-faint shadow-liquid"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    class="h-3 w-3"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M3 6h18M8 6V4h8v2m1 0-1 14H8L7 6" />
-                  </svg>
-                  Clear
-                </span>
-              </div>
-              <div class="flex flex-col gap-2.5 px-4 py-3.5">
-                <p
-                  class="max-w-[85%] self-end rounded-lg rounded-br-sm border border-[rgba(110,168,254,0.35)] bg-[rgba(110,168,254,0.18)] px-3 py-2 text-[13px] leading-[1.5]"
-                >
-                  What did we decide about the launch?
-                </p>
-                <p
-                  class="max-w-[92%] self-start rounded-lg rounded-bl-sm border border-glass-border bg-[rgba(255,255,255,0.05)] px-3.5 py-2.5 text-[13px] leading-[1.5] text-fg-dim"
-                >
-                  Ship <span class="font-medium text-fg">v0.9 on Friday</span>. Sarah owns the
-                  rollout checklist, and you're drafting the changelog right after the call.
-                </p>
-                <p
-                  class="max-w-[85%] self-end rounded-lg rounded-br-sm border border-[rgba(110,168,254,0.35)] bg-[rgba(110,168,254,0.18)] px-3 py-2 text-[13px] leading-[1.5]"
-                >
-                  Did anyone push back on pricing?
-                </p>
-                <p
-                  class="max-w-[85%] self-start rounded-lg rounded-bl-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-3 py-2 text-[13px] text-fg-faint italic"
-                >
-                  Thinking…
-                </p>
-              </div>
-              <div class="border-t border-glass-border px-3 py-3">
-                <div class="flex items-end gap-2">
                   <span
-                    class="min-h-[38px] flex-1 rounded-sm border border-glass-border bg-[rgba(255,255,255,0.06)] px-3 py-2 text-[13px] leading-[1.5] text-fg-faint"
-                  >
-                    Ask about this transcript…
-                  </span>
-                  <span
-                    class="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-sm border border-[rgba(167,139,250,0.5)] bg-[rgba(167,139,250,0.16)] px-3.5 text-[13px] font-medium text-[#d6c6ff] shadow-liquid"
+                    class="text-speaker-1 inline-flex min-w-0 items-center gap-1.5 text-[12px] tracking-[0.06em] uppercase"
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      class="h-3.5 w-3.5"
+                      class="h-3.5 w-3.5 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.4 0-2.7-.33-3.86-.92L3 21l1.92-5.64A8.5 8.5 0 1 1 21 11.5z"
+                      />
+                    </svg>
+                    <span class="truncate">Ask about this transcript</span>
+                  </span>
+                  <span
+                    class="text-app-faint inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border border-white/20 bg-white/6 px-2 py-1 text-[11.5px]"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="h-3 w-3"
                       fill="none"
                       stroke="currentColor"
                       stroke-width="2"
                       stroke-linecap="round"
                       stroke-linejoin="round"
                     >
-                      <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
+                      <path d="M3 6h18M8 6V4h8v2m1 0-1 14H8L7 6" />
                     </svg>
-                    Send
+                    Clear
                   </span>
                 </div>
-              </div>
-            </aside>
-            <figcaption class="mt-4 text-center font-mono text-[10.5px] text-fg-faint">
-              The per-session chat panel — as it looks in the app.
-            </figcaption>
-          </figure>
-
-          <div class="order-1 lg:order-2">
-            <p
-              class="font-mono text-[11.5px] tracking-[0.22em] text-accent-2 uppercase"
-              data-reveal
-            >
-              Transcript chat
-            </p>
-            <h2
-              class="font-display font-expanded mt-4 max-w-[18ch] text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-              data-reveal
-            >
-              Ask your meeting anything — after it ends.
-            </h2>
-            <p class="mt-6 max-w-[54ch] text-[15px] leading-relaxed text-fg-dim" data-reveal>
-              Every session has a built-in notetaker: a chat panel grounded in that session's
-              transcript. Ask what was decided, who owns what, or what you missed while you were
-              away — answers come from your own OpenAI or Gemini key and the conversation is saved
-              with the session.
-            </p>
-            <p class="mt-6 font-mono text-[12px] leading-relaxed text-fg-faint" data-reveal>
-              Markdown answers · history persisted per session · needs an OpenAI or Gemini key
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================ HOW IT WORKS ============================ -->
-      <section id="how" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto max-w-[1120px]">
-          <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase" data-reveal>
-            How it works
-          </p>
-          <h2
-            class="font-display font-expanded mt-4 text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-            data-reveal
-          >
-            Recording in three steps.
-          </h2>
-
-          <div class="mt-12 grid gap-4 md:grid-cols-3">
-            <div class="liquid-glass rounded-lg p-7" data-reveal>
-              <p class="font-mono text-[12px] tracking-[0.2em] text-accent">01</p>
-              <h3 class="mt-3 text-[17px] font-semibold">Install</h3>
-              <p class="mt-2 text-[14px] leading-relaxed text-fg-dim">
-                Grab the installer for your OS below — free, no account or sign-up. Windows and
-                Linux capture system audio with zero setup; macOS routes it through
-                <a
-                  href="https://github.com/ExistentialAudio/BlackHole"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="underline underline-offset-4 hover:text-fg"
-                  >BlackHole</a
-                >.
-              </p>
-            </div>
-            <div class="liquid-glass rounded-lg p-7" data-reveal>
-              <p class="font-mono text-[12px] tracking-[0.2em] text-accent">02</p>
-              <h3 class="mt-3 text-[17px] font-semibold">Bring your keys</h3>
-              <p class="mt-2 text-[14px] leading-relaxed text-fg-dim">
-                Paste a free
-                <a
-                  href="https://console.deepgram.com/signup"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="underline underline-offset-4 hover:text-fg"
-                  >Deepgram key</a
-                >
-                in Settings (plus an OpenAI or Gemini key if you want summaries). They're stored in
-                your OS keychain and never leave your machine.
-              </p>
-            </div>
-            <div class="liquid-glass rounded-lg p-7" data-reveal>
-              <p class="font-mono text-[12px] tracking-[0.2em] text-accent">03</p>
-              <h3 class="mt-3 text-[17px] font-semibold">Hit record</h3>
-              <p class="mt-2 text-[14px] leading-relaxed text-fg-dim">
-                Press <span class="font-mono text-[12.5px]">Ctrl+Alt+R</span> from anywhere. Live
-                captions float over your meeting; finishing writes the transcript, the video (if you
-                recorded one), and an AI summary to your library — ready to chat with.
-              </p>
-            </div>
-          </div>
-          <p class="mt-6 font-mono text-[12px] text-fg-faint" data-reveal>
-            On Windows, sososo also auto-detects Zoom / Teams / Meet / Webex meetings and offers
-            one-click recording.
-          </p>
-        </div>
-      </section>
-
-      <!-- ============================ DEMO ============================ -->
-      <section id="demo" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto max-w-[920px]">
-          <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase" data-reveal>
-            Demo
-          </p>
-          <h2
-            class="font-display font-expanded mt-4 text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-            data-reveal
-          >
-            See it run.
-          </h2>
-          <div class="liquid-glass mt-10 rounded-lg p-2" data-reveal>
-            <div
-              id="video-shell"
-              class="group relative aspect-video w-full cursor-pointer overflow-hidden rounded-[12px]"
-            >
-              <img
-                src="https://img.youtube.com/vi/al1_YU_ILXs/maxresdefault.jpg"
-                alt="sososo demo video thumbnail"
-                loading="lazy"
-                class="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
-              />
-              <button
-                type="button"
-                aria-label="Play the demo video"
-                class="absolute inset-0 flex items-center justify-center"
-              >
-                <span
-                  class="liquid-glass flex h-16 w-16 items-center justify-center rounded-full shadow-liquid transition group-hover:scale-105"
-                >
-                  <svg
-                    class="ml-1 h-5 w-5 fill-current text-fg"
-                    viewBox="0 0 12 12"
-                    aria-hidden="true"
+                <div class="flex min-h-[300px] flex-col gap-2.5 px-4 py-3.5">
+                  <p
+                    class="js-chat border-you/35 bg-you/18 max-w-[85%] self-end rounded-[16px] rounded-br-[6px] border px-3 py-2 text-[13px] leading-[1.5]"
                   >
-                    <path
-                      d="M3 1.6a1 1 0 0 1 1.52-.86l6.3 4.4a1 1 0 0 1 0 1.7l-6.3 4.4A1 1 0 0 1 3 10.4z"
-                    />
-                  </svg>
-                </span>
-              </button>
-              <span
-                class="absolute bottom-3 left-3 rounded-full bg-[rgba(10,10,15,0.7)] px-3 py-1 font-mono text-[11px] text-fg-dim"
-                >▶ Watch on YouTube</span
+                    What did we decide about the release?
+                  </p>
+                  <p
+                    class="js-chat border-app-border text-app-dim max-w-[92%] self-start rounded-[16px] rounded-bl-[6px] border bg-white/5 px-3.5 py-2.5 text-[13px] leading-[1.5]"
+                  >
+                    It ships on <b class="text-app-fg font-semibold">Friday</b>. Speaker 2 asked for
+                    that date, and you said you'd write the changelog after the call.
+                  </p>
+                  <p
+                    class="js-chat border-you/35 bg-you/18 max-w-[85%] self-end rounded-[16px] rounded-br-[6px] border px-3 py-2 text-[13px] leading-[1.5]"
+                  >
+                    Did anyone check the installer?
+                  </p>
+                  <p
+                    class="js-chat js-chat-thinking border-app-border text-app-faint hidden max-w-[85%] self-start rounded-[16px] rounded-bl-[6px] border bg-white/6 px-3 py-2 text-[13px] italic"
+                  >
+                    Thinking…
+                  </p>
+                  <p
+                    class="js-chat js-chat-last border-app-border text-app-dim max-w-[92%] self-start rounded-[16px] rounded-bl-[6px] border bg-white/5 px-3.5 py-2.5 text-[13px] leading-[1.5]"
+                  >
+                    Yes. You said the build is green and the installer looks good.
+                  </p>
+                </div>
+                <div class="border-app-border border-t px-3 py-3">
+                  <div class="flex items-end gap-2">
+                    <span
+                      class="border-app-border text-app-faint min-h-[38px] flex-1 rounded-[8px] border bg-white/6 px-3 py-2 text-[13px] leading-[1.5]"
+                      >Ask about this transcript…</span
+                    >
+                    <span
+                      class="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-[8px] border border-[rgba(167,139,250,0.5)] bg-[rgba(167,139,250,0.16)] px-3.5 text-[13px] font-medium text-[#d6c6ff]"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="h-3.5 w-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />
+                      </svg>
+                      Send
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </figure>
+
+            <div class="lg:col-span-5 lg:pt-4">
+              <p class="lede" data-reveal>
+                Every session ends with an AI summary: an overview, the key points and the action
+                items. Next to the transcript sits a chat that answers from what was actually said,
+                and it keeps its history with the session.
+              </p>
+
+              <h3
+                class="font-display mt-12 text-[22px] leading-tight font-medium tracking-[-0.02em]"
+                data-reveal
               >
+                Runs on the model you pick
+              </h3>
+              <ul class="mt-5 flex flex-wrap gap-x-1 gap-y-1 text-[19px] leading-snug" data-reveal>
+                <li>OpenAI<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>Anthropic Claude<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>Google Gemini<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>DeepSeek<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>Grok<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>Kimi<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>GLM<span class="text-fg-3 px-1.5" aria-hidden="true">/</span></li>
+                <li>
+                  OpenRouter and other OpenAI-compatible endpoints<span
+                    class="text-fg-3 px-1.5"
+                    aria-hidden="true"
+                    >/</span
+                  >
+                </li>
+                <li class="font-semibold">Llama on your own machine</li>
+              </ul>
+              <p class="text-fg-2 mt-5 text-[16px]" data-reveal>
+                Choose one in Settings and paste your own key. A local Llama through Ollama, LM
+                Studio or llama.cpp needs no key at all, and your summaries and chat never leave the
+                computer.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ============================ PRIVACY ============================ -->
-      <section id="privacy" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto grid max-w-[1120px] items-center gap-12 lg:grid-cols-2">
-          <div>
-            <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase" data-reveal>
-              Privacy
-            </p>
-            <h2
-              class="font-display font-expanded mt-4 max-w-[18ch] text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-              data-reveal
-            >
-              Your audio goes only where you send it.
+      <section id="privacy" class="px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
+        <div class="mx-auto max-w-[1240px]">
+          <div class="grid items-end gap-8 lg:grid-cols-12">
+            <h2 class="display-lg lg:col-span-7" data-caption>
+              No sososo server sits in the middle
             </h2>
-            <ul class="mt-8 space-y-4" data-reveal>
-              <li class="flex items-start gap-3">
-                <svg
-                  viewBox="0 0 24 24"
-                  class="mt-0.5 h-4.5 w-4.5 shrink-0 text-ok"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.4"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+            <p class="lede lg:col-span-5" data-reveal>
+              The app talks to the services you set up, with your own keys, and to nothing else.
+              Here is everything that leaves your computer, and where the rest stays.
+            </p>
+          </div>
+
+          <ol class="js-flow border-line-strong mt-14 border-t lg:mt-20">
+            <li
+              class="border-line grid gap-3 border-b py-7 md:grid-cols-[1fr_1.1fr_1.6fr] md:items-center md:gap-8"
+            >
+              <p class="font-display text-[22px] font-medium tracking-[-0.02em]">Audio</p>
+              <p class="flex items-center gap-3 font-semibold">
+                <span
+                  class="js-flow-line relative hidden h-[2px] flex-1 overflow-hidden md:block"
                   aria-hidden="true"
-                >
-                  <path d="m4.5 12.5 5 5 10-11" />
-                </svg>
-                <p class="text-[14.5px] leading-relaxed text-fg-dim">
-                  <span class="font-medium text-fg">Bring your own keys.</span> Audio streams to
-                  Deepgram; transcripts go to OpenAI or Gemini only when you ask for a summary or
-                  translation.
-                </p>
-              </li>
-              <li class="flex items-start gap-3">
-                <svg
-                  viewBox="0 0 24 24"
-                  class="mt-0.5 h-4.5 w-4.5 shrink-0 text-ok"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.4"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  ><i class="absolute inset-0 origin-left bg-fg"></i
+                ></span>
+                <span class="text-fg-3 md:hidden" aria-hidden="true">→</span>
+                <span>Deepgram</span>
+              </p>
+              <p class="text-fg-2">Streamed over a secure WebSocket for live speech-to-text.</p>
+            </li>
+            <li
+              class="border-line grid gap-3 border-b py-7 md:grid-cols-[1fr_1.1fr_1.6fr] md:items-center md:gap-8"
+            >
+              <p class="font-display text-[22px] font-medium tracking-[-0.02em]">Transcript text</p>
+              <p class="flex items-center gap-3 font-semibold">
+                <span
+                  class="js-flow-line relative hidden h-[2px] flex-1 overflow-hidden md:block"
                   aria-hidden="true"
-                >
-                  <path d="m4.5 12.5 5 5 10-11" />
-                </svg>
-                <p class="text-[14.5px] leading-relaxed text-fg-dim">
-                  <span class="font-medium text-fg">Keys in the OS keychain</span> — Windows
-                  Credential Manager, macOS Keychain, or the Linux Secret Service. Never in a config
-                  file.
-                </p>
-              </li>
-              <li class="flex items-start gap-3">
-                <svg
-                  viewBox="0 0 24 24"
-                  class="mt-0.5 h-4.5 w-4.5 shrink-0 text-ok"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.4"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  ><i
+                    class="absolute inset-0 origin-left bg-[repeating-linear-gradient(90deg,var(--fg)_0_8px,transparent_8px_14px)]"
+                  ></i
+                ></span>
+                <span class="text-fg-3 md:hidden" aria-hidden="true">→</span>
+                <span>Your AI provider</span>
+              </p>
+              <p class="text-fg-2">
+                Only when you ask for a summary, a translation or a chat answer. With a local Llama
+                it stays on your computer.
+              </p>
+            </li>
+            <li
+              class="border-line grid gap-3 border-b py-7 md:grid-cols-[1fr_1.1fr_1.6fr] md:items-center md:gap-8"
+            >
+              <p class="font-display text-[22px] font-medium tracking-[-0.02em]">API keys</p>
+              <p class="flex items-center gap-3 font-semibold">
+                <span
+                  class="js-flow-line relative hidden h-[2px] flex-1 overflow-hidden md:block"
                   aria-hidden="true"
-                >
-                  <path d="m4.5 12.5 5 5 10-11" />
-                </svg>
-                <p class="text-[14.5px] leading-relaxed text-fg-dim">
-                  <span class="font-medium text-fg">No backend, no account, no telemetry.</span>
-                  Sessions live in a local SQLite database on your disk.
-                </p>
-              </li>
-            </ul>
+                  ><i class="absolute inset-0 origin-left bg-fg"></i
+                ></span>
+                <span class="text-fg-3 md:hidden" aria-hidden="true">→</span>
+                <span>Your OS keychain</span>
+              </p>
+              <p class="text-fg-2">
+                Windows Credential Manager, macOS Keychain or the Linux Secret Service. Never a
+                config file. They leave only as auth headers to the services above.
+              </p>
+            </li>
+            <li
+              class="border-line grid gap-3 border-b py-7 md:grid-cols-[1fr_1.1fr_1.6fr] md:items-center md:gap-8"
+            >
+              <p class="font-display text-[22px] font-medium tracking-[-0.02em]">Sessions</p>
+              <p class="flex items-center gap-3 font-semibold">
+                <span
+                  class="js-flow-line relative hidden h-[2px] flex-1 overflow-hidden md:block"
+                  aria-hidden="true"
+                  ><i class="absolute inset-0 origin-left bg-fg"></i
+                ></span>
+                <span class="text-fg-3 md:hidden" aria-hidden="true">→</span>
+                <span>Your disk</span>
+              </p>
+              <p class="text-fg-2">Transcripts, summaries and chats live in a local SQLite file.</p>
+            </li>
+            <li
+              class="border-line-strong grid gap-3 border-b py-7 md:grid-cols-[1fr_1.1fr_1.6fr] md:items-center md:gap-8"
+            >
+              <p class="font-display text-[22px] font-medium tracking-[-0.02em]">
+                Accounts and telemetry
+              </p>
+              <p class="flex items-center gap-3 font-semibold">
+                <span class="hidden flex-1 md:block" aria-hidden="true"></span>
+                <span>None</span>
+              </p>
+              <p class="text-fg-2">There is nothing to sign up for and nothing phones home.</p>
+            </li>
+          </ol>
+          <p class="mt-8" data-reveal>
             <a
               href="https://github.com/yusupsupriyadi/sososo/blob/master/PRIVACY.md"
               target="_blank"
               rel="noreferrer"
-              class="mt-8 inline-block font-mono text-[12.5px] text-fg-dim underline underline-offset-4 hover:text-fg"
-              data-reveal
-              >Read PRIVACY.md ↗</a
+              class="link font-semibold"
+              >Read the full privacy notes</a
             >
-          </div>
-
-          <div
-            class="liquid-glass rounded-lg p-7 font-mono text-[12px]"
-            data-reveal
-            aria-hidden="true"
-          >
-            <div class="rounded-md border border-glass-border p-4">
-              <p class="tracking-[0.2em] text-fg-faint uppercase">Your machine</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span class="rounded-md border border-glass-border px-2.5 py-1.5 text-fg-dim"
-                  >🎙 mic</span
-                >
-                <span class="rounded-md border border-glass-border px-2.5 py-1.5 text-fg-dim"
-                  >🔊 system audio</span
-                >
-                <span class="rounded-md border border-glass-border px-2.5 py-1.5 text-fg-dim"
-                  >🔑 keys · OS keychain</span
-                >
-                <span class="rounded-md border border-glass-border px-2.5 py-1.5 text-fg-dim"
-                  >🗄 SQLite library</span
-                >
-              </div>
-            </div>
-            <div class="my-3 flex items-center gap-3 pl-6 text-fg-faint">
-              <span class="h-7 w-px bg-glass-border"></span>
-              <span>audio · secure WebSocket</span>
-            </div>
-            <div class="rounded-md border border-glass-border p-4">
-              <p class="tracking-[0.2em] text-accent uppercase">Deepgram</p>
-              <p class="mt-1.5 text-fg-dim">live speech-to-text (Nova-3 / Nova-2)</p>
-            </div>
-            <div class="my-3 flex items-center gap-3 pl-6 text-fg-faint">
-              <span class="h-7 w-px border-l border-dashed border-[rgba(255,255,255,0.25)]"></span>
-              <span>transcript · only when you ask</span>
-            </div>
-            <div class="rounded-md border border-dashed border-glass-border p-4">
-              <p class="tracking-[0.2em] text-accent-2 uppercase">OpenAI / Gemini · optional</p>
-              <p class="mt-1.5 text-fg-dim">end-of-session summary · live translation</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================ DOWNLOAD ============================ -->
-      <section id="download" class="scroll-mt-28 px-6 pt-28">
-        <div class="mx-auto max-w-[1120px]">
-          <div class="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p
-                class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase"
-                data-reveal
-              >
-                Download
-              </p>
-              <h2
-                class="font-display font-expanded mt-4 text-[clamp(28px,3.8vw,44px)] leading-[1.05] font-extrabold"
-                data-reveal
-              >
-                Free on every desktop.
-              </h2>
-            </div>
-            <p class="font-mono text-[12px] text-fg-faint" data-reveal>
-              <span id="dl-version" class="text-fg-dim">latest release</span> ·
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/CHANGELOG.md"
-                target="_blank"
-                rel="noreferrer"
-                class="underline underline-offset-4 hover:text-fg-dim"
-                >release notes ↗</a
-              >
-            </p>
-          </div>
-
-          <div class="mt-10 grid gap-4 md:grid-cols-3">
-            <!-- windows -->
-            <article class="liquid-glass relative rounded-lg p-7" data-os="windows" data-reveal>
-              <span
-                class="js-detected absolute top-4 right-4 hidden rounded-full border border-[rgba(110,168,254,0.5)] bg-[rgba(110,168,254,0.14)] px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] text-accent uppercase"
-                >Detected</span
-              >
-              <svg viewBox="0 0 24 24" class="h-6 w-6 fill-current text-fg-dim" aria-hidden="true">
-                <path
-                  d="M3 5.5 10.5 4.4v7.1H3zM12 4.2 21 3v8.5h-9zM3 13h7.5v7.1L3 19zM12 13h9v8L12 19.8z"
-                />
-              </svg>
-              <h3 class="mt-4 text-[17px] font-semibold">Windows 10/11</h3>
-              <p class="mt-1 font-mono text-[11px] text-fg-faint">WASAPI loopback — no setup</p>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_windows_x64-setup.exe"
-                class="mt-6 flex items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/10 px-4 py-3 text-[14px] font-semibold shadow-liquid transition hover:bg-white/16"
-              >
-                Installer (.exe)
-              </a>
-              <p class="mt-3 text-center font-mono text-[12px]">
-                <a
-                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_windows_x64.msi"
-                  class="text-fg-dim underline underline-offset-4 hover:text-fg"
-                  >.msi</a
-                >
-              </p>
-            </article>
-
-            <!-- macos -->
-            <article class="liquid-glass relative rounded-lg p-7" data-os="macos" data-reveal>
-              <span
-                class="js-detected absolute top-4 right-4 hidden rounded-full border border-[rgba(110,168,254,0.5)] bg-[rgba(110,168,254,0.14)] px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] text-accent uppercase"
-                >Detected</span
-              >
-              <svg
-                viewBox="0 0 24 24"
-                class="h-6 w-6 text-fg-dim"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-              </svg>
-              <h3 class="mt-4 text-[17px] font-semibold">macOS 11+</h3>
-              <p class="mt-1 font-mono text-[11px] text-fg-faint">
-                system audio via
-                <a
-                  href="https://github.com/ExistentialAudio/BlackHole"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="underline underline-offset-4 hover:text-fg-dim"
-                  >BlackHole</a
-                >
-                (free)
-              </p>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_macos_universal.dmg"
-                class="mt-6 flex items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/10 px-4 py-3 text-[14px] font-semibold shadow-liquid transition hover:bg-white/16"
-              >
-                Universal .dmg
-              </a>
-              <p class="mt-3 text-center font-mono text-[12px] text-fg-faint">
-                Intel & Apple Silicon
-              </p>
-            </article>
-
-            <!-- linux -->
-            <article class="liquid-glass relative rounded-lg p-7" data-os="linux" data-reveal>
-              <span
-                class="js-detected absolute top-4 right-4 hidden rounded-full border border-[rgba(110,168,254,0.5)] bg-[rgba(110,168,254,0.14)] px-2.5 py-1 font-mono text-[10px] tracking-[0.14em] text-accent uppercase"
-                >Detected</span
-              >
-              <svg
-                viewBox="0 0 24 24"
-                class="h-6 w-6 text-fg-dim"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="3" y="4" width="18" height="16" rx="2.5" />
-                <path d="m7 9 3 3-3 3M12.5 15H17" />
-              </svg>
-              <h3 class="mt-4 text-[17px] font-semibold">Linux</h3>
-              <p class="mt-1 font-mono text-[11px] text-fg-faint">
-                PulseAudio / PipeWire — no setup
-              </p>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_amd64.deb"
-                class="mt-6 flex items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/10 px-4 py-3 text-[14px] font-semibold shadow-liquid transition hover:bg-white/16"
-              >
-                .deb
-              </a>
-              <p class="mt-3 text-center font-mono text-[12px]">
-                <a
-                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_amd64.AppImage"
-                  class="text-fg-dim underline underline-offset-4 hover:text-fg"
-                  >.AppImage</a
-                >
-                <span class="mx-1.5 text-fg-faint">·</span>
-                <a
-                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_x86_64.rpm"
-                  class="text-fg-dim underline underline-offset-4 hover:text-fg"
-                  >.rpm</a
-                >
-              </p>
-            </article>
-          </div>
-
-          <p class="mt-6 max-w-[90ch] text-[12.5px] leading-relaxed text-fg-faint" data-reveal>
-            Builds aren't code-signed yet, so your OS may warn on first run — Windows: "More info" →
-            "Run anyway"; macOS: right-click the app → Open. Browse every version on the
-            <a
-              href="https://github.com/yusupsupriyadi/sososo/releases"
-              target="_blank"
-              rel="noreferrer"
-              class="underline underline-offset-4 hover:text-fg-dim"
-              >Releases page ↗</a
-            >.
           </p>
         </div>
       </section>
 
-      <!-- ============================ OPEN SOURCE ============================ -->
-      <section id="opensource" class="scroll-mt-28 px-6 pt-28 pb-8">
-        <div
-          class="liquid-glass relative mx-auto max-w-[1120px] overflow-hidden rounded-[20px] p-9 md:p-14"
-          data-reveal
-        >
+      <section id="demo" class="px-5 pb-16 sm:px-8 sm:pb-24 lg:pb-36">
+        <div class="mx-auto max-w-[1240px]">
+          <div class="flex flex-wrap items-end justify-between gap-6">
+            <h2 class="display-lg" data-caption>Watch a real session</h2>
+            <a
+              href="https://youtu.be/al1_YU_ILXs"
+              target="_blank"
+              rel="noreferrer"
+              class="link text-[16px] font-semibold"
+              data-reveal
+              >Open on YouTube</a
+            >
+          </div>
           <div
-            class="rings-bg animate-ring-drift absolute top-1/2 right-[-260px] -z-10 h-[640px] w-[640px] -translate-y-1/2"
-            aria-hidden="true"
-          ></div>
-          <div class="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-            <div>
-              <p class="font-mono text-[11.5px] tracking-[0.22em] text-accent uppercase">
-                Open source
-              </p>
-              <h2
-                class="font-display font-expanded mt-4 max-w-[20ch] text-[clamp(26px,3.4vw,40px)] leading-[1.05] font-extrabold"
+            id="video-shell"
+            class="group bg-stage relative mt-10 aspect-video w-full overflow-hidden rounded-[22px]"
+            data-reveal
+          >
+            <img
+              src="https://img.youtube.com/vi/al1_YU_ILXs/maxresdefault.jpg"
+              alt="Frame from the demo video: the sososo recording widget over a playing video"
+              loading="lazy"
+              class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.015]"
+            />
+            <button
+              id="btn-play-demo"
+              type="button"
+              aria-label="Play the demo video"
+              class="absolute inset-0 flex items-center justify-center"
+            >
+              <span
+                class="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-[#f3f1ea] text-[#0e0e10] transition group-hover:scale-105"
               >
-                Read the code. Keep your audio yours.
-              </h2>
-              <p class="mt-5 max-w-[58ch] text-[15px] leading-relaxed text-fg-dim">
-                The entire app — Rust audio pipeline, Deepgram streaming, UI — is on GitHub under
-                the AGPL-3.0, with a commercial license for closed-source use. Issues and pull
-                requests are welcome.
+                <svg class="ml-1 h-6 w-6 fill-current" viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M4.5 2.6a1 1 0 0 1 1.5-.86l7.3 5.4a1 1 0 0 1 0 1.72L6 14.26a1 1 0 0 1-1.5-.86z"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <p class="text-fg-3 mt-4 text-[15px]" data-reveal>
+            The video loads from youtube-nocookie.com only after you press play.
+          </p>
+        </div>
+      </section>
+
+      <section id="download" class="bg-bg-2 px-5 py-16 sm:px-8 sm:py-24 lg:py-36">
+        <div class="mx-auto max-w-[1240px]">
+          <div class="flex flex-wrap items-end justify-between gap-6">
+            <h2 class="display-lg max-w-[16ch]" data-caption>Free on Windows, macOS and Linux</h2>
+            <p class="text-fg-3 font-mono text-[14px]" data-reveal>
+              <span class="js-version text-fg-2">latest release</span> ·
+              <a
+                href="https://github.com/yusupsupriyadi/sososo/blob/master/CHANGELOG.md"
+                target="_blank"
+                rel="noreferrer"
+                class="link"
+                >Release notes</a
+              >
+            </p>
+          </div>
+
+          <ul class="border-line-strong mt-12 border-t">
+            <li
+              class="border-line grid gap-5 border-b py-8 md:grid-cols-[1.1fr_1.5fr_auto] md:items-center md:gap-10"
+              data-os="windows"
+            >
+              <div>
+                <h3 class="font-display text-[26px] font-medium tracking-[-0.02em]">Windows</h3>
+                <p class="js-detected mt-1 hidden text-[15px] font-semibold">
+                  <span
+                    class="mr-1.5 inline-block h-2 w-2 rounded-full bg-fg align-middle"
+                    aria-hidden="true"
+                  ></span
+                  >Your system
+                </p>
+              </div>
+              <p class="text-fg-2">
+                Windows 10 or 11. System audio through WASAPI loopback, no setup.
               </p>
-              <div class="mt-8 flex flex-wrap items-center gap-3.5">
+              <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_windows_x64-setup.exe"
+                  class="btn btn-ink"
+                  >Installer (.exe)</a
+                >
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_windows_x64.msi"
+                  class="link inline-flex min-h-11 items-center font-mono text-[15px]"
+                  >.msi</a
+                >
+              </div>
+            </li>
+            <li
+              class="border-line grid gap-5 border-b py-8 md:grid-cols-[1.1fr_1.5fr_auto] md:items-center md:gap-10"
+              data-os="macos"
+            >
+              <div>
+                <h3 class="font-display text-[26px] font-medium tracking-[-0.02em]">macOS</h3>
+                <p class="js-detected mt-1 hidden text-[15px] font-semibold">
+                  <span
+                    class="mr-1.5 inline-block h-2 w-2 rounded-full bg-fg align-middle"
+                    aria-hidden="true"
+                  ></span
+                  >Your system
+                </p>
+              </div>
+              <p class="text-fg-2">
+                macOS 11 or later, Intel and Apple Silicon. System audio through the free
+                <a
+                  href="https://github.com/ExistentialAudio/BlackHole"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="link"
+                  >BlackHole</a
+                >
+                driver.
+              </p>
+              <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_macos_universal.dmg"
+                  class="btn btn-ink"
+                  >Universal .dmg</a
+                >
+              </div>
+            </li>
+            <li
+              class="border-line-strong grid gap-5 border-b py-8 md:grid-cols-[1.1fr_1.5fr_auto] md:items-center md:gap-10"
+              data-os="linux"
+            >
+              <div>
+                <h3 class="font-display text-[26px] font-medium tracking-[-0.02em]">Linux</h3>
+                <p class="js-detected mt-1 hidden text-[15px] font-semibold">
+                  <span
+                    class="mr-1.5 inline-block h-2 w-2 rounded-full bg-fg align-middle"
+                    aria-hidden="true"
+                  ></span
+                  >Your system
+                </p>
+              </div>
+              <p class="text-fg-2">
+                PulseAudio or PipeWire. Captures your output's monitor, no setup.
+              </p>
+              <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_amd64.deb"
+                  class="btn btn-ink"
+                  >.deb</a
+                >
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_amd64.AppImage"
+                  class="link inline-flex min-h-11 items-center font-mono text-[15px]"
+                  >.AppImage</a
+                >
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases/latest/download/sososo_linux_x86_64.rpm"
+                  class="link inline-flex min-h-11 items-center font-mono text-[15px]"
+                  >.rpm</a
+                >
+              </div>
+            </li>
+          </ul>
+
+          <div class="mt-16 grid gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-6">
+              <h3
+                class="font-display text-[22px] leading-tight font-medium tracking-[-0.02em]"
+                data-reveal
+              >
+                After you install
+              </h3>
+              <ol class="mt-6 flex flex-col gap-5" data-reveal>
+                <li class="flex gap-4">
+                  <span class="text-fg-3 font-mono text-[15px]">1</span>
+                  <p class="text-fg-2">
+                    Open Settings and paste a free
+                    <a
+                      href="https://console.deepgram.com/signup"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="link text-fg"
+                      >Deepgram API key</a
+                    >. It's the one key you need for captions.
+                  </p>
+                </li>
+                <li class="flex gap-4">
+                  <span class="text-fg-3 font-mono text-[15px]">2</span>
+                  <p class="text-fg-2">
+                    If you want summaries, translation and chat, pick an AI provider and add its
+                    key, or point it at a local Llama.
+                  </p>
+                </li>
+                <li class="flex gap-4">
+                  <span class="text-fg-3 font-mono text-[15px]">3</span>
+                  <p class="text-fg-2">
+                    Press Ctrl+Alt+R, or the record button, and join your call.
+                  </p>
+                </li>
+              </ol>
+            </div>
+            <div class="lg:col-span-5 lg:col-start-8" data-reveal>
+              <h3 class="font-display text-[22px] leading-tight font-medium tracking-[-0.02em]">
+                A note on the first launch
+              </h3>
+              <p class="text-fg-2 mt-6">
+                The builds aren't code-signed yet, so your OS may warn you the first time. On
+                Windows, choose More info, then Run anyway. On macOS, right-click the app and choose
+                Open.
+              </p>
+              <p class="text-fg-2 mt-4">
+                Every version is on the
+                <a
+                  href="https://github.com/yusupsupriyadi/sososo/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="link text-fg"
+                  >Releases page</a
+                >.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="open-source" class="on-stage bg-stage relative overflow-hidden text-[#f3f1ea]">
+        <div class="mx-auto max-w-[1240px] px-5 pt-16 sm:px-8 sm:pt-24 lg:pt-36">
+          <div class="grid gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-7">
+              <h2 class="display-lg" data-caption>Every line of it is on GitHub</h2>
+              <p class="mt-6 max-w-[56ch] text-[18px] leading-relaxed text-[#cbc8bf]" data-reveal>
+                The Rust audio pipeline, the Deepgram streaming and the interface are all public
+                under the AGPL-3.0. Issues and pull requests are welcome.
+              </p>
+              <div class="mt-9 flex flex-wrap items-center gap-3" data-reveal>
                 <a
                   href="https://github.com/yusupsupriyadi/sososo"
                   target="_blank"
                   rel="noreferrer"
-                  class="inline-flex items-center gap-2.5 rounded-full bg-accent px-6 py-3 text-[14.5px] font-semibold text-[#0b0e14] shadow-liquid transition hover:brightness-110"
+                  class="btn bg-[#f3f1ea] text-[#0e0e10] hover:bg-white"
                 >
-                  <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 fill-current" aria-hidden="true">
-                    <path
-                      d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.06.78 2.14 0 1.54-.02 2.79-.02 3.17 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"
-                    />
-                  </svg>
                   Star on GitHub
                   <span
-                    class="js-star-count hidden border-l border-[rgba(11,14,20,0.25)] pl-2.5"
+                    class="js-star-count font-mono text-[14px] text-[#5c5a60] empty:hidden"
                   ></span>
                 </a>
                 <a
                   href="https://github.com/yusupsupriyadi/sososo/blob/master/CONTRIBUTING.md"
                   target="_blank"
                   rel="noreferrer"
-                  class="inline-flex items-center rounded-full border border-glass-border px-6 py-3 text-[14.5px] font-medium transition-colors hover:bg-hover"
+                  class="btn border-[1.5px] border-[rgb(243_241_234/0.34)] text-[#f3f1ea] hover:border-[#f3f1ea]"
+                  >Read the contributing guide</a
                 >
-                  Contributing guide
-                </a>
               </div>
             </div>
-            <div class="space-y-4">
-              <div class="rounded-md border border-glass-border p-5">
-                <p class="font-mono text-[11px] tracking-[0.18em] text-accent uppercase">
-                  Community · AGPL-3.0
-                </p>
-                <p class="mt-2 text-[13.5px] leading-relaxed text-fg-dim">
-                  Free forever. If you distribute or host a modified version, share your changes
-                  under the AGPL too.
-                </p>
+            <dl class="flex flex-col gap-6 text-[16px] lg:col-span-4 lg:col-start-9" data-reveal>
+              <div>
+                <dt class="font-semibold">AGPL-3.0</dt>
+                <dd class="mt-1 text-[#cbc8bf]">
+                  Free to use. If you distribute or host a modified version, share your changes
+                  under the same license.
+                </dd>
               </div>
-              <div class="rounded-md border border-glass-border p-5">
-                <p class="font-mono text-[11px] tracking-[0.18em] text-accent-2 uppercase">
-                  Commercial
-                </p>
-                <p class="mt-2 text-[13.5px] leading-relaxed text-fg-dim">
-                  Need it closed-source? A commercial license lifts the copyleft —
+              <div>
+                <dt class="font-semibold">Commercial license</dt>
+                <dd class="mt-1 text-[#cbc8bf]">
+                  Lifts the copyleft for closed-source use. See
                   <a
                     href="https://github.com/yusupsupriyadi/sososo/blob/master/LICENSING.md"
                     target="_blank"
                     rel="noreferrer"
-                    class="underline underline-offset-4 hover:text-fg"
-                    >see LICENSING.md</a
+                    class="link"
+                    >LICENSING.md</a
                   >.
-                </p>
+                </dd>
               </div>
-              <p class="font-mono text-[11px] leading-relaxed text-fg-faint">
-                The sososo name & logo are trademarks — forks must rebrand.
-              </p>
-            </div>
+              <div>
+                <dt class="font-semibold">Trademark</dt>
+                <dd class="mt-1 text-[#cbc8bf]">
+                  The sososo name and logo are trademarks, so forks need a name of their own.
+                </dd>
+              </div>
+            </dl>
           </div>
+        </div>
+
+        <div class="relative mt-20 lg:mt-28" aria-hidden="true">
+          <svg
+            class="js-footer-rings pointer-events-none absolute top-1/2 left-1/2 -z-0 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2"
+            viewBox="0 0 900 900"
+          >
+            <g fill="none" stroke="rgb(243 241 234 / 0.07)" stroke-width="1.5">
+              <circle cx="450" cy="450" r="120" />
+              <circle cx="450" cy="450" r="220" />
+              <circle cx="450" cy="450" r="320" />
+              <circle cx="450" cy="450" r="420" />
+            </g>
+          </svg>
+          <img
+            src="./sososo_brand_logo_white-bg-transparent.png"
+            alt=""
+            class="js-big-wordmark relative mx-auto w-[min(92vw,1180px)] max-w-none px-5 pb-10 sm:px-8"
+            width="1180"
+            height="333"
+            loading="lazy"
+          />
         </div>
       </section>
     </main>
 
-    <!-- ============================ FOOTER ============================ -->
-    <footer class="mt-20 border-t border-glass-border/60 px-6">
-      <div class="mx-auto grid max-w-[1120px] gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div>
-          <img
-            src="./sososo_brand_logo_white-bg-transparent.png"
-            alt="sososo"
-            class="h-[14px] w-auto"
-          />
-          <p class="mt-4 max-w-[34ch] text-[13px] leading-relaxed text-fg-dim">
-            Real-time meeting & audio transcription for Windows, macOS & Linux.
-          </p>
-          <p class="mt-6 font-mono text-[11.5px] text-fg-faint">
+    <footer class="on-stage bg-stage text-[#cbc8bf]">
+      <div class="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <div
+          class="flex flex-col gap-6 border-t border-[rgb(243_241_234/0.14)] py-10 lg:flex-row lg:items-center lg:justify-between"
+        >
+          <nav aria-label="Project links">
+            <ul class="flex flex-wrap gap-x-6 gap-y-1 text-[15px]">
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Releases</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/blob/master/CHANGELOG.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Changelog</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/issues"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Issues</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/blob/master/LICENSE"
+                  target="_blank"
+                  rel="noreferrer"
+                  >License</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/blob/master/PRIVACY.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Privacy</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/blob/master/SECURITY.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Security</a
+                >
+              </li>
+              <li>
+                <a
+                  class="inline-flex min-h-11 items-center hover:text-[#f3f1ea]"
+                  href="https://github.com/yusupsupriyadi/sososo/blob/master/TRADEMARK.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Trademark</a
+                >
+              </li>
+            </ul>
+          </nav>
+          <p class="font-mono text-[14px] text-[#a19e96]">
             © <span id="year">2026</span> Yusup Supriyadi
           </p>
         </div>
-        <nav aria-label="Project">
-          <p class="font-mono text-[11px] tracking-[0.2em] text-fg-faint uppercase">Project</p>
-          <ul class="mt-4 space-y-2.5 text-[13.5px] text-fg-dim">
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >GitHub</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/releases"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Releases</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/CHANGELOG.md"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Changelog</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/issues"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Issues</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://youtu.be/al1_YU_ILXs"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Demo video</a
-              >
-            </li>
-          </ul>
-        </nav>
-        <nav aria-label="Legal">
-          <p class="font-mono text-[11px] tracking-[0.2em] text-fg-faint uppercase">Legal</p>
-          <ul class="mt-4 space-y-2.5 text-[13.5px] text-fg-dim">
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/LICENSE"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >License (AGPL-3.0)</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/LICENSING.md"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Commercial licensing</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/PRIVACY.md"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Privacy</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/TRADEMARK.md"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Trademark</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/yusupsupriyadi/sososo/blob/master/SECURITY.md"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Security</a
-              >
-            </li>
-          </ul>
-        </nav>
-        <nav aria-label="Powered by">
-          <p class="font-mono text-[11px] tracking-[0.2em] text-fg-faint uppercase">Powered by</p>
-          <ul class="mt-4 space-y-2.5 text-[13.5px] text-fg-dim">
-            <li>
-              <a
-                href="https://tauri.app"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Tauri 2</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://deepgram.com"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Deepgram</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://openai.com"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >OpenAI</a
-              >
-            </li>
-            <li>
-              <a
-                href="https://ai.google.dev"
-                target="_blank"
-                rel="noreferrer"
-                class="transition-colors hover:text-fg"
-                >Google Gemini</a
-              >
-            </li>
-          </ul>
-        </nav>
       </div>
     </footer>
   </body>

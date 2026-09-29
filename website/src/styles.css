@@ -1,50 +1,351 @@
 @import 'tailwindcss';
 
-/* ============================================================
-   Design tokens — mirrored from the app (src/styles/app.css) so
-   the landing page and the product share one visual language,
-   plus landing-only additions (display/mono fonts, pause yellow).
-   ============================================================ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Paper and ink come from the black-on-white wordmark; the one accent is the app's
+   record red, for non-text marks only. Speaker hues stay inside the app recreations. */
+:root {
+  color-scheme: light;
+  --bg: #f3f1ea;
+  --bg-2: #e8e5db;
+  --fg: #0e0e10;
+  --fg-2: #3b3a40;
+  --fg-3: #5c5a60;
+  --line: rgb(14 14 16 / 0.14);
+  --line-strong: rgb(14 14 16 / 0.34);
+  /* the "screen" the app UI floats on: ink in both themes */
+  --stage: #0e0e10;
+  --stage-ring: rgb(243 241 234 / 0.09);
+  --ring: rgb(14 14 16 / 0.09);
+  --logo-invert: 1;
+  --grain-opacity: 0.07;
+  --grain-blend: multiply;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0e0e10;
+  --bg-2: #18181c;
+  --fg: #f3f1ea;
+  --fg-2: #cbc8bf;
+  --fg-3: #a19e96;
+  --line: rgb(243 241 234 / 0.14);
+  --line-strong: rgb(243 241 234 / 0.34);
+  --stage: #1b1b20;
+  --stage-ring: rgb(243 241 234 / 0.08);
+  --ring: rgb(243 241 234 / 0.08);
+  --logo-invert: 0;
+  --grain-opacity: 0.05;
+  --grain-blend: screen;
+}
+
+/* No-JS fallback: the inline script in index.html always sets data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0e0e10;
+    --bg-2: #18181c;
+    --fg: #f3f1ea;
+    --fg-2: #cbc8bf;
+    --fg-3: #a19e96;
+    --line: rgb(243 241 234 / 0.14);
+    --line-strong: rgb(243 241 234 / 0.34);
+    --stage: #1b1b20;
+    --stage-ring: rgb(243 241 234 / 0.08);
+    --ring: rgb(243 241 234 / 0.08);
+    --logo-invert: 0;
+    --grain-opacity: 0.05;
+    --grain-blend: screen;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-stage: var(--stage);
+}
+
 @theme {
-  /* text / foreground */
-  --color-fg: rgb(255 255 255 / 0.92);
-  --color-fg-dim: rgb(255 255 255 / 0.58);
-  --color-fg-faint: rgb(255 255 255 / 0.34);
-
-  /* accents */
-  --color-accent: #6ea8fe;
-  --color-accent-2: #b794f6;
   --color-rec: #ff5d5d;
-  --color-ok: #58d68d;
-  --color-pause: #ffd479;
 
-  /* glass surfaces */
-  --color-glass: rgb(28 28 34 / 0.58);
-  --color-glass-strong: rgb(20 20 26 / 0.74);
-  --color-glass-border: rgb(255 255 255 / 0.12);
-  --color-hover: rgb(255 255 255 / 0.08);
+  /* app palette, for the recreated app UI only (src/styles/app.css) */
+  --color-app-fg: rgb(255 255 255 / 0.92);
+  --color-app-dim: rgb(255 255 255 / 0.62);
+  /* the app's 0.34 "faint" fails AA on the stage; 0.52 is the lowest that passes */
+  --color-app-faint: rgb(255 255 255 / 0.52);
+  --color-app-border: rgb(255 255 255 / 0.12);
+  --color-you: #6ea8fe;
+  --color-speaker-1: #b794f6;
+  --color-speaker-2: #5fd1a8;
+  --color-translation: #ffc04d;
+  --color-pause: #f5c518;
 
-  /* page atmosphere (the "desktop" behind the glass) */
-  --color-night: #0a0a0f;
+  --radius-key: 10px;
+  --radius-ui: 12px;
+  --radius-stage: 22px;
 
-  /* radii — match the app */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* Unbounded echoes the wordmark's round O; Atkinson Hyperlegible is drawn for
+     low-vision readers, the people captions serve first. */
+  --font-display: 'Unbounded', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-sans: 'Atkinson Hyperlegible Next', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --font-app: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
-  /* glossy "liquid glass" edge for buttons */
-  --shadow-liquid:
-    inset 0 1px 0 rgb(255 255 255 / 0.6), 0 0 9px rgb(0 0 0 / 0.2), 0 3px 8px rgb(0 0 0 / 0.15);
+@layer base {
+  html {
+    /* decorative rings may exceed the viewport; never let them pan the page */
+    overflow-x: clip;
+    scroll-padding-top: 88px;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--fg);
+    background-color: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color 0.3s ease;
+  }
+  ::selection {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  :focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .on-stage :focus-visible {
+    outline-color: #f3f1ea;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
 
-  /* type */
-  --font-display: 'Archivo', 'Schibsted Grotesk', system-ui, sans-serif;
-  --font-sans: 'Schibsted Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Spline Sans Mono', ui-monospace, 'Cascadia Mono', monospace;
+/* Living paper grain: fixed, behind the content, never animated. */
+.grain {
+  position: fixed;
+  inset: 0;
+  /* over everything, the sticky nav included, so the paper reads as one sheet */
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-  /* animations */
-  --animate-rec-pulse: rec-pulse 1.4s infinite;
-  --animate-eq-bar: eq-bar 1.05s ease-in-out infinite;
-  --animate-ring-drift: ring-drift 18s ease-in-out infinite alternate;
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--radius-ui);
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 600;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+.wordmark {
+  filter: invert(var(--logo-invert));
+}
+
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 500;
+  /* single column below 1024px: the headline gets the full width */
+  font-size: clamp(34px, 6vw, 62px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+@media (min-width: 1024px) {
+  .display-xl {
+    font-size: clamp(34px, 4.3vw, 62px);
+  }
+}
+.display-lg {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 3.9vw, 54px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.display-md {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(26px, 2.9vw, 40px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+.lede {
+  font-size: clamp(17px, 1.35vw, 19.5px);
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+
+/* SRT-style cue: the page reads as one captioned call, so the sections that
+   happen during the call carry the timecode they'd have in its transcript. */
+.cue {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Words split by SplitText for the "caption settle" signature. */
+.cap-word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.btn {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: var(--radius-ui);
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-ink {
+  background: var(--fg);
+  color: var(--bg);
+}
+.btn-ink:hover {
+  background: var(--fg-2);
+}
+.btn-line {
+  border: 1.5px solid var(--line-strong);
+  color: var(--fg);
+}
+.btn-line:hover {
+  border-color: var(--fg);
+  background: var(--bg-2);
+}
+.link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 0.2s ease;
+}
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* The dark "screen" the app recreations float on; the logo's rings are its only decoration. */
+.stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-stage);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 0.05), transparent 60%), var(--stage);
+  color: var(--color-app-fg);
+}
+:root[data-theme='dark'] .stage {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.stage-rings {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.stage-rings circle {
+  fill: none;
+  stroke: var(--stage-ring);
+}
+
+/* App recreations: values mirror src/windows/main/*.tsx. */
+.app {
+  font-family: var(--font-app);
+  color: var(--color-app-fg);
+}
+.app-glass {
+  position: relative;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: rgb(28 28 34 / 0.72);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    inset 0 0 18px rgb(255 255 255 / 0.05);
+}
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 0 9px rgb(0 0 0 / 0.2),
+    0 3px 8px rgb(0 0 0 / 0.15);
+  transition:
+    filter 0.15s ease,
+    background-color 0.15s ease;
+}
+.app-btn:hover {
+  filter: brightness(1.08);
+}
+/* invisible hit area so 30px app buttons still meet the 44px tap target */
+.app-btn.hit {
+  position: relative;
+}
+.app-btn.hit::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+}
+.speaker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.caption-text {
+  font-size: 14px;
+  line-height: 1.5;
+  transition: opacity 0.25s ease;
+}
+.caption-text.is-interim {
+  font-style: italic;
+  opacity: 0.6;
+}
+.translation-line {
+  border-left: 2px solid rgb(255 192 77 / 0.55);
+  padding-left: 8px;
+  font-size: 13px;
+  color: var(--color-translation);
+}
+.translation-line.is-pending {
+  border-left-color: rgb(255 192 77 / 0.35);
+  font-style: italic;
+  opacity: 0.75;
+  font-size: 12px;
 }
 
 @keyframes rec-pulse {
@@ -58,200 +359,124 @@
     box-shadow: 0 0 0 0 rgb(255 93 93 / 0);
   }
 }
-
-@keyframes eq-bar {
-  0%,
-  100% {
-    transform: scaleY(0.35);
-  }
+@keyframes soft-pulse {
   50% {
-    transform: scaleY(1);
+    opacity: 0.45;
   }
 }
-
-/* the concentric-ring "sound wave" backdrop slowly breathing */
-@keyframes ring-drift {
-  from {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  to {
-    transform: scale(1.06);
-    opacity: 1;
-  }
+/* status dot states, as in RecordingView: live, connecting, finishing, idle */
+.status-dot {
+  height: 9px;
+  width: 9px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-app-faint);
+}
+.status-dot[data-state='live'] {
+  background: var(--color-rec);
+  animation: rec-pulse 1.4s infinite;
+}
+.status-dot[data-state='connecting'] {
+  background: var(--color-you);
+  animation: soft-pulse 1.2s ease-in-out infinite;
+}
+.status-dot[data-state='finishing'] {
+  background: #ffb454;
+  animation: soft-pulse 1.2s ease-in-out infinite;
 }
 
-/* caption line entering the live transcript */
-@keyframes cap-in {
-  from {
-    opacity: 0;
-    transform: translateY(7px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* window picker selection, as in WindowPickerModal */
+.js-pick {
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+.js-pick .js-pick-check {
+  display: none;
+}
+.js-pick.is-picked {
+  border-color: rgb(110 168 254 / 0.55);
+  background: rgb(110 168 254 / 0.16);
+}
+.js-pick.is-picked .js-pick-check {
+  display: inline-flex;
 }
 
-/* AI summary card pop */
-@keyframes sum-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* the hero transcript scrolls like the app's: older lines slide out the top */
+.demo-body {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 36px);
 }
 
-/* ============================================================
-   Liquid-glass material — identical recipe to the app.
-   ============================================================ */
-@utility liquid-glass {
+/* keycaps for the global shortcut */
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(64px, 11vw, 132px);
+  height: clamp(64px, 11vw, 132px);
+  padding: 0 clamp(12px, 2vw, 24px);
+  border-radius: clamp(12px, 1.6vw, 20px);
+  border: 1.5px solid var(--fg);
+  background: var(--bg);
+  --depth: 8px;
+  box-shadow: 0 var(--depth) 0 var(--fg);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(18px, 2.6vw, 34px);
+  letter-spacing: -0.02em;
+}
+
+/* the big interim → final sentence */
+.live-sentence {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 6.2vw, 96px);
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+}
+.live-sentence .lw {
+  display: inline-block;
+  transform-origin: 0 100%;
+}
+.live-swap {
   position: relative;
-  border: 1px solid rgb(255 255 255 / 0.35);
-  background: rgb(28 28 34 / 0.58);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.6),
-    inset 0 0 18px rgb(255 255 255 / 0.05);
+  display: inline-grid;
+}
+.live-swap > span {
+  grid-area: 1 / 1;
+  /* keep each word at its own width so motion.ts can measure it */
+  justify-self: start;
 }
 
-/* wide display setting for Archivo headings (matches the wordmark's stance) */
-@utility font-expanded {
-  font-variation-settings: 'wdth' 120;
+/* two-input timeline */
+.track-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.track-bar i {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
 }
 
-/* concentric rings — the logo's "O" / sound-wave motif */
-@utility rings-bg {
-  background-image: repeating-radial-gradient(
-    circle at center,
-    rgb(255 255 255 / 0.055) 0,
-    rgb(255 255 255 / 0.055) 1px,
-    transparent 1px,
-    transparent 88px
-  );
-  mask-image: radial-gradient(circle at center, black 0%, transparent 68%);
+/* The head script adds .motion only when motion will run, so no-JS and reduced-motion
+   visitors get every element in its final state. */
+.motion [data-reveal],
+.motion [data-caption] {
+  opacity: 0;
+}
+:root:not(.motion) .js-playhead {
+  transform: translateX(100%);
 }
 
-/* film-grain so the dark field never bands */
-@utility noise-bg {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-}
-
-/* ============================================================
-   Base.
-   ============================================================ */
-@layer base {
-  html {
-    scroll-behavior: smooth;
-    /* decorative rings/glows may exceed the viewport — never let them scroll the page */
-    overflow-x: clip;
+@media (prefers-reduced-motion: reduce) {
+  .status-dot[data-state] {
+    animation: none;
   }
   body {
-    font-family: var(--font-sans);
-    color: var(--color-fg);
-    background-color: var(--color-night);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  ::selection {
-    background: rgb(110 168 254 / 0.35);
-  }
-  :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgb(255 255 255 / 0.16);
-    border-radius: 8px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgb(255 255 255 / 0.28);
-  }
-}
-
-/* ============================================================
-   Live-transcript demo states (toggled from main.ts).
-   ============================================================ */
-.cap-line {
-  animation: cap-in 0.35s ease both;
-}
-.cap-text {
-  transition: color 0.3s ease;
-}
-.cap-interim .cap-text {
-  color: var(--color-fg-dim);
-  font-style: italic;
-}
-.cap-leaving {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-  opacity: 0;
-  transform: translateY(-8px);
-}
-.sum-pop {
-  animation: sum-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
-}
-/* blinking "still listening" caret on the streaming interim line */
-.cap-interim .cap-text::after {
-  content: '▍';
-  margin-left: 2px;
-  color: var(--color-accent);
-  animation: caret-blink 0.9s steps(2) infinite;
-}
-@keyframes caret-blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-/* ============================================================
-   Scroll reveals (observer in main.ts adds .is-visible).
-   ============================================================ */
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s ease;
-}
-[data-reveal].is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* ============================================================
-   Reduced motion: everything lands in its final, readable state.
-   ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  [data-reveal] {
-    opacity: 1;
-    transform: none;
     transition: none;
-  }
-  .animate-rec-pulse,
-  .animate-eq-bar,
-  .animate-ring-drift {
-    animation: none;
-  }
-  .animate-eq-bar {
-    transform: scaleY(0.7);
-  }
-  .cap-line,
-  .sum-pop {
-    animation: none;
-  }
-  .cap-interim .cap-text::after {
-    content: none;
   }
 }
