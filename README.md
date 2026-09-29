@@ -1,5 +1,3 @@
-
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/sososo_brand_logo_white.png" />
