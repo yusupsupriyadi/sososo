@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-09-29
+
+### Changed
+
+- **Linux download files are renamed** from `sososo_linux_amd64.AppImage` /
+  `sososo_linux_amd64.deb` / `sososo_linux_x86_64.rpm` to
+  `sososo_amd64.AppImage` / `sososo_amd64.deb` / `sososo_x86_64.rpm`, as the
+  AppImage catalog asks for no "linux" in AppImage names. The README and website
+  links point to the new names; installed AppImages keep updating in-app.
+
 ### Fixed
 
 - **Linux AppImage now starts on Ubuntu 22.04 / Debian 12 and passes the
@@ -360,7 +370,8 @@ First public release. **Windows only** — macOS and Linux are not yet tested.
 - Formatting SOP — Prettier (with Tailwind class sorting) + rustfmt, enforced by
   a Husky pre-commit hook — plus CI and a Windows release workflow.
 
-[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.1...HEAD
+[unreleased]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/yusupsupriyadi/sososo/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/yusupsupriyadi/sososo/compare/v0.7.1...v0.8.0

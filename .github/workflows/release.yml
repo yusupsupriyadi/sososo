@@ -42,8 +42,9 @@ jobs:
           # Oldest supported Ubuntu: the AppImage uses the host glibc, so a 24.04 build won't start on 22.04.
           - os: ubuntu-22.04
             args: ''
-            # e.g. sososo_linux_amd64.deb / .AppImage / .rpm
-            assetNamePattern: 'sososo_linux_[arch][ext]'
+            # e.g. sososo_amd64.deb / .AppImage, sososo_x86_64.rpm. No "linux" in the
+            # name: the AppImage catalog flags it, since every AppImage is for Linux.
+            assetNamePattern: 'sososo_[arch][ext]'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +103,7 @@ jobs:
             echo ""
             echo "- **Windows:** sososo_windows_x64-setup.exe"
             echo "- **macOS:** sososo_macos_universal.dmg"
-            echo "- **Linux:** sososo_linux_amd64.AppImage (or .deb / .rpm)"
+            echo "- **Linux:** sososo_amd64.AppImage (or .deb / .rpm)"
             echo ""
             echo "The other assets (latest.json, .app.tar.gz) are used by the in-app auto-updater — you can ignore them. Builds are not code-signed yet, so the OS may warn on first run (Windows SmartScreen / macOS Gatekeeper — on macOS, right-click the app and choose Open)."
             echo "__CHANGELOG_EOF__"
