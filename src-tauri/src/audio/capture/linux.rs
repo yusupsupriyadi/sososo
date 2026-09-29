@@ -73,8 +73,8 @@ pub(super) fn capture_loop(
             .map_err(|e| AppError::Audio(format!("pulse: read ({source:?}): {e}")))?;
 
         let mut samples = Vec::with_capacity(READ_FRAMES);
-        for frame in bytes.chunks_exact(2) {
-            samples.push(i16::from_le_bytes([frame[0], frame[1]]));
+        for frame in bytes.as_chunks::<2>().0 {
+            samples.push(i16::from_le_bytes(*frame));
         }
         // Non-blocking: drop if the consumer is far behind (favor fresh audio).
         let _ = tx.try_send(samples);

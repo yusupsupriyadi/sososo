@@ -550,7 +550,7 @@ fn capture_thumbnail(hwnd: HWND) -> Option<String> {
 /// BGRA pixels → aspect-fit RGB thumbnail → JPEG → `data:image/jpeg;base64,…`.
 fn encode_thumbnail_jpeg(bgra: &[u8], w: u32, h: u32) -> Option<String> {
     let mut rgb = Vec::with_capacity((w as usize) * (h as usize) * 3);
-    for px in bgra.chunks_exact(4) {
+    for px in bgra.as_chunks::<4>().0 {
         rgb.extend_from_slice(&[px[2], px[1], px[0]]);
     }
     let full = image::RgbImage::from_raw(w, h, rgb)?;
@@ -593,7 +593,9 @@ fn fit_thumb_size(w: u32, h: u32, max_w: u32, max_h: u32) -> (u32, u32) {
 fn is_blank_bgra(pixels: &[u8]) -> bool {
     const NEAR_BLACK: u8 = 8;
     pixels
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .all(|px| px[0] <= NEAR_BLACK && px[1] <= NEAR_BLACK && px[2] <= NEAR_BLACK)
 }
 
